@@ -1,0 +1,8 @@
+{
+  "**/*.{js,ts}": [
+    "eslint --fix --quiet"
+  ],
+  "**/*.{js,ts,css,scss,md}": [
+    "yarn format"
+  ]
+}
