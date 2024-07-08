@@ -21,12 +21,12 @@ export default {
       sourcemap: true,
     },
     {
-      file: `${packageJson.umd}/lucia-sdk-${packageJson.version}.min.js`,
+      file: `${packageJson.umd}/lucia-browser-sdk-${packageJson.version}.min.js`,
       format: 'umd',
       name: 'LuciaSDK',
     },
     {
-      file: `${packageJson.umd}/lucia-sdk-latest.min.js`,
+      file: `${packageJson.umd}/lucia-browser-sdk-latest.min.js`,
       format: 'umd',
       name: 'LuciaSDK',
     },

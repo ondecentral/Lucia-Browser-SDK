@@ -6,16 +6,16 @@ The Lucia JavaScript Library is a set of methods attached to a global `LuciaSDK`
 
 ## Installation
 
-### Install via npm
+### Install via NPM
 
 You can use `npm` or `yarn` to install this library:
 
 ```
-npm install lucia-sdk
+npm install lucia-browser-sdk
 ```
 or
 ```
-yarn add lucia-sdk
+yarn add lucia-browser-sdk
 ```
 
 ### Install via CDN
@@ -23,7 +23,7 @@ yarn add lucia-sdk
 You can add the following script to use global `LuciaSDK` object.
 
 ```
-<script src="https://cdn.luciaprotocol.com/lucia-sdk-latest.min.js"></script>
+<script src="https://cdn.luciaprotocol.com/lucia-browser-sdk-latest.min.js"></script>
 ```
 
 
