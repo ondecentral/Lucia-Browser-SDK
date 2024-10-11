@@ -1,20 +1,20 @@
-import { LuciaSDK } from './sdk';
+import LuciaSDKClass from './core';
+import { Config, SDK } from './types';
 
-let instance: LuciaSDK | null = null;
+const LuciaSDK: SDK = {
+  init: (config: Config) => {
+    if (typeof window === 'undefined') return;
 
-const init = (apiKey: string, clientId: string) => {
-  instance = new LuciaSDK(apiKey, clientId);
+    const userConfig = config || {};
+
+    const instance = new LuciaSDKClass(userConfig);
+    LuciaSDK.userInfo = instance.userInfo;
+    LuciaSDK.pageView = instance.pageView;
+    LuciaSDK.trackConversion = instance.trackConversion;
+    LuciaSDK.buttonClick = instance.buttonClick;
+    LuciaSDK.sendWalletInfo = instance.sendWalletInfo;
+    LuciaSDK.checkMetaMaskConnection = instance.checkMetaMaskConnection;
+  },
 };
 
-const debug = () => {
-  if (!instance) {
-    throw new Error('SDK is not initialized');
-  }
-
-  return instance.debug();
-};
-
-export default {
-  init,
-  debug,
-};
+export default LuciaSDK;
