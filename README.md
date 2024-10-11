@@ -13,9 +13,7 @@ You can use `npm` or `yarn` to install this library:
 ```
 npm install lucia-sdk
 ```
-
 or
-
 ```
 yarn add lucia-sdk
 ```
@@ -27,3 +25,5 @@ You can add the following script to use global `LuciaSDK` object.
 ```
 <script src="https://cdn.luciaprotocol.com/lucia-sdk-latest.min.js"></script>
 ```
+
+
