@@ -6,7 +6,20 @@ class LuciaSDK extends BaseClass {
     this.httpClient.post('/api/key/auth', {});
   }
 
-  async userInfo(user: unknown, userInfo: unknown) {
+  async init() {
+    const data = await this.httpClient.post<{ lid: string }>('/api/sdk/init', {
+      user: {
+        name: getUser(),
+        data: await udata(),
+      },
+      session: getSessionData(),
+    });
+    if (data) {
+      localStorage.setItem('lid', data.lid);
+    }
+  }
+
+  async userInfo(user: object, userInfo: unknown) {
     const lid = getLidData();
     const session = getSessionData();
 
