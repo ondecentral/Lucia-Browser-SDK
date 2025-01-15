@@ -12,9 +12,19 @@ class HttpClient {
 
   constructor(store: typeof Store.store) {
     this.store = store;
-    this.baseURL = this.store.config?.testENV ? TEST_SERVER_URL : SERVER_URL;
+    this.baseURL = this.getBaseURL();
 
     this.logger = new Logger(this.store);
+  }
+
+  private getBaseURL(): string {
+    const { config } = this.store;
+
+    if (config?.debugURL) {
+      return config.debugURL;
+    }
+
+    return config?.testENV ? TEST_SERVER_URL : SERVER_URL;
   }
 
   async get<T extends unknown>(url: string): Promise<T | null> {

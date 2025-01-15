@@ -15,10 +15,10 @@ class BaseClass {
   constructor(config: Config) {
     this.store = Store.store;
     this.dispatch = Store.dispatch;
+    this.dispatch({ config });
+
     this.httpClient = new HttpClient(this.store);
     this.logger = new Logger(this.store);
-
-    this.dispatch({ config });
   }
 }
 
