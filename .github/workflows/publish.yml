@@ -1,12 +1,28 @@
-name: Publish to npm
+name: Publish Package
 
 on:
+  # Regular releases from main branch
   push:
     branches:
       - main
+    tags:
+      - 'v*'
+  
+  # Alpha releases from any branch
+  workflow_dispatch:
+    inputs:
+      releaseType:
+        description: 'Release type'
+        required: true
+        default: 'alpha'
+        type: choice
+        options:
+          - alpha
+          - beta
+          - regular
 
 jobs:
-  build:
+  publish:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,28 +35,43 @@ jobs:
         node-version: '22.x'
         registry-url: 'https://registry.npmjs.org'
 
-    - name: Install Yarn
-      run: npm i -g yarn
-
     - name: Install dependencies
-      run: yarn install
+      run: yarn install --frozen-lockfile
 
-    - name: Set git configuration
+    - name: Build
+      run: yarn build
+
+    - name: Test
+      run: yarn test
+
+    # Alpha Release Steps
+    - name: Version & Publish Alpha
+      if: github.event_name == 'workflow_dispatch' && inputs.releaseType != 'regular'
+      run: |
+        npm version prerelease --preid=alpha --no-git-tag-version
+        npm publish --tag alpha --access public
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+    # Regular Release Steps
+    - name: Regular Release Steps
+      if: github.event_name == 'push'
       run: |
         git config --global user.name "github-actions[bot]"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-    - name: Upgrade package version
+        yarn package:release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: yarn package:release
 
-    - name: Publish
+    - name: Regular Publish
+      if: github.event_name == 'push'
       run: yarn package:publish --access public
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+    # S3 and CloudFront steps only for regular releases
     - name: Copy umd files to S3
+      if: github.event_name == 'push'
       uses: arcezd/s3-cp-action@master
       with:
         args: --follow-symlinks --recursive
@@ -52,6 +83,7 @@ jobs:
         SOURCE_DIR: 'dist/umd'      # optional: defaults to entire repository
 
     - name: Invalidate CloudFront
+      if: github.event_name == 'push'
       uses: chetan/invalidate-cloudfront-action@v2
       env:
         DISTRIBUTION: ${{ secrets.DISTRIBUTION }}
