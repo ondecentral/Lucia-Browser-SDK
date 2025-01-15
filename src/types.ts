@@ -2,14 +2,19 @@ export interface Config {
   apiKey: string;
   debug?: boolean;
   testENV?: boolean;
+  debugURL?: string;
 }
 
 export interface SDK {
-  init: (config: Config) => void;
-  userInfo?: (user: unknown, userInfo: unknown) => Promise<void>;
-  pageView?: (page: string) => Promise<void>;
-  trackConversion?: (eventTag: string, amount: number, eventDetails: unknown) => Promise<void>;
-  buttonClick?: (button: unknown) => Promise<void>;
-  sendWalletInfo?: (walletAddress: string, chainId: number | string) => Promise<void>;
-  checkMetaMaskConnection?: () => boolean;
+  init: (config: Config) => Promise<LuciaSDKClass>;
+  userInfo: (user: string, userInfo: object) => Promise<void>;
+  pageView: (page: string) => Promise<void>;
+  trackConversion: (eventTag: string, amount: number, eventDetails: object) => Promise<void>;
+  buttonClick: (button: string) => Promise<void>;
+  sendWalletInfo: (walletAddress: string, chainId: number | string) => Promise<void>;
+  checkMetaMaskConnection: () => boolean;
+}
+
+export interface LuciaSDKClass extends Omit<SDK, 'init'> {
+  init: () => void;
 }

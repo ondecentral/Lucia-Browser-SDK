@@ -4,6 +4,9 @@ module.exports = {
     es2021: true,
   },
   extends: ['airbnb-base', 'plugin:eslint-comments/recommended', 'plugin:import/recommended', 'prettier'],
+  globals: {
+    LuciaSDK: true,
+  },
   ignorePatterns: ['jest.setup.ts'],
   overrides: [
     {

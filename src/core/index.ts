@@ -19,13 +19,13 @@ class LuciaSDK extends BaseClass {
     }
   }
 
-  async userInfo(user: object, userInfo: unknown) {
+  async userInfo(userId: string, userInfo: object) {
     const lid = getLidData();
     const session = getSessionData();
 
     await this.httpClient.post('/api/sdk/user', {
       user: {
-        name: user,
+        name: userId,
         data: await udata(),
         userInfo,
       },
@@ -49,7 +49,7 @@ class LuciaSDK extends BaseClass {
     });
   }
 
-  async trackConversion(eventTag: string, amount: number, eventDetails: unknown) {
+  async trackConversion(eventTag: string, amount: number, eventDetails: object) {
     const lid = getLidData();
     const session = getSessionData();
 
@@ -66,7 +66,7 @@ class LuciaSDK extends BaseClass {
     });
   }
 
-  async buttonClick(button: unknown) {
+  async buttonClick(button: string) {
     const lid = getLidData();
     const session = getSessionData();
 
