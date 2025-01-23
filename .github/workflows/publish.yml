@@ -1,28 +1,14 @@
 name: Publish Package
 
 on:
-  # Regular releases from main branch
-  push:
-    branches:
-      - main
-    tags:
-      - 'v*'
-  
-  # Alpha releases from any branch
-  workflow_dispatch:
-    inputs:
-      releaseType:
-        description: 'Release type'
-        required: true
-        default: 'alpha'
-        type: choice
-        options:
-          - alpha
-          - beta
-          - regular
+  workflow_run:
+    workflows: ["Release"]
+    types:
+      - completed
 
 jobs:
   publish:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -41,37 +27,20 @@ jobs:
     - name: Build
       run: yarn build
 
-    - name: Test
-      run: yarn test
-
-    # Alpha Release Steps
-    - name: Version & Publish Alpha
-      if: github.event_name == 'workflow_dispatch' && inputs.releaseType != 'regular'
-      run: |
-        npm version prerelease --preid=alpha --no-git-tag-version
-        npm publish --tag alpha --access public
+    - name: Publish Alpha
+      if: needs.release.outputs.is_alpha == 'true'
+      run: npm publish --tag alpha --access public
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-    # Regular Release Steps
-    - name: Regular Release Steps
-      if: github.event_name == 'push'
-      run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        yarn package:release
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-    - name: Regular Publish
-      if: github.event_name == 'push'
+    - name: Publish Regular
+      if: needs.release.outputs.is_alpha == 'false' && needs.release.outputs.version_exists == 'false'
       run: yarn package:publish --access public
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-    # S3 and CloudFront steps only for regular releases
-    - name: Copy umd files to S3
-      if: github.event_name == 'push'
+    - name: Upload to S3
+      if: needs.release.outputs.is_alpha == 'false' && needs.release.outputs.version_exists == 'false'
       uses: arcezd/s3-cp-action@master
       with:
         args: --follow-symlinks --recursive
@@ -79,11 +48,11 @@ jobs:
         AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: 'us-east-1'   # optional: defaults to us-east-1
-        SOURCE_DIR: 'dist/umd'      # optional: defaults to entire repository
+        AWS_REGION: 'us-east-1'
+        SOURCE_DIR: 'dist/umd'
 
     - name: Invalidate CloudFront
-      if: github.event_name == 'push'
+      if: needs.release.outputs.is_alpha == 'false' && needs.release.outputs.version_exists == 'false'
       uses: chetan/invalidate-cloudfront-action@v2
       env:
         DISTRIBUTION: ${{ secrets.DISTRIBUTION }}
