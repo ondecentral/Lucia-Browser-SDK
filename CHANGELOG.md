@@ -1,5 +1,8 @@
 # Changelog
 
+* Merge pull request #6 from ondecentral/fix/release (9c39776)
+* fix: fix release and publish (8de68e6)
+
 All notable changes to this project will be documented in this file.
 
 ## 0.0.3 (2025-01-19)
