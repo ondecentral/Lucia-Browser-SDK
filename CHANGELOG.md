@@ -1,14 +1,47 @@
 # Changelog
 
-* Merge pull request #6 from ondecentral/fix/release (9c39776)
-* fix: fix release and publish (8de68e6)
-
 All notable changes to this project will be documented in this file.
 
-## 0.0.3 (2025-01-19)
+## [0.0.4] - 2024-03-19
 
-## 0.0.2 (2024-10-23)
+### Features
 
-## 0.0.1 (2024-07-01)
+- add alpha release workflow
+- add release workflow
 
-## 0.0.1 (2024-07-01)
+### Bug Fixes
+
+- fix typescript error for global object
+- fix changelog generation
+- fix release workflow
+
+### Code Refactoring
+
+- split release and publish workflows
+
+## [0.0.3] - 2024-03-18
+
+### Features
+
+- initial SDK setup
+- add tracking methods
+- add user info methods
+
+### Bug Fixes
+
+- fix initialization process
+- fix http client base url
+
+## [0.0.2] - 2024-03-17
+
+### Features
+
+- add core SDK functionality
+- add basic tracking methods
+
+## [0.0.1] - 2024-03-16
+
+### Features
+
+- initial release
+- basic SDK structure
