@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [0.0.5](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.0.4...v0.0.5) (2025-01-23)
+
+
+### Bug Fixes
+
+* fix changelog generation ([4797697](https://github.com/ondecentral/Lucia-Browser-SDK/commit/47976978ccb3866d510919c974dc73d304786953))
+* fix release and publish ([8de68e6](https://github.com/ondecentral/Lucia-Browser-SDK/commit/8de68e6fe5bbef2b3d4e99262dc6f44d55241bc3))
+
 ## [0.0.4] - 2024-03-19
 
 ### Features
