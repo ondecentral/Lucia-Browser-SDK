@@ -53,14 +53,19 @@ jobs:
 
     - name: Get package version
       id: get_version
-      run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+      run: |
+        echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+        echo "Current version: $(node -p "require('./package.json').version")"
 
     - name: Check if version exists
       id: check_version
       run: |
-        if git rev-parse "v${{ steps.get_version.outputs.version }}" >/dev/null 2>&1; then
+        PACKAGE_VERSION=$(node -p "require('./package.json').version")
+        if git rev-parse "v$PACKAGE_VERSION" >/dev/null 2>&1; then
+          echo "Version v$PACKAGE_VERSION already exists"
           echo "version_exists=true" >> $GITHUB_OUTPUT
         else
+          echo "Version v$PACKAGE_VERSION does not exist"
           echo "version_exists=false" >> $GITHUB_OUTPUT
         fi
 
@@ -72,13 +77,15 @@ jobs:
         else
           echo "is_alpha=false" >> $GITHUB_OUTPUT
         fi
+        echo "Event type: ${{ github.event_name }}"
+        echo "Is alpha: ${{ steps.check_type.outputs.is_alpha }}"
 
     - name: Alpha Release
       if: steps.check_type.outputs.is_alpha == 'true'
       run: npm version prerelease --preid=alpha --no-git-tag-version
 
     - name: Regular Release
-      if: github.event_name == 'push' && steps.check_version.outputs.version_exists == 'false'
+      if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.releaseType == 'regular')
       run: yarn package:release
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
