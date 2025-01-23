@@ -8,12 +8,14 @@ on:
 
 jobs:
   publish:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        ref: ${{ github.event.workflow_run.head_branch }}  # Get the correct branch
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
@@ -27,20 +29,31 @@ jobs:
     - name: Build
       run: yarn build
 
+    - name: Check if alpha version
+      id: check_version
+      run: |
+        VERSION=$(node -p "require('./package.json').version")
+        if [[ $VERSION == *"-alpha."* ]]; then
+          echo "is_alpha=true" >> $GITHUB_OUTPUT
+        else
+          echo "is_alpha=false" >> $GITHUB_OUTPUT
+        fi
+        echo "Current version: $VERSION"
+
     - name: Publish Alpha
-      if: needs.release.outputs.is_alpha == 'true'
+      if: steps.check_version.outputs.is_alpha == 'true'
       run: npm publish --tag alpha --access public
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     - name: Publish Regular
-      if: needs.release.outputs.is_alpha == 'false' && needs.release.outputs.version_exists == 'false'
+      if: steps.check_version.outputs.is_alpha == 'false'
       run: yarn package:publish --access public
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
     - name: Upload to S3
-      if: needs.release.outputs.is_alpha == 'false' && needs.release.outputs.version_exists == 'false'
+      if: steps.check_version.outputs.is_alpha == 'false'
       uses: arcezd/s3-cp-action@master
       with:
         args: --follow-symlinks --recursive
@@ -52,7 +65,7 @@ jobs:
         SOURCE_DIR: 'dist/umd'
 
     - name: Invalidate CloudFront
-      if: needs.release.outputs.is_alpha == 'false' && needs.release.outputs.version_exists == 'false'
+      if: steps.check_version.outputs.is_alpha == 'false'
       uses: chetan/invalidate-cloudfront-action@v2
       env:
         DISTRIBUTION: ${{ secrets.DISTRIBUTION }}
