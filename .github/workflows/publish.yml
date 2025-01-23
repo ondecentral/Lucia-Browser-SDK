@@ -1,12 +1,14 @@
-name: Publish to npm
+name: Publish Package
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["Release"]
+    types:
+      - completed
 
 jobs:
-  build:
+  publish:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -19,28 +21,26 @@ jobs:
         node-version: '22.x'
         registry-url: 'https://registry.npmjs.org'
 
-    - name: Install Yarn
-      run: npm i -g yarn
-
     - name: Install dependencies
-      run: yarn install
+      run: yarn install --frozen-lockfile
 
-    - name: Set git configuration
-      run: |
-        git config --global user.name "github-actions[bot]"
-        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+    - name: Build
+      run: yarn build
 
-    - name: Upgrade package version
+    - name: Publish Alpha
+      if: needs.release.outputs.is_alpha == 'true'
+      run: npm publish --tag alpha --access public
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: yarn package:release
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-    - name: Publish
+    - name: Publish Regular
+      if: needs.release.outputs.is_alpha == 'false' && needs.release.outputs.version_exists == 'false'
       run: yarn package:publish --access public
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
-    - name: Copy umd files to S3
+    - name: Upload to S3
+      if: needs.release.outputs.is_alpha == 'false' && needs.release.outputs.version_exists == 'false'
       uses: arcezd/s3-cp-action@master
       with:
         args: --follow-symlinks --recursive
@@ -48,10 +48,11 @@ jobs:
         AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        AWS_REGION: 'us-east-1'   # optional: defaults to us-east-1
-        SOURCE_DIR: 'dist/umd'      # optional: defaults to entire repository
+        AWS_REGION: 'us-east-1'
+        SOURCE_DIR: 'dist/umd'
 
     - name: Invalidate CloudFront
+      if: needs.release.outputs.is_alpha == 'false' && needs.release.outputs.version_exists == 'false'
       uses: chetan/invalidate-cloudfront-action@v2
       env:
         DISTRIBUTION: ${{ secrets.DISTRIBUTION }}

@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      releaseType:
+        description: 'Release type'
+        required: true
+        default: 'alpha'
+        type: choice
+        options:
+          - alpha
+          - beta
+          - regular
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_version.outputs.version }}
+      version_exists: ${{ steps.check_version.outputs.version_exists }}
+      is_alpha: ${{ steps.check_type.outputs.is_alpha }}
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup Git
+      run: |
+        git config --global user.name "github-actions[bot]"
+        git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '22.x'
+
+    - name: Install dependencies
+      run: yarn install --frozen-lockfile
+
+    - name: Build
+      run: yarn build
+
+    - name: Test
+      run: yarn test
+
+    - name: Get package version
+      id: get_version
+      run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+    - name: Check if version exists
+      id: check_version
+      run: |
+        if git rev-parse "v${{ steps.get_version.outputs.version }}" >/dev/null 2>&1; then
+          echo "version_exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "version_exists=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Check release type
+      id: check_type
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.releaseType }}" != "regular" ]; then
+          echo "is_alpha=true" >> $GITHUB_OUTPUT
+        else
+          echo "is_alpha=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Alpha Release
+      if: steps.check_type.outputs.is_alpha == 'true'
+      run: npm version prerelease --preid=alpha --no-git-tag-version
+
+    - name: Regular Release
+      if: github.event_name == 'push' && steps.check_version.outputs.version_exists == 'false'
+      run: yarn package:release
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
