@@ -690,3 +690,19 @@ function generateSessionID() {
 
   return uid || '';
 }
+
+export function getUtmParams() {
+  const url = new URL(window.location.href);
+  const params = url.searchParams;
+  const utmObject: Record<string, string> = {};
+
+  if (!params.has('utm')) {
+    return null;
+  }
+
+  params.forEach((value, key) => {
+    utmObject[key] = value;
+  });
+
+  return utmObject;
+}
