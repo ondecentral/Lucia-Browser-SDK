@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [0.2.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.1.0...v0.2.0) (2025-03-12)
+
+
+### Features
+
+* collect and send utm params on init ([0fa6e85](https://github.com/ondecentral/Lucia-Browser-SDK/commit/0fa6e85b79f69c2b402bc55f8bf896a5fda4ba54))
+
 ## [0.1.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.0.5...v0.1.0) (2025-01-23)
 
 ### Features
