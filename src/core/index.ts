@@ -1,5 +1,5 @@
 import BaseClass from '../base';
-import { getLidData, getSessionData, getUser, udata } from '../utils/data';
+import { getLidData, getSessionData, getUser, getUtmParams, udata } from '../utils/data';
 
 class LuciaSDK extends BaseClass {
   authenticate() {
@@ -16,6 +16,7 @@ class LuciaSDK extends BaseClass {
         data: await udata(),
       },
       session: getSessionData(),
+      utm: getUtmParams(),
     });
     if (data) {
       localStorage.setItem('lid', data.lid);
