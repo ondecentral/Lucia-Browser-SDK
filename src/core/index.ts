@@ -109,7 +109,7 @@ class LuciaSDK extends BaseClass {
    * @param walletAddress The wallet address of the user
    * @param chainId The chain ID of the wallet
    */
-  async sendWalletInfo(walletAddress: string, chainId: number | string, walletName?: string) {
+  async sendWalletInfo(walletAddress: string, chainId: number | string, walletName?: 'Phantom' | 'Metamask') {
     const lid = getLidData();
     const session = getSessionData();
 
