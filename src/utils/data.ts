@@ -500,7 +500,7 @@ export async function udata() {
       return strOnError;
     }
   }
-
+  
   function metaMaskAvailable() {
     try {
       if ((window as any).ethereum && (window as any).ethereum.isMetaMask) {
