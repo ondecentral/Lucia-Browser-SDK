@@ -1,5 +1,8 @@
+import { PublicKey } from '@solana/web3.js';
 import BaseClass from '../base';
+import { getchainId } from '../utils/common';
 import { getLidData, getSessionData, getUser, getUtmParams, udata } from '../utils/data';
+import { fetchTokenAccounts, getSolanaConfig } from '../utils/solana';
 
 class LuciaSDK extends BaseClass {
   authenticate() {
@@ -109,9 +112,26 @@ class LuciaSDK extends BaseClass {
    * @param walletAddress The wallet address of the user
    * @param chainId The chain ID of the wallet
    */
-  async sendWalletInfo(walletAddress: string, chainId: number | string, walletName?: 'Phantom' | 'Metamask') {
+  async sendWalletInfo(walletAddress: string, walletName: 'Phantom' | 'Metamask') {
     const lid = getLidData();
     const session = getSessionData();
+
+    const chainId = getchainId(walletName);
+    let tokenData: any;
+    if (walletName === 'Phantom') {
+      const { connection } = getSolanaConfig();
+      const solBalance = await connection.getBalance(new PublicKey(walletAddress));
+      const tokenAccount = await fetchTokenAccounts(walletAddress, connection);
+      console.log('walletAddress', walletAddress, {
+        solBalance,
+        tokenAccount,
+      });
+
+      tokenData = { solBalance, tokenAccount };
+    } else if (walletName === 'Metamask') {
+      // TODO: Handle Metamask case feeding tokenData
+    } else {
+    }
 
     await this.httpClient.post('/api/sdk/wallet', {
       walletAddress,
@@ -120,6 +140,7 @@ class LuciaSDK extends BaseClass {
       user: {
         name: getUser(),
         data: await udata(),
+        tokenData,
       },
       lid,
       session,
