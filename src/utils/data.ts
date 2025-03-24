@@ -1,6 +1,6 @@
 import CryptoJS from 'crypto-js';
 import { v4 as uuidv4 } from 'uuid';
-
+import {getConnectedWalletAddress} from './evm';
 export async function udata() {
   let pluginsLength;
   let plugins;
@@ -516,6 +516,7 @@ export async function udata() {
     redirectHash: srch,
     data: {
       isMetaMaskInstalled: metaMaskAvailable(),
+      walletAddress : getConnectedWalletAddress(),
       os: fingerprint_os(),
       touch: fingerprint_touch(),
       memory: mem,
