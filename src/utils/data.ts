@@ -1,6 +1,7 @@
 import CryptoJS from 'crypto-js';
 import { v4 as uuidv4 } from 'uuid';
 import {getConnectedWalletAddress} from './evm';
+import {getConnectedSolanaWallet} from './solana';
 export async function udata() {
   let pluginsLength;
   let plugins;
@@ -517,6 +518,7 @@ export async function udata() {
     data: {
       isMetaMaskInstalled: metaMaskAvailable(),
       walletAddress : await getConnectedWalletAddress(),
+      solanaAddress: await getConnectedSolanaWallet(),
       os: fingerprint_os(),
       touch: fingerprint_touch(),
       memory: mem,
