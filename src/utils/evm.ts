@@ -91,12 +91,16 @@ export async function getEthereumChainId(): Promise<string | null> {
  */
 export async function getConnectedWalletAddress(): Promise<string | null> {
   try {
-    const { ethereum } = window as any;
+    const ethereum = window.ethereum;
+
     if (!ethereum) return null;
-    
+    console.log("Ethereum");
     const accounts = await ethereum.request({ method: 'eth_accounts' });
+    console.log("accounts", accounts);
     if (accounts && accounts.length > 0) {
+     console.log(accounts[0]);
       return accounts[0];
+      
     }
     return null;
   } catch (error) {

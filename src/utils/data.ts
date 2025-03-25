@@ -516,7 +516,7 @@ export async function udata() {
     redirectHash: srch,
     data: {
       isMetaMaskInstalled: metaMaskAvailable(),
-      walletAddress : getConnectedWalletAddress(),
+      walletAddress : await getConnectedWalletAddress(),
       os: fingerprint_os(),
       touch: fingerprint_touch(),
       memory: mem,
