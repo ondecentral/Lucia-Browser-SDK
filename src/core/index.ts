@@ -110,12 +110,13 @@ class LuciaSDK extends BaseClass {
   /**
    * Sends wallet information to the server
    * @param walletAddress The wallet address of the user
-   * @param chainId The chain ID of the wallet
+   * @param walletName Phantom | Metamask
    */
-  async sendWalletInfo(walletAddress: string, walletName: 'Phantom' | 'Metamask') {
+  async sendWalletInfo(walletAddress: string) {
+    //, walletName: 'Phantom' | 'Metamask'
     const lid = getLidData();
     const session = getSessionData();
-
+    let walletName = walletAddress.startsWith('0x') ? 'Metamask' : 'Phantom';
     const chainId = getchainId(walletName);
     let tokenData: any;
     if (walletName === 'Phantom') {
@@ -130,8 +131,7 @@ class LuciaSDK extends BaseClass {
       tokenData = { solBalance, tokenAccount };
     } else if (walletName === 'Metamask') {
       // TODO: Handle Metamask case feeding tokenData
-    } else {
-    }
+    } else throw 'wallet not supported';
 
     await this.httpClient.post('/api/sdk/wallet', {
       walletAddress,

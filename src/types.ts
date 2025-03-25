@@ -11,11 +11,7 @@ export interface SDK {
   pageView: (page: string) => Promise<void>;
   trackConversion: (eventTag: string, amount: number, eventDetails: object) => Promise<void>;
   buttonClick: (button: string) => Promise<void>;
-  sendWalletInfo: (
-    walletAddress: string,
-    chainId: number | string,
-    walletName?: 'Metamask' | 'Phantom',
-  ) => Promise<void>;
+  sendWalletInfo: (walletAddress: string, walletName: 'Phantom' | 'Metamask') => Promise<void>;
   checkMetaMaskConnection: () => boolean;
 }
 
