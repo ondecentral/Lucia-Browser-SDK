@@ -1,7 +1,9 @@
 import CryptoJS from 'crypto-js';
 import { v4 as uuidv4 } from 'uuid';
-import {getConnectedWalletAddress, getWalletName} from './evm';
-import {getConnectedSolanaWallet, getSolanaWalletName} from './solana';
+
+import { getConnectedWalletAddress, getWalletName } from './evm';
+import { getConnectedSolanaWallet, getSolanaWalletName } from './solana';
+
 export async function udata() {
   let pluginsLength;
   let plugins;
@@ -501,7 +503,7 @@ export async function udata() {
       return strOnError;
     }
   }
-  
+
   function metaMaskAvailable() {
     try {
       if ((window as any).ethereum && (window as any).ethereum.isMetaMask) {
@@ -520,10 +522,10 @@ export async function udata() {
     redirectHash: srch,
     data: {
       isMetaMaskInstalled: metaMaskAvailable(),
-      walletAddress : ethAddress,
+      walletAddress: ethAddress,
       solanaAddress: solAddress,
-      walletName:walletName,
-      solWalletName:solWalletName,
+      walletName,
+      solWalletName,
       os: fingerprint_os(),
       touch: fingerprint_touch(),
       memory: mem,
