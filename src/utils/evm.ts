@@ -125,4 +125,25 @@ export async function isMetaMask(): Promise<boolean> {
   }
 }
 
+/**
+ * Gets the name of the connected wallet
+ * @returns Promise resolving to the name of the connected wallet, or null if not available
+ */
+export async function getWalletName(): Promise<string | null> {
+  try {
+    const { ethereum } = window as any;
+    if (!ethereum) return null;
+
+    const isMetaMask = await ethereum.isMetaMask;
+    if (isMetaMask) {
+      return 'MetaMask';
+    }
+
+    const walletName = (await ethereum.request({ method: 'wallet_getName' })) as string;
+    return walletName || null;
+  } catch (error) {
+    console.error('Error getting wallet name:', error);
+    return null;
+  }
+}
 

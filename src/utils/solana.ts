@@ -20,6 +20,7 @@ interface WalletAdapter {
   publicKey: {
     toString: () => string;
   };
+  name?: string;
 }
 
 interface PhantomProvider {
@@ -61,26 +62,18 @@ export async function getConnectedSolanaWallet(): Promise<string | null> {
       }
     } 
     // Check for Phantom's Solana adapter
-    else if (window.phantom) {
-        let addr: string | null = null;
-        const checkPhantomConnection = async () => {
-            if (window.phantom?.solana) {
-                try {
-                    let mockConnect = await window.phantom.solana.connect({ onlyIfTrusted: true })
-                    if (mockConnect) {
-                        addr = window.phantom.solana.publicKey.toString();
-                      }
-                }
-                catch {
-                    return null;
-                }
-              
-            }
-          }
-        checkPhantomConnection()
-      return addr;
+    else if (window.phantom?.solana) {
+      try {
+        // Try to connect with onlyIfTrusted to avoid prompting the user
+        const response = await window.phantom.solana.connect({ onlyIfTrusted: true });
+        if (response && window.phantom.solana.publicKey) {
+          return window.phantom.solana.publicKey.toString();
+        }
+      } catch (error) {
+        console.error('Error silently connecting to Phantom wallet:', error);
+        // If silent connection fails, we return null but don't throw an error
+      }
     }
-    
 
     // Check for other wallet adapters
     const adapters: WalletAdapter[] = [];
@@ -108,4 +101,48 @@ export async function getConnectedSolanaWallet(): Promise<string | null> {
     console.error('Error detecting Solana wallet:', err);
     return null;
   }
+}
+/**
+ * Get the name of the connected Solana wallet
+ * @returns Promise that resolves to the name of the wallet or null if none found
+ */
+export async function getSolanaWalletName(): Promise<string | null> {
+  const address = await getConnectedSolanaWallet();
+
+  if (!address) {
+    return null;
+  }
+
+  // Check if the wallet is Phantom
+  if (window.phantom?.solana) {
+    return 'Phantom';
+  }
+
+  // Check if the wallet is Solflare
+  if (window.solflare) {
+    return 'Solflare';
+  }
+
+  // Try to detect the wallet name from the adapter
+  const adapters: WalletAdapter[] = [];
+
+  // Check for wallet adapter instances in common locations
+  if (window.walletAdapterNetwork?.adapters) {
+    adapters.push(...window.walletAdapterNetwork.adapters);
+  }
+
+  // Check for @solana/wallet-adapter-react context exposed globally
+  if (window.SolanaWalletAdapterContext?.current) {
+    adapters.push(window.SolanaWalletAdapterContext.current);
+  }
+
+  // Find first matching adapter
+  for (const adapter of adapters) {
+    if (adapter.connected && adapter.publicKey && adapter.publicKey.toString() === address) {
+      return adapter.name || 'Unknown Wallet';
+    }
+  }
+
+  // If all else fails, return null
+  return null;
 }
