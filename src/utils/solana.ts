@@ -54,13 +54,13 @@ export async function getConnectedSolanaWallet(): Promise<string | null> {
       if (window.solana.isConnected && window.solana.publicKey) {
         return window.solana.publicKey.toString();
       }
-    } 
+    }
     // Check for Solflare specifically as it may use a different pattern
     else if (window.solflare) {
       if (window.solflare.isConnected && window.solflare.publicKey) {
         return window.solflare.publicKey.toString();
       }
-    } 
+    }
     // Check for Phantom's Solana adapter
     else if (window.phantom?.solana) {
       try {
@@ -77,28 +77,28 @@ export async function getConnectedSolanaWallet(): Promise<string | null> {
 
     // Check for other wallet adapters
     const adapters: WalletAdapter[] = [];
-    
+
     // Check for wallet adapter instances in common locations
     if (window.walletAdapterNetwork?.adapters) {
       adapters.push(...window.walletAdapterNetwork.adapters);
     }
-    
+
     // Check for @solana/wallet-adapter-react context exposed globally
     if (window.SolanaWalletAdapterContext?.current) {
       adapters.push(window.SolanaWalletAdapterContext.current);
     }
-    
+
     // Find first connected adapter
-    for (const adapter of adapters) {
-      if (adapter.connected && adapter.publicKey) {
-        return adapter.publicKey.toString();
-      }
+    const connectedAdapter = adapters.find((adapter) => adapter.connected && adapter.publicKey);
+
+    if (connectedAdapter) {
+      return connectedAdapter.publicKey.toString();
     }
-    
+
     // No connected wallet found
     return null;
   } catch (err) {
-    console.error('Error detecting Solana wallet:', err);
+    // Error detecting Solana wallet
     return null;
   }
 }
@@ -137,10 +137,12 @@ export async function getSolanaWalletName(): Promise<string | null> {
   }
 
   // Find first matching adapter
-  for (const adapter of adapters) {
-    if (adapter.connected && adapter.publicKey && adapter.publicKey.toString() === address) {
-      return adapter.name || 'Unknown Wallet';
-    }
+  const matchingAdapter = adapters.find(
+    (adapter) => adapter.connected && adapter.publicKey && adapter.publicKey.toString() === address,
+  );
+
+  if (matchingAdapter) {
+    return matchingAdapter.name || 'Unknown Wallet';
   }
 
   // If all else fails, return null
