@@ -143,3 +143,116 @@ export async function getWalletName(): Promise<string | null> {
     return null;
   }
 }
+
+/**
+ * Provider information interface
+ */
+export interface ProviderInfo {
+  isMetaMask: boolean;
+  isCoinbaseWallet: boolean;
+  isWalletConnect: boolean;
+  isTrust: boolean;
+  isImToken: boolean;
+  isBraveWallet: boolean;
+  isTokenPocket: boolean;
+  isStatus: boolean;
+  isTally: boolean;
+  isAlphaWallet: boolean;
+  isOpera: boolean;
+  isCoin98: boolean;
+  isMathWallet: boolean;
+  isOneInch: boolean;
+  isRainbow: boolean;
+  isBinanceChainWallet: boolean;
+  isFrame: boolean;
+  userAgent: string;
+  chainId?: string;
+  networkVersion?: string;
+  name: string;
+  isPossiblyGenericInjectedProvider?: boolean;
+}
+
+// Extend the Window interface to include BinanceChain and wallet-specific properties
+declare global {
+  interface Window {
+    BinanceChain?: any;
+    ethereum?: any;
+  }
+}
+
+export async function getExtendedProviderInfo(): Promise<ProviderInfo | null> {
+  if (!window.ethereum) return null;
+
+  const provider: ProviderInfo = {
+    isMetaMask: !!window.ethereum.isMetaMask,
+    isCoinbaseWallet: !!window.ethereum.isCoinbaseWallet || !!window.ethereum.isCoinbase,
+    isWalletConnect: !!window.ethereum.isWalletConnect,
+    isTrust: !!window.ethereum.isTrust || !!window.ethereum.isTrustWallet,
+    isImToken: !!window.ethereum.isImToken,
+    isBraveWallet: !!window.ethereum.isBraveWallet,
+    isTokenPocket: !!window.ethereum.isTokenPocket,
+    isStatus: !!window.ethereum.isStatus,
+    isTally: !!window.ethereum.isTally || window.ethereum.isTallyWallet,
+    isAlphaWallet: !!window.ethereum.isAlphaWallet,
+    isOpera: !!window.ethereum.isOpera,
+    isCoin98: !!window.ethereum.isCoin98,
+    isMathWallet: !!window.ethereum.isMathWallet,
+    isOneInch: window.ethereum.isOneInchIOSWallet || window.ethereum.isOneInchAndroidWallet,
+    isRainbow: !!window.ethereum.isRainbow,
+    isBinanceChainWallet: false, // Will be set later if detected
+    isFrame: !!window.ethereum.isFrame,
+    userAgent: window.navigator.userAgent,
+    chainId: window.ethereum.chainId || undefined,
+    networkVersion: window.ethereum.networkVersion || undefined,
+    name: '', // Temporary placeholder
+  };
+
+  if (!Object.values(provider).some(Boolean)) {
+    if (Object.prototype.hasOwnProperty.call(window.ethereum, '_metamask')) {
+      provider.isMetaMask = true;
+    }
+
+    if (window.BinanceChain) {
+      provider.isBinanceChainWallet = true;
+    }
+
+    if (window.ethereum.isFrame) {
+      provider.isFrame = true;
+    }
+
+    if (typeof window.ethereum.request === 'function' && typeof (window.ethereum as any)._metamask === 'undefined') {
+      provider.isPossiblyGenericInjectedProvider = true;
+    }
+  }
+
+  // Set the name after the provider object is fully initialized
+  provider.name = determineProviderName(provider);
+
+  return provider;
+}
+
+function determineProviderName(provider: ProviderInfo): string {
+  if (provider.isMetaMask) return 'MetaMask';
+  if (provider.isCoinbaseWallet) return 'Coinbase Wallet';
+  if (provider.isWalletConnect) return 'WalletConnect';
+  if (provider.isTrust) return 'Trust Wallet';
+  if (provider.isImToken) return 'imToken';
+  if (provider.isBraveWallet) return 'Brave Wallet';
+  if (provider.isTokenPocket) return 'TokenPocket';
+  if (provider.isStatus) return 'Status';
+  if (provider.isTally) return 'Tally';
+  if (provider.isAlphaWallet) return 'AlphaWallet';
+  if (provider.isOpera) return 'Opera';
+  if (provider.isCoin98) return 'Coin98';
+  if (provider.isMathWallet) return 'MathWallet';
+  if (provider.isOneInch) return '1inch Wallet';
+  if (provider.isRainbow) return 'Rainbow';
+  if (provider.isBinanceChainWallet) return 'Binance Chain Wallet';
+  if (provider.isFrame) return 'Frame';
+
+  const ua = provider.userAgent.toLowerCase();
+  if (ua.includes('trust')) return 'Trust Wallet (UA)';
+  if (ua.includes('rainbow')) return 'Rainbow (UA)';
+
+  return 'Unknown Provider';
+}

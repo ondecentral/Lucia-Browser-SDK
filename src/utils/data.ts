@@ -1,7 +1,7 @@
 import CryptoJS from 'crypto-js';
 import { v4 as uuidv4 } from 'uuid';
 
-import { getConnectedWalletAddress, getWalletName } from './evm';
+import { getConnectedWalletAddress, getWalletName, getExtendedProviderInfo } from './evm';
 import { getConnectedSolanaWallet, getSolanaWalletName } from './solana';
 
 export async function udata() {
@@ -518,12 +518,15 @@ export async function udata() {
   const ethAddress = await getConnectedWalletAddress();
   const walletName = await getWalletName();
   const solWalletName = await getSolanaWalletName();
+  const providerInfo = await getExtendedProviderInfo();
+  console.log('provider', providerInfo);
   return {
     redirectHash: srch,
     data: {
       isMetaMaskInstalled: metaMaskAvailable(),
       walletAddress: ethAddress,
       solanaAddress: solAddress,
+      providerInfo,
       walletName,
       solWalletName,
       os: fingerprint_os(),
