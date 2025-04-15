@@ -2,25 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
-
 ## [0.3.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.2.0...v0.3.0) (2025-03-14)
-
 
 ### Features
 
-* add walletName to sendWalletInfo ([50944b0](https://github.com/ondecentral/Lucia-Browser-SDK/commit/50944b0f37d1492b47dbab1bb07b8281edabaf37))
-
+- add walletName to sendWalletInfo ([50944b0](https://github.com/ondecentral/Lucia-Browser-SDK/commit/50944b0f37d1492b47dbab1bb07b8281edabaf37))
 
 ### Documentation
 
-* type of walletName is Metamask | Phantom ([1ca2008](https://github.com/ondecentral/Lucia-Browser-SDK/commit/1ca20088567e51a481e7bbd56cdea73d7cd45091))
+- type of walletName is Metamask | Phantom ([1ca2008](https://github.com/ondecentral/Lucia-Browser-SDK/commit/1ca20088567e51a481e7bbd56cdea73d7cd45091))
 
 ## [0.2.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.1.0...v0.2.0) (2025-03-12)
 
-
 ### Features
 
-* collect and send utm params on init ([0fa6e85](https://github.com/ondecentral/Lucia-Browser-SDK/commit/0fa6e85b79f69c2b402bc55f8bf896a5fda4ba54))
+- collect and send utm params on init ([0fa6e85](https://github.com/ondecentral/Lucia-Browser-SDK/commit/0fa6e85b79f69c2b402bc55f8bf896a5fda4ba54))
 
 ## [0.1.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.0.5...v0.1.0) (2025-01-23)
 
