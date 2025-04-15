@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [0.4.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.3.0...v0.4.0) (2025-04-15)
+
+
+### Features
+
+* ethereum and solana browser wallet detection ([0117ba4](https://github.com/ondecentral/Lucia-Browser-SDK/commit/0117ba43b2cba4bfd8c78da8f1bcee21ba11695f))
+* ethereum and solana browser wallet detection ([ea61012](https://github.com/ondecentral/Lucia-Browser-SDK/commit/ea61012f9892914481b377ef8339c1ccbcd73edb))
+* new wallet types and framework for easily adding new wallets ([c99d3a8](https://github.com/ondecentral/Lucia-Browser-SDK/commit/c99d3a875e14980d15cc9f3030194939e29d7026))
+
 ## [0.3.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.2.0...v0.3.0) (2025-03-14)
 
 ### Features
