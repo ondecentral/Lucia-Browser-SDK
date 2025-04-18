@@ -2,8 +2,15 @@ module.exports = {
   env: {
     browser: true,
     es2021: true,
+    jest: true,
   },
-  extends: ['airbnb-base', 'plugin:eslint-comments/recommended', 'plugin:import/recommended', 'prettier'],
+  extends: [
+    'airbnb-base',
+    'plugin:eslint-comments/recommended',
+    'plugin:import/recommended',
+    'prettier',
+    'plugin:jest/recommended',
+  ],
   globals: {
     LuciaSDK: true,
   },
@@ -20,6 +27,9 @@ module.exports = {
       files: '**/*{.,_}{test,spec,stories}.{js,ts}',
       rules: {
         'import/no-extraneous-dependencies': 'off',
+      },
+      env: {
+        jest: true,
       },
     },
   ],
@@ -38,6 +48,7 @@ module.exports = {
     '@typescript-eslint',
     'unused-imports',
     'import',
+    'jest',
   ],
   rules: {
     '@typescript-eslint/no-redeclare': ['error'],
