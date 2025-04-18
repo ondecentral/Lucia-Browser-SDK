@@ -1,36 +1,6 @@
 module.exports = {
   coverageThreshold: {
     global: {
-      branches: 20,
-      functions: 40,
-      lines: 40,
-      statements: 40,
-    },
-    './src/core/': {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
-    },
-    './src/base/': {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
-    },
-    './src/utils/http-client.ts': {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
-    },
-    './src/utils/store.ts': {
-      branches: 80,
-      functions: 80,
-      lines: 80,
-      statements: 80,
-    },
-    './src/utils/logger.ts': {
       branches: 80,
       functions: 80,
       lines: 80,

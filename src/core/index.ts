@@ -1,5 +1,6 @@
 import BaseClass from '../base';
-import { getLidData, getSessionData, getUser, getUtmParams, udata } from '../utils/data';
+import { getUtmParams, udata } from '../utils/data';
+import { getSessionData, getLidData, getUser } from '../utils/session';
 
 class LuciaSDK extends BaseClass {
   authenticate() {

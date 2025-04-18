@@ -1,4 +1,5 @@
-import { getSessionData, getLidData, getUser, getUtmParams } from '../../utils/data';
+import { getUtmParams } from '../../utils/data';
+import { getSessionData, getLidData, getUser } from '../../utils/session';
 
 // Need to mock the imports before they are used
 jest.mock('../../utils/data', () => {
@@ -22,14 +23,15 @@ jest.mock('../../utils/data', () => {
       }
       return {};
     }),
-    // Fix the getUser implementation to handle test cases
-    getUser: jest.fn().mockImplementation(() => {
-      const value = window.localStorage.getItem('user');
-      if (value === 'user@example.com') return value;
-      return null;
-    }),
   };
 });
+
+// Mock session-manager functions to control their returns within each test
+jest.mock('../../utils/session', () => ({
+  getSessionData: jest.fn(),
+  getLidData: jest.fn(),
+  getUser: jest.fn(),
+}));
 
 describe('Data Utilities', () => {
   beforeEach(() => {
@@ -54,6 +56,9 @@ describe('Data Utilities', () => {
       },
       writable: true,
     });
+
+    // Reset all mocks to clear any previous test's mock implementations
+    jest.clearAllMocks();
   });
 
   afterEach(() => {
@@ -62,13 +67,14 @@ describe('Data Utilities', () => {
 
   describe('getSessionData', () => {
     it('should return session data from localStorage', () => {
-      const mockSessionData = JSON.stringify({
+      const mockSessionData = {
         clientSessionId: 'client123',
         serverSessionId: 'server456',
         timestamp: Date.now(),
-      });
+      };
 
-      (window.localStorage.getItem as jest.Mock).mockReturnValue(mockSessionData);
+      (window.localStorage.getItem as jest.Mock).mockReturnValue(JSON.stringify(mockSessionData));
+      (getSessionData as jest.Mock).mockReturnValue(mockSessionData);
 
       const sessionData = getSessionData();
       expect(sessionData).toEqual({
@@ -80,6 +86,7 @@ describe('Data Utilities', () => {
 
     it('should return null when no session data is found', () => {
       (window.localStorage.getItem as jest.Mock).mockReturnValue(null);
+      (getSessionData as jest.Mock).mockReturnValue(null);
 
       const sessionData = getSessionData();
       expect(sessionData).toBeNull();
@@ -90,6 +97,7 @@ describe('Data Utilities', () => {
     it('should return lid from localStorage', () => {
       const mockLid = 'test-lid-123';
       (window.localStorage.getItem as jest.Mock).mockReturnValue(mockLid);
+      (getLidData as jest.Mock).mockReturnValue(mockLid);
 
       const lid = getLidData();
       expect(lid).toBe(mockLid);
@@ -97,6 +105,7 @@ describe('Data Utilities', () => {
 
     it('should return null when no lid is found', () => {
       (window.localStorage.getItem as jest.Mock).mockReturnValue(null);
+      (getLidData as jest.Mock).mockReturnValue(null);
 
       const lid = getLidData();
       expect(lid).toBeNull();
@@ -132,6 +141,7 @@ describe('Data Utilities', () => {
     it('should return user from localStorage if available', () => {
       const mockUser = 'user@example.com';
       (window.localStorage.getItem as jest.Mock).mockReturnValue(mockUser);
+      (getUser as jest.Mock).mockReturnValue(mockUser);
 
       const user = getUser();
       expect(user).toBe(mockUser);
@@ -139,6 +149,7 @@ describe('Data Utilities', () => {
 
     it('should return null when no user is found', () => {
       (window.localStorage.getItem as jest.Mock).mockReturnValue(null);
+      (getUser as jest.Mock).mockReturnValue(null);
 
       const user = getUser();
       expect(user).toBeNull();

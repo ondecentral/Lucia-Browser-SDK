@@ -1,13 +1,17 @@
 import LuciaSDK from '../../core';
-import { getLidData, getSessionData, getUser, getUtmParams, udata } from '../../utils/data';
+import { getUtmParams, udata } from '../../utils/data';
+import { getLidData, getSessionData, getUser } from '../../utils/session';
 
 // Mocking all the required modules
 jest.mock('../../utils/data', () => ({
+  getUtmParams: jest.fn(),
+  udata: jest.fn(),
+}));
+
+jest.mock('../../utils/session', () => ({
   getLidData: jest.fn(),
   getSessionData: jest.fn(),
   getUser: jest.fn(),
-  getUtmParams: jest.fn(),
-  udata: jest.fn(),
 }));
 
 describe('LuciaSDK', () => {
