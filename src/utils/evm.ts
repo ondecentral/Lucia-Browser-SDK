@@ -1,6 +1,10 @@
 /**
  * Ethereum wallet utilities for Lucia Browser SDK
  */
+import Logger from './logger';
+import Store from './store';
+
+const logger = new Logger(Store.store);
 
 /**
  * Checks if an Ethereum provider exists in the window object
@@ -20,7 +24,7 @@ export async function getEthereumAddress(): Promise<string | null> {
     // Check if Ethereum provider exists
     const { ethereum } = window as any;
     if (!ethereum) {
-      console.error('No Ethereum wallet detected.');
+      logger.log('error', 'No Ethereum wallet detected.');
       return null;
     }
 
@@ -37,9 +41,9 @@ export async function getEthereumAddress(): Promise<string | null> {
   } catch (error: any) {
     if (error.code === 4001) {
       // User rejected the request
-      console.error('Connection request rejected by user.');
+      logger.log('error', 'Connection request rejected by user.');
     } else {
-      console.error('Error connecting to wallet:', error);
+      logger.log('error', 'Error connecting to wallet:', error);
     }
     return null;
   }
@@ -78,7 +82,7 @@ export async function getEthereumChainId(): Promise<string | null> {
     const chainId = await ethereum.request({ method: 'eth_chainId' });
     return chainId;
   } catch (error) {
-    console.error('Error getting chain ID:', error);
+    logger.log('error', 'Error getting chain ID:', error);
     return null;
   }
 }
@@ -92,19 +96,21 @@ export async function getConnectedWalletAddress(): Promise<string | null> {
     const { ethereum } = window;
 
     if (!ethereum) return null;
-    console.log('Ethereum');
+
+    logger.log('log', 'Ethereum');
     const accounts = await ethereum.request({ method: 'eth_accounts' });
-    console.log('accounts', accounts);
+    logger.log('log', 'accounts', accounts);
     if (accounts && accounts.length > 0) {
-      console.log(accounts[0]);
+      logger.log('log', accounts[0]);
       return accounts[0];
     }
     return null;
   } catch (error) {
-    console.error('Error checking connected wallet:', error);
+    logger.log('error', 'Error checking connected wallet:', error);
     return null;
   }
 }
+
 /**
  * Checks if the connected wallet is MetaMask
  * @returns boolean indicating if the connected wallet is MetaMask
@@ -117,7 +123,7 @@ export async function isMetaMask(): Promise<boolean> {
     const isMetaMask = await ethereum.isMetaMask;
     return !!isMetaMask;
   } catch (error) {
-    console.error('Error checking if MetaMask:', error);
+    logger.log('error', 'Error checking if MetaMask:', error);
     return false;
   }
 }
@@ -139,7 +145,7 @@ export async function getWalletName(): Promise<string | null> {
     const walletName = (await ethereum.request({ method: 'wallet_getName' })) as string;
     return walletName || null;
   } catch (error) {
-    console.error('Error getting wallet name:', error);
+    logger.log('error', 'Error getting wallet name:', error);
     return null;
   }
 }
