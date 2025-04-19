@@ -1,43 +1,43 @@
 import LuciaSDK from '../../core';
-import { getUtmParams, udata } from '../../utils/data';
-import { getLidData, getSessionData, getUser } from '../../utils/session';
-
-// Mocking all the required modules
-jest.mock('../../utils/data', () => ({
-  getUtmParams: jest.fn(),
-  udata: jest.fn(),
-}));
-
-jest.mock('../../utils/session', () => ({
-  getLidData: jest.fn(),
-  getSessionData: jest.fn(),
-  getUser: jest.fn(),
-}));
+import * as dataUtils from '../../utils/data';
+import * as sessionUtils from '../../utils/session';
 
 describe('LuciaSDK', () => {
   let sdk: LuciaSDK;
   let httpClientPostSpy: jest.SpyInstance;
 
-  // Common mock implementations
-  const mockUdata = { userAgent: 'test-agent', screen: { width: 1920, height: 1080 } };
+  // Common mock implementations with proper types
+  const mockUdata = {
+    userAgent: 'test-agent',
+    screen: { width: 1920, height: 1080 },
+    // Add other properties expected by the udata function
+    plugins: [],
+    language: 'en-US',
+    timeZone: -4,
+  };
   const mockUser = 'test-user';
-  const mockSession = { clientSessionId: 'client123', serverSessionId: 'server456' };
+  const mockSession = {
+    clientSessionId: 'client123',
+    serverSessionId: 'server456' as string | null,
+    timestamp: Date.now(),
+  };
   const mockLid = 'test-lid';
   const mockUtm = { source: 'google', medium: 'cpc' };
 
   beforeEach(() => {
+    // Setup spies on the utility functions instead of full mocks
+    jest.spyOn(dataUtils, 'getUtmParams').mockReturnValue(mockUtm);
+    // Using type assertion to bypass TypeScript's type checking for the mock
+    jest.spyOn(dataUtils, 'udata').mockImplementation(() => Promise.resolve(mockUdata) as Promise<any>);
+    jest.spyOn(sessionUtils, 'getLidData').mockReturnValue(mockLid);
+    jest.spyOn(sessionUtils, 'getSessionData').mockReturnValue(mockSession);
+    jest.spyOn(sessionUtils, 'getUser').mockReturnValue(mockUser);
+
     // Create SDK instance with config
     sdk = new LuciaSDK({ apiKey: 'test-key' });
 
     // Spy on the httpClient.post method
     httpClientPostSpy = jest.spyOn(sdk.httpClient, 'post').mockResolvedValue({ lid: 'new-lid' });
-
-    // Setup common mocks
-    (udata as jest.Mock).mockResolvedValue(mockUdata);
-    (getUser as jest.Mock).mockReturnValue(mockUser);
-    (getSessionData as jest.Mock).mockReturnValue(mockSession);
-    (getLidData as jest.Mock).mockReturnValue(mockLid);
-    (getUtmParams as jest.Mock).mockReturnValue(mockUtm);
 
     // Mock localStorage
     Object.defineProperty(window, 'localStorage', {
@@ -57,6 +57,7 @@ describe('LuciaSDK', () => {
 
   afterEach(() => {
     jest.clearAllMocks();
+    jest.restoreAllMocks();
   });
 
   describe('init', () => {

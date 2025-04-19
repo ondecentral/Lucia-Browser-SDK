@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import Logger from './logger';
 import Store from './store';
 
-const SESSION_STORAGE_KEY = 'lucia_session';
+const SESSION_STORAGE_KEY = 'luci_session';
 const SESSION_EXPIRY_MINUTES = 30;
 const logger = new Logger(Store.store);
 
@@ -13,20 +13,16 @@ const logger = new Logger(Store.store);
  * @returns Promise that resolves to the hash
  */
 export async function hash(string: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    try {
-      const utf8 = new TextEncoder().encode(string);
-
-      crypto.subtle.digest('SHA-256', utf8).then((hashBuffer) => {
-        const hashArray = Array.from(new Uint8Array(hashBuffer));
-        const hashHex = hashArray.map((bytes) => bytes.toString(16).padStart(2, '0')).join('');
-        resolve(hashHex);
-      });
-    } catch (e) {
-      logger.log('error', (e as Error).message);
-      reject(e);
-    }
-  });
+  try {
+    const utf8 = new TextEncoder().encode(string);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', utf8);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map((byte) => byte.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+  } catch (e) {
+    logger.log('error', (e as Error).message);
+    throw e;
+  }
 }
 
 /**
@@ -146,5 +142,5 @@ export function generateSessionID(): string {
  * @returns User ID or null if not found
  */
 export function getUser(): string | null {
-  return localStorage.getItem('user');
+  return localStorage.getItem('luc_uid');
 }

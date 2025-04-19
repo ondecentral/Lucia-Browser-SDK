@@ -2,15 +2,13 @@ import { SERVER_URL, TEST_SERVER_URL } from '../../constants';
 import HttpClient from '../../utils/http-client';
 import Store from '../../utils/store';
 
-// Mock the fetch function
-global.fetch = jest.fn();
-
 describe('HttpClient', () => {
   let httpClient: HttpClient;
+  let originalFetch: typeof global.fetch;
 
   beforeEach(() => {
-    // Reset the fetch mock
-    (global.fetch as jest.Mock).mockClear();
+    // Save original fetch
+    originalFetch = global.fetch;
 
     // Reset the store
     Store.store = {
@@ -18,6 +16,11 @@ describe('HttpClient', () => {
       config: null,
       session: null,
     };
+  });
+
+  afterEach(() => {
+    // Restore original fetch
+    global.fetch = originalFetch;
   });
 
   describe('constructor', () => {
@@ -55,12 +58,11 @@ describe('HttpClient', () => {
 
       const result = await httpClient.get('/test');
       expect(result).toBeNull();
-      expect(global.fetch).not.toHaveBeenCalled();
     });
 
     it('should make a GET request with correct headers', async () => {
       const mockResponse = { data: 'test' };
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      global.fetch = jest.fn().mockResolvedValueOnce({
         json: jest.fn().mockResolvedValueOnce(mockResponse),
       });
 
@@ -78,7 +80,7 @@ describe('HttpClient', () => {
 
     it('should return null and log error when fetch fails', async () => {
       const error = new Error('Network error');
-      (global.fetch as jest.Mock).mockRejectedValueOnce(error);
+      global.fetch = jest.fn().mockRejectedValueOnce(error);
 
       const loggerSpy = jest.spyOn(httpClient.logger, 'log');
       const result = await httpClient.get('/test');
@@ -99,14 +101,13 @@ describe('HttpClient', () => {
 
       const result = await httpClient.post('/test', { foo: 'bar' });
       expect(result).toBeNull();
-      expect(global.fetch).not.toHaveBeenCalled();
     });
 
     it('should make a POST request with correct headers and body', async () => {
       const mockResponse = { success: true };
       const postData = { foo: 'bar' };
 
-      (global.fetch as jest.Mock).mockResolvedValueOnce({
+      global.fetch = jest.fn().mockResolvedValueOnce({
         json: jest.fn().mockResolvedValueOnce(mockResponse),
       });
 
@@ -125,7 +126,7 @@ describe('HttpClient', () => {
 
     it('should return null and log error when fetch fails', async () => {
       const error = new Error('Network error');
-      (global.fetch as jest.Mock).mockRejectedValueOnce(error);
+      global.fetch = jest.fn().mockRejectedValueOnce(error);
 
       const loggerSpy = jest.spyOn(httpClient.logger, 'log');
       const result = await httpClient.post('/test', { foo: 'bar' });

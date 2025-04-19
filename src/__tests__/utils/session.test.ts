@@ -32,6 +32,8 @@ describe('Session Manager', () => {
   let originalLocalStorage: Storage;
   let mockLocalStorage: { [key: string]: string };
   let logMock: jest.SpyInstance;
+  let originalTextEncoder: any;
+  let mockTextEncoderInstance: any;
 
   beforeEach(() => {
     // Reset mocks
@@ -68,37 +70,70 @@ describe('Session Manager', () => {
       writable: true,
     });
 
-    // Mock crypto.subtle.digest
-    Object.defineProperty(global.crypto, 'subtle', {
-      value: {
-        digest: jest.fn().mockImplementation(() => {
-          // Mock a SHA-256 hash result (32 bytes)
-          const buffer = new ArrayBuffer(32);
-          const view = new Uint8Array(buffer);
-          // Fill with predictable values
-          for (let i = 0; i < 32; i += 1) {
-            view[i] = i;
-          }
-          return Promise.resolve(buffer);
-        }),
-      },
-      configurable: true,
-    });
+    // Save original TextEncoder
+    originalTextEncoder = global.TextEncoder;
 
-    // Mock TextEncoder
-    global.TextEncoder = jest.fn().mockImplementation(() => ({
+    // Create a mock TextEncoder instance
+    mockTextEncoderInstance = {
       encode: jest.fn().mockReturnValue(new Uint8Array([1, 2, 3, 4])),
-    }));
+    };
+
+    // Mock TextEncoder constructor
+    global.TextEncoder = jest.fn().mockImplementation(() => mockTextEncoderInstance);
   });
 
   afterEach(() => {
     jest.restoreAllMocks();
     global.localStorage = originalLocalStorage;
+    global.TextEncoder = originalTextEncoder;
   });
 
   describe('hash', () => {
+    let subtleCryptoMock: any;
+    let originalSubtleCrypto: any;
+
+    beforeEach(() => {
+      // Save original subtle crypto
+      originalSubtleCrypto = crypto.subtle;
+
+      // Create a predictable mock buffer for the digest result
+      const buffer = new ArrayBuffer(32);
+      const view = new Uint8Array(buffer);
+      // Fill with predictable values
+      for (let i = 0; i < 32; i += 1) {
+        view[i] = i;
+      }
+
+      // Create a mock for crypto.subtle
+      subtleCryptoMock = {
+        digest: jest.fn().mockResolvedValue(buffer),
+      };
+
+      // Replace crypto.subtle with our mock
+      Object.defineProperty(crypto, 'subtle', {
+        value: subtleCryptoMock,
+        configurable: true,
+      });
+    });
+
+    afterEach(() => {
+      // Restore original crypto.subtle
+      Object.defineProperty(crypto, 'subtle', {
+        value: originalSubtleCrypto,
+        configurable: true,
+      });
+    });
+
     it('should return a hexadecimal string hash', async () => {
       const result = await hash('test-string');
+
+      // Verify TextEncoder was used
+      expect(global.TextEncoder).toHaveBeenCalled();
+      expect(mockTextEncoderInstance.encode).toHaveBeenCalledWith('test-string');
+
+      // Verify crypto.subtle.digest was called with the encoded data
+      expect(subtleCryptoMock.digest).toHaveBeenCalledWith('SHA-256', expect.any(Uint8Array));
+
       expect(typeof result).toBe('string');
       expect(result.length).toBe(64); // SHA-256 hash is 64 hex characters
 
@@ -107,24 +142,23 @@ describe('Session Manager', () => {
     });
 
     it('should handle different input strings', async () => {
-      // Our mock always returns the same hash, but we can verify the TextEncoder was called
       const input1 = 'test-string-1';
       const input2 = 'test-string-2';
 
       await hash(input1);
       await hash(input2);
 
-      // Verify TextEncoder was called twice
-      expect(TextEncoder).toHaveBeenCalledTimes(2);
+      // Verify TextEncoder.encode was called for each input
+      expect(mockTextEncoderInstance.encode).toHaveBeenCalledWith(input1);
+      expect(mockTextEncoderInstance.encode).toHaveBeenCalledWith(input2);
 
       // Verify crypto.subtle.digest was called twice
-      expect(crypto.subtle.digest).toHaveBeenCalledTimes(2);
+      expect(subtleCryptoMock.digest).toHaveBeenCalledTimes(2);
     });
 
     it('should handle errors gracefully', async () => {
-      // Mock TextEncoder to throw an error
-      const originalTextEncoder = global.TextEncoder;
-      global.TextEncoder = jest.fn().mockImplementation(() => {
+      // Setup TextEncoder to throw an error
+      mockTextEncoderInstance.encode.mockImplementationOnce(() => {
         throw new Error('Mock encoding error');
       });
 
@@ -132,10 +166,19 @@ describe('Session Manager', () => {
       await expect(hash('test-string')).rejects.toThrow('Mock encoding error');
 
       // Verify logger.log was called with error
-      expect(logMock).toHaveBeenCalledWith('error', expect.any(String));
+      expect(logMock).toHaveBeenCalledWith('error', 'Mock encoding error');
+    });
 
-      // Restore original implementations
-      global.TextEncoder = originalTextEncoder;
+    it('should handle crypto.subtle.digest rejections', async () => {
+      // Setup crypto.subtle.digest to reject
+      const digestError = new Error('Digest error');
+      subtleCryptoMock.digest.mockRejectedValueOnce(digestError);
+
+      // Test that hash properly rejects when digest rejects
+      await expect(hash('test-string')).rejects.toThrow('Digest error');
+
+      // Verify that the error was logged
+      expect(logMock).toHaveBeenCalledWith('error', 'Digest error');
     });
   });
 
@@ -161,7 +204,7 @@ describe('Session Manager', () => {
         timestamp: mockExpiredTimestamp,
       };
 
-      mockLocalStorage['lucia_session'] = JSON.stringify(expiredSession);
+      mockLocalStorage['luci_session'] = JSON.stringify(expiredSession);
 
       expect(isSessionValid()).toBe(false);
     });
@@ -173,7 +216,7 @@ describe('Session Manager', () => {
         timestamp: mockValidTimestamp,
       };
 
-      mockLocalStorage['lucia_session'] = JSON.stringify(validSession);
+      mockLocalStorage['luci_session'] = JSON.stringify(validSession);
 
       expect(isSessionValid()).toBe(true);
     });
@@ -191,14 +234,14 @@ describe('Session Manager', () => {
         timestamp: mockCurrentTimestamp,
       };
 
-      mockLocalStorage['lucia_session'] = JSON.stringify(sessionData);
+      mockLocalStorage['luci_session'] = JSON.stringify(sessionData);
 
       expect(getSessionData()).toEqual(sessionData);
     });
 
     it('should handle JSON parsing errors gracefully', () => {
       // Set invalid JSON
-      mockLocalStorage['lucia_session'] = '{invalid-json';
+      mockLocalStorage['luci_session'] = '{invalid-json';
 
       expect(getSessionData()).toBeNull();
 
@@ -231,8 +274,8 @@ describe('Session Manager', () => {
       });
 
       // Verify localStorage was updated
-      expect(mockLocalStorage['lucia_session']).toBeTruthy();
-      expect(JSON.parse(mockLocalStorage['lucia_session'])).toEqual({
+      expect(mockLocalStorage['luci_session']).toBeTruthy();
+      expect(JSON.parse(mockLocalStorage['luci_session'])).toEqual({
         clientSessionId: 'mock-uuid',
         serverSessionId: null,
         timestamp: mockCurrentTimestamp,
@@ -250,7 +293,7 @@ describe('Session Manager', () => {
       });
 
       // Verify localStorage was updated
-      expect(JSON.parse(mockLocalStorage['lucia_session'])).toEqual({
+      expect(JSON.parse(mockLocalStorage['luci_session'])).toEqual({
         clientSessionId: 'mock-uuid',
         serverSessionId,
         timestamp: mockCurrentTimestamp,
@@ -271,7 +314,7 @@ describe('Session Manager', () => {
         timestamp: mockValidTimestamp,
       };
 
-      mockLocalStorage['lucia_session'] = JSON.stringify(oldSession);
+      mockLocalStorage['luci_session'] = JSON.stringify(oldSession);
 
       const result = incrementSessionExpiry();
 
@@ -283,7 +326,7 @@ describe('Session Manager', () => {
       });
 
       // Verify localStorage was updated
-      expect(JSON.parse(mockLocalStorage['lucia_session'])).toEqual({
+      expect(JSON.parse(mockLocalStorage['luci_session'])).toEqual({
         clientSessionId: 'client123',
         serverSessionId: 'server456',
         timestamp: mockCurrentTimestamp,
@@ -303,7 +346,7 @@ describe('Session Manager', () => {
         timestamp: mockCurrentTimestamp,
       };
 
-      mockLocalStorage['lucia_session'] = JSON.stringify(sessionData);
+      mockLocalStorage['luci_session'] = JSON.stringify(sessionData);
 
       expect(getExpiry()).toBe(mockCurrentTimestamp);
     });
@@ -322,7 +365,7 @@ describe('Session Manager', () => {
 
     it('should return user when it exists', () => {
       const userValue = 'user@example.com';
-      mockLocalStorage['user'] = userValue;
+      mockLocalStorage['luc_uid'] = userValue;
 
       expect(getUser()).toBe(userValue);
     });

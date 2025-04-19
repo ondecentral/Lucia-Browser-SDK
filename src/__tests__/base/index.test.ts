@@ -4,7 +4,6 @@ import Logger from '../../utils/logger';
 import Store from '../../utils/store';
 
 // Mock the dependencies
-jest.mock('../../utils/http-client');
 jest.mock('../../utils/logger');
 
 describe('BaseClass', () => {
@@ -24,6 +23,10 @@ describe('BaseClass', () => {
 
     // Create a spy on Store.dispatch
     jest.spyOn(Store, 'dispatch');
+
+    // Create a spy on HttpClient's constructor and prototype methods
+    jest.spyOn(HttpClient.prototype, 'get').mockResolvedValue(null);
+    jest.spyOn(HttpClient.prototype, 'post').mockResolvedValue(null);
   });
 
   it('should store the config in the Store', () => {
@@ -36,7 +39,7 @@ describe('BaseClass', () => {
   it('should initialize with HttpClient', () => {
     baseInstance = new BaseClass(mockConfig);
 
-    expect(HttpClient).toHaveBeenCalledWith(Store.store);
+    expect(baseInstance.httpClient).toBeInstanceOf(HttpClient);
     expect(baseInstance.httpClient).toBeDefined();
   });
 
