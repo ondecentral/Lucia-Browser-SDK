@@ -563,12 +563,10 @@ export function getUtmParams() {
   const params = url.searchParams;
   const utmObject: Record<string, string> = {};
 
-  if (!params.has('utm')) {
-    return null;
-  }
-
   params.forEach((value, key) => {
-    utmObject[key] = value;
+    if (key.startsWith('utm_') || key.includes('id') || key === 'ref' || key === 'source') {
+      utmObject[key] = value;
+    }
   });
 
   return utmObject;
