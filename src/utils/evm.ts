@@ -97,11 +97,8 @@ export async function getConnectedWalletAddress(): Promise<string | null> {
 
     if (!ethereum) return null;
 
-    logger.log('log', 'Ethereum');
     const accounts = await ethereum.request({ method: 'eth_accounts' });
-    logger.log('log', 'accounts', accounts);
     if (accounts && accounts.length > 0) {
-      logger.log('log', accounts[0]);
       return accounts[0];
     }
     return null;

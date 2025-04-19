@@ -1,40 +1,12 @@
-import { getUtmParams } from '../../utils/data';
-import { getSessionData, getLidData, getUser } from '../../utils/session';
-
-// Need to mock the imports before they are used
-jest.mock('../../utils/data', () => {
-  const originalModule = jest.requireActual('../../utils/data');
-  return {
-    ...originalModule,
-    // Override problematic functions
-    udata: jest.fn().mockResolvedValue({
-      data: {
-        userAgent: 'Mozilla/5.0 Test Browser',
-      },
-      redirectHash: undefined,
-    }),
-    getUtmParams: jest.fn().mockImplementation(() => {
-      if (window.location.search.includes('utm_source')) {
-        return {
-          utm_source: 'test',
-          utm_medium: 'email',
-          utm_campaign: 'welcome',
-        };
-      }
-      return {};
-    }),
-  };
-});
-
-// Mock session-manager functions to control their returns within each test
-jest.mock('../../utils/session', () => ({
-  getSessionData: jest.fn(),
-  getLidData: jest.fn(),
-  getUser: jest.fn(),
-}));
+import { udata, getUtmParams } from '../../utils/data';
 
 describe('Data Utilities', () => {
+  let originalWindow: typeof window;
+
   beforeEach(() => {
+    // Store original window and navigator
+    originalWindow = { ...window };
+
     // Mock localStorage
     Object.defineProperty(window, 'localStorage', {
       value: {
@@ -56,59 +28,78 @@ describe('Data Utilities', () => {
       },
       writable: true,
     });
-
-    // Reset all mocks to clear any previous test's mock implementations
-    jest.clearAllMocks();
   });
 
   afterEach(() => {
-    jest.clearAllMocks();
+    // eslint-disable-next-line no-global-assign
+    window = originalWindow;
+    jest.restoreAllMocks();
   });
 
-  describe('getSessionData', () => {
-    it('should return session data from localStorage', () => {
-      const mockSessionData = {
-        clientSessionId: 'client123',
-        serverSessionId: 'server456',
-        timestamp: Date.now(),
-      };
-
-      (window.localStorage.getItem as jest.Mock).mockReturnValue(JSON.stringify(mockSessionData));
-      (getSessionData as jest.Mock).mockReturnValue(mockSessionData);
-
-      const sessionData = getSessionData();
-      expect(sessionData).toEqual({
-        clientSessionId: 'client123',
-        serverSessionId: 'server456',
-        timestamp: Date.now(),
+  describe('udata', () => {
+    it('should collect browser information', async () => {
+      const mockUserAgent = 'Mozilla/5.0 Test Browser';
+      Object.defineProperty(navigator, 'userAgent', {
+        value: mockUserAgent,
+        writable: true,
       });
+
+      const data = await udata();
+      // Check for data structure based on actual implementation
+      expect(data).toHaveProperty('redirectHash');
+      expect(data).toHaveProperty('data');
+      expect(data.data).toHaveProperty('isMetaMaskInstalled');
     });
 
-    it('should return null when no session data is found', () => {
-      (window.localStorage.getItem as jest.Mock).mockReturnValue(null);
-      (getSessionData as jest.Mock).mockReturnValue(null);
+    it('should collect screen information when available', async () => {
+      Object.defineProperty(window, 'screen', {
+        value: {
+          width: 1920,
+          height: 1080,
+          colorDepth: 24,
+          availHeight: 1040,
+        },
+        writable: true,
+      });
 
-      const sessionData = getSessionData();
-      expect(sessionData).toBeNull();
+      const data = await udata();
+      expect(data.data.screenWidth).toBe(1920);
+      expect(data.data.screenHeight).toBe(1080);
+      expect(data.data.colorDepth).toBe(24);
+      expect(data.data.availHeight).toBe(1040);
     });
-  });
 
-  describe('getLidData', () => {
-    it('should return lid from localStorage', () => {
-      const mockLid = 'test-lid-123';
-      (window.localStorage.getItem as jest.Mock).mockReturnValue(mockLid);
-      (getLidData as jest.Mock).mockReturnValue(mockLid);
+    it('should handle errors when browser features are missing', async () => {
+      const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation();
 
-      const lid = getLidData();
-      expect(lid).toBe(mockLid);
-    });
+      // Instead of throwing at window.screen level, prepare a mock that throws for specific properties
+      Object.defineProperty(window, 'screen', {
+        value: {
+          get width() {
+            throw new Error('Screen width not available');
+          },
+          get height() {
+            throw new Error('Screen height not available');
+          },
+          get colorDepth() {
+            throw new Error('Screen colorDepth not available');
+          },
+          availHeight: undefined,
+          availWidth: undefined,
+          orientation: {
+            type: undefined,
+            angle: undefined,
+          },
+        },
+        configurable: true,
+        writable: true,
+      });
 
-    it('should return null when no lid is found', () => {
-      (window.localStorage.getItem as jest.Mock).mockReturnValue(null);
-      (getLidData as jest.Mock).mockReturnValue(null);
+      const data = await udata();
 
-      const lid = getLidData();
-      expect(lid).toBeNull();
+      // Check that error was logged - at least one of these should be called
+      expect(mockConsoleLog).toHaveBeenCalled();
+      expect(data).toHaveProperty('data');
     });
   });
 
@@ -134,25 +125,6 @@ describe('Data Utilities', () => {
 
       const utmParams = getUtmParams();
       expect(utmParams).toEqual({});
-    });
-  });
-
-  describe('getUser', () => {
-    it('should return user from localStorage if available', () => {
-      const mockUser = 'user@example.com';
-      (window.localStorage.getItem as jest.Mock).mockReturnValue(mockUser);
-      (getUser as jest.Mock).mockReturnValue(mockUser);
-
-      const user = getUser();
-      expect(user).toBe(mockUser);
-    });
-
-    it('should return null when no user is found', () => {
-      (window.localStorage.getItem as jest.Mock).mockReturnValue(null);
-      (getUser as jest.Mock).mockReturnValue(null);
-
-      const user = getUser();
-      expect(user).toBeNull();
     });
   });
 });
