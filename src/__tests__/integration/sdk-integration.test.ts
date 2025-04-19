@@ -1,0 +1,190 @@
+import LuciaSDK from '../../core';
+
+// Helper to mock fetch and capture requests
+let fetchMock: jest.Mock;
+let fetchCalls: any[];
+
+// Helper to mock localStorage
+let localStorageMock: { [key: string]: string };
+
+beforeEach(() => {
+  // Reset fetch mock
+  fetchCalls = [];
+  fetchMock = jest.fn((url, options) => {
+    fetchCalls.push({ url, options });
+    // Simulate /api/sdk/init returning a lid
+    if (url.endsWith('/api/sdk/init')) {
+      return Promise.resolve({
+        json: () => Promise.resolve({ lid: 'integration-lid' }),
+      });
+    }
+    // Simulate other endpoints
+    return Promise.resolve({
+      json: () => Promise.resolve({ success: true }),
+    });
+  });
+  global.fetch = fetchMock;
+
+  // Reset localStorage mock
+  localStorageMock = {};
+  Object.defineProperty(window, 'localStorage', {
+    value: {
+      getItem: jest.fn((key: string) => localStorageMock[key] || null),
+      setItem: jest.fn((key: string, value: string) => {
+        localStorageMock[key] = value;
+      }),
+      removeItem: jest.fn((key: string) => {
+        delete localStorageMock[key];
+      }),
+      clear: jest.fn(() => {
+        Object.keys(localStorageMock).forEach((k) => delete localStorageMock[k]);
+      }),
+    },
+    writable: true,
+  });
+});
+
+afterEach(() => {
+  jest.restoreAllMocks();
+});
+
+describe('LuciaSDK Integration User Flow', () => {
+  it('should initialize, track page view, and send user info in sequence', async () => {
+    const sdk = new LuciaSDK({ apiKey: 'integration-test-key' });
+
+    // 1. Initialize SDK
+    await sdk.init();
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/sdk/init'),
+      expect.objectContaining({ method: 'POST' }),
+    );
+    expect(localStorageMock.lid).toBe('integration-lid');
+
+    // 2. Track a page view
+    await sdk.pageView('/home');
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/sdk/page'),
+      expect.objectContaining({ method: 'POST' }),
+    );
+
+    // 3. Send user info
+    await sdk.userInfo('user@example.com', { name: 'Test User' });
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/api/sdk/user'),
+      expect.objectContaining({ method: 'POST' }),
+    );
+
+    // 4. Check the order and payloads of fetch calls
+    expect(fetchCalls.length).toBeGreaterThanOrEqual(3);
+    expect(fetchCalls[0].url).toContain('/api/sdk/init');
+    expect(fetchCalls[1].url).toContain('/api/sdk/page');
+    expect(fetchCalls[2].url).toContain('/api/sdk/user');
+
+    // Optionally, check payload structure
+    const initPayload = JSON.parse(fetchCalls[0].options.body);
+    expect(initPayload).toHaveProperty('user');
+    expect(initPayload).toHaveProperty('session');
+    expect(initPayload).toHaveProperty('utm');
+  });
+});
+
+describe('LuciaSDK UTM/Analytics Integration', () => {
+  beforeEach(() => {
+    // Set up window.location with UTM parameters
+    Object.defineProperty(window, 'location', {
+      value: {
+        href: 'https://example.com/?utm_source=google&utm_medium=cpc&utm_campaign=spring&utm_term=shoes&utm_content=ad1',
+        search: '?utm_source=google&utm_medium=cpc&utm_campaign=spring&utm_term=shoes&utm_content=ad1',
+      },
+      writable: true,
+    });
+  });
+
+  it('should include UTM parameters in the analytics payload', async () => {
+    const sdk = new LuciaSDK({ apiKey: 'integration-test-key' });
+    await sdk.init();
+    await sdk.pageView('/utm-test');
+
+    // Find the init call and check UTM params
+    const initCall = fetchCalls.find((call) => call.url.includes('/api/sdk/init'));
+    expect(initCall).toBeDefined();
+    const initPayload = JSON.parse(initCall.options.body);
+    expect(initPayload.utm).toEqual({
+      utm_source: 'google',
+      utm_medium: 'cpc',
+      utm_campaign: 'spring',
+      utm_term: 'shoes',
+      utm_content: 'ad1',
+    });
+
+    // Find the page view call and check UTM params if present
+    const pageViewCall = fetchCalls.find((call) => call.url.includes('/api/sdk/page'));
+    expect(pageViewCall).toBeDefined();
+    const pagePayload = JSON.parse(pageViewCall.options.body);
+    // UTM are not included in page view at this stage, but at least user/session/lid should be present
+    expect(pagePayload).toHaveProperty('user');
+    expect(pagePayload).toHaveProperty('session');
+    expect(pagePayload).toHaveProperty('lid');
+  });
+});
+
+describe('LuciaSDK Wallet Connection Integration', () => {
+  beforeEach(() => {
+    // Reset fetch and localStorage mocks (already done in global beforeEach)
+  });
+
+  it('should connect Ethereum wallet (MetaMask) and send wallet info', async () => {
+    // Mock MetaMask provider
+    const mockAddress = '0x1234567890abcdef1234567890abcdef12345678';
+    const mockChainId = 1;
+    const mockWalletName = 'Metamask';
+    (window as any).ethereum = {
+      isMetaMask: true,
+      isConnected: () => true,
+      selectedAddress: mockAddress,
+      request: jest.fn().mockImplementation(({ method }: { method: string }) => {
+        if (method === 'eth_requestAccounts') return Promise.resolve([mockAddress]);
+        if (method === 'eth_chainId') return Promise.resolve('0x1');
+        return Promise.resolve();
+      }),
+    };
+
+    const sdk = new LuciaSDK({ apiKey: 'integration-test-key' });
+    await sdk.init();
+    await sdk.sendWalletInfo(mockAddress, mockChainId, mockWalletName);
+
+    // Find the wallet info call
+    const walletCall = fetchCalls.find((call) => call.url.includes('/api/sdk/wallet'));
+    expect(walletCall).toBeDefined();
+    const walletPayload = JSON.parse(walletCall.options.body);
+    expect(walletPayload.walletAddress).toBe(mockAddress);
+    expect(walletPayload.chainId).toBe(mockChainId);
+    expect(walletPayload.walletName).toBe(mockWalletName);
+  });
+
+  it('should connect Solana wallet (Phantom) and send wallet info', async () => {
+    // Mock Phantom provider
+    const mockSolanaAddress = 'phantom-address-789';
+    (window as any).phantom = {
+      solana: {
+        isConnected: true,
+        publicKey: { toString: () => mockSolanaAddress },
+        connect: jest.fn(),
+      },
+    };
+
+    const sdk = new LuciaSDK({ apiKey: 'integration-test-key' });
+    await sdk.init();
+    // Simulate the SDK or your app calling the Solana wallet info method
+    // (Assume you have a method like sendSolanaWalletInfo, or you can call sendWalletInfo with Solana data)
+    await sdk.sendWalletInfo(mockSolanaAddress, 'solana', 'Phantom');
+
+    // Find the wallet info call
+    const walletCall = fetchCalls.find((call) => call.url.includes('/api/sdk/wallet'));
+    expect(walletCall).toBeDefined();
+    const walletPayload = JSON.parse(walletCall.options.body);
+    expect(walletPayload.walletAddress).toBe(mockSolanaAddress);
+    expect(walletPayload.chainId).toBe('solana');
+    expect(walletPayload.walletName).toBe('Phantom');
+  });
+});
