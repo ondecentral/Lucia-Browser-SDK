@@ -3,211 +3,145 @@ import CryptoJS from 'crypto-js';
 import { getConnectedWalletAddress, getWalletName, getExtendedProviderInfo } from './evm';
 import { getConnectedSolanaWallet, getSolanaWalletName } from './solana';
 
+/**
+ * Collects user data including wallet information, device capabilities, and browser features.
+ * Gathers both Ethereum and Solana wallet information if available.
+ *
+ * @returns {Promise<Object>} A structured object containing user data such as wallet addresses,
+ *                           device information, screen specifications, and browser capabilities.
+ */
 export async function udata() {
-  let pluginsLength;
-  let plugins;
-  let pluginNames;
+  const [solAddress, ethAddress, walletName, solWalletName, providerInfo] = await Promise.all([
+    getConnectedSolanaWallet(),
+    getConnectedWalletAddress(),
+    getWalletName(),
+    getSolanaWalletName(),
+    getExtendedProviderInfo(),
+  ]);
 
-  try {
-    pluginsLength = navigator.plugins.length;
-    plugins = navigator.plugins;
-    pluginNames = [];
-    for (let i = 0; i < pluginsLength; i += 1) {
-      pluginNames[i] = plugins[i].name;
+  const url = new URL(window.location.href);
+  const redirectHash = url.searchParams.get('lucia');
+
+  return {
+    redirectHash,
+    data: {
+      walletAddress: ethAddress,
+      solanaAddress: solAddress,
+      providerInfo: providerInfo && filterObject(providerInfo),
+      walletName,
+      solWalletName,
+      touch: isTouchEnabled(),
+      memory: safeAccess(() => (navigator as any).deviceMemory),
+      cores: safeAccess(() => navigator.hardwareConcurrency),
+      language: safeAccess(() => navigator.language),
+      devicePixelRatio: safeAccess(() => window.devicePixelRatio),
+      encoding: safeAccess(() => (TextDecoder as any).encoding),
+      timezone: safeAccess(() => -new Date().getTimezoneOffset() / 60),
+      pluginsLength: safeAccess(() => navigator.plugins.length),
+      pluginNames: safeAccess(() => Array.from(navigator.plugins, (p) => p.name)),
+      applePayAvailable: getApplePayAvailable(),
+      screen: {
+        width: safeAccess(() => window.screen.width),
+        height: safeAccess(() => window.screen.height),
+        colorDepth: safeAccess(() => window.screen.colorDepth),
+        availHeight: safeAccess(() => window.screen.availHeight),
+        availWidth: safeAccess(() => window.screen.availWidth),
+        orientation: {
+          type: safeAccess(() => window.screen.orientation.type),
+          angle: safeAccess(() => window.screen.orientation.angle),
+        },
+        colorGamut: getColorGamut(),
+        contrastPreference: getContrastPreference(),
+      },
+      navPer: safeAccess(() => (navigator.permissions as any).webglVersion),
+      renderedPer: safeAccess(() => (navigator.permissions as any).RENDERER),
+      geoPer: safeAccess(() => (navigator.permissions as any).geolocation),
+      cpuClass: safeAccess(() => (navigator as any).cpuClass),
+      indexedDB: safeAccess(() => window.indexedDB),
+      openDB: safeAccess(() => (window as any).openDatabase),
+      localStorage: safeAccess(() => window.localStorage),
+      uniqueHash: getCanvasFingerprint(),
+    },
+  };
+}
+
+/**
+ * Extracts tracking parameters from the current URL.
+ * Captures UTM parameters, ID-related values, and referrer information.
+ *
+ * @returns {Record<string, string>} An object containing all tracking parameters
+ *                                  from the current URL as key-value pairs.
+ */
+export function getUtmParams(): Record<string, string> {
+  const url = new URL(window.location.href);
+  const params = url.searchParams;
+  const utmObject: Record<string, string> = {};
+
+  params.forEach((value, key) => {
+    if (key.startsWith('utm_') || key.includes('id') || key === 'ref' || key === 'source') {
+      utmObject[key] = value;
     }
-  } catch (e) {
-    console.log((e as Error).message);
-  }
+  });
 
-  // not yet working
+  return utmObject;
+}
 
-  // const { ApplePaySession, matchMedia } = window
-  // var applePay;
-  // if (typeof ApplePaySession?.canMakePayments !== 'function') {
-  //     applePay = false
-  // }
-
-  // try {
-  //    ApplePaySession.canMakePayments() ? applePay = true : applePay = false
-  // } catch (error) {
-  //    console.log(error.message)
-  // }
-  let colorDepth;
+/**
+ * Safely executes a function and handles any exceptions that may occur.
+ * Provides type safety through function overloads.
+ *
+ * @template T - The return type of the function
+ * @param {() => T} fn - The function to execute safely
+ * @param {T} [fallback] - Optional fallback value to return if the function throws
+ * @returns {T | undefined} The result of the function or fallback/undefined if it throws
+ * @example
+ * // Returns 42 or undefined if window.answer doesn't exist
+ * const answer = safeAccess(() => window.answer);
+ *
+ * // Returns window.width or 800 if accessing window.width throws
+ * const width = safeAccess(() => window.width, 800);
+ */
+function safeAccess<T>(fn: () => T): T | undefined;
+function safeAccess<T>(fn: () => T, fallback: T): T;
+function safeAccess<T>(fn: () => T, fallback?: T) {
   try {
-    colorDepth = window.screen.colorDepth;
-  } catch (e) {
-    console.log((e as Error).message);
+    return fn();
+  } catch {
+    return fallback;
   }
+}
 
-  // function doesMatch(value) {
-  //     return matchMedia(`(prefers-contrast: ${value})`).matches
-  // }
-  //  var contrast;
-  // try{
-  //     if (doesMatch('no-preference')) {
-  //         contrast = 'None';
-  //       }
-  //       if (doesMatch('high') || doesMatch('more')) {
-  //         contrast = 'More';
-  //       }
-  //       if (doesMatch('low') || doesMatch('less')) {
-  //         contrast = 'Less';
-  //       }
-  //       if (doesMatch('forced')) {
-  //         contrast = 'ForcedColors';
-  //       }
-  // }catch(e){
-  //     console.log((e as Error).message)
-  // }
+/**
+ * Filters an object by removing all falsy values (undefined, null, false, 0, '', NaN)
+ * from its properties.
+ *
+ * @template T - The type of the input object
+ * @param {T} obj - The object to filter
+ * @returns {Partial<T>} A new object containing only the properties with truthy values
+ * @example
+ * // Returns { name: 'John', age: 30 }
+ * filterObject({ name: 'John', age: 30, address: '', active: false });
+ */
+function filterObject<T extends object>(obj: T): Partial<T> {
+  const result: Partial<T> = {};
+  Object.keys(obj).forEach((key) => {
+    const typedKey = key as keyof T;
+    if (obj[typedKey]) {
+      result[typedKey] = obj[typedKey];
+    }
+  });
+  return result;
+}
 
-  // var gamut;
-  // for (const g of ['rec2020', 'p3', 'srgb']) {
-  //     if (matchMedia(`(color-gamut: ${g})`).matches) {
-  //         gamut = g
-  //     }
-  //   }
-
-  let indexedDB;
-  try {
-    indexedDB = window.indexedDB;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-
-  let localStorage;
-  let openDB;
-
-  try {
-    localStorage = window.localStorage;
-    openDB = (window as any).openDatabase;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-  // var sourceId;
-
-  // //private click measurement
-
-  // try{
-  //     const link = document.createElement('a')
-  //     sourceId = link.attributionSourceId ?? link.attributionsourceid
-  // }catch(e){
-  //     console.log((e as Error).message)
-  // }
-
-  let mem;
-  try {
-    mem = (navigator as any).deviceMemory;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-
-  let cores;
-  try {
-    cores = navigator.hardwareConcurrency;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-  let lang;
-  try {
-    lang = navigator.language;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-  let scale;
-  try {
-    scale = window.devicePixelRatio;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-
-  let encoding;
-  try {
-    encoding = (TextDecoder as any).encoding;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-
-  let timeZone;
-  const date = new Date();
-  try {
-    timeZone = -date.getTimezoneOffset() / 60;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-
-  let screenWidth;
-  try {
-    screenWidth = window.screen.width;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-  let screenHeight;
-  try {
-    screenHeight = window.screen.height;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-
-  let navPer;
-  try {
-    navPer = (navigator.permissions as any).webglVersion;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-
-  let renderedPer;
-  try {
-    renderedPer = (navigator.permissions as any).RENDERER;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-
-  let cpuClass;
-  try {
-    cpuClass = (navigator as any).cpuClass;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-
-  let geoPer;
-  try {
-    geoPer = (navigator.permissions as any).geolocation;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-
-  let availHeight;
-
-  try {
-    availHeight = window.screen.availHeight;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-
-  let availWidth;
-  try {
-    availWidth = window.screen.availWidth;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-
-  let screenOrientationType;
-  try {
-    screenOrientationType = window.screen.orientation.type;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-
-  let screenOrientationAngle;
-  try {
-    screenOrientationAngle = window.screen.orientation.angle;
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-
-  let src;
-  let hVal;
-  // canvas
+/**
+ * Generates a unique hash based on canvas rendering characteristics.
+ * Creates a canvas with specific shapes and colors, then generates a SHA-256 hash
+ * of the canvas data. This serves as a fingerprinting mechanism for the browser.
+ *
+ * @returns {string | undefined} A SHA-256 hexadecimal hash string representing the canvas fingerprint,
+ *                              or undefined if canvas is not supported or operation fails
+ */
+function getCanvasFingerprint(): string | undefined {
   try {
     const canvas = document.createElement('canvas');
     canvas.id = 'canvasLucia';
@@ -237,99 +171,93 @@ export async function udata() {
       ctx.shadowBlur = 8;
       ctx.shadowColor = 'red';
       ctx.fillRect(20, 12, 100, 5);
-      src = canvas.toDataURL();
-      hVal = CryptoJS.SHA256(src).toString(CryptoJS.enc.Hex);
+      const src = canvas.toDataURL();
+      return CryptoJS.SHA256(src).toString(CryptoJS.enc.Hex);
     }
-  } catch (e) {
-    console.log((e as Error).message);
+    return undefined;
+  } catch {
+    return undefined;
   }
+}
 
-  // to check if device is touch enabled
-  function fingerprint_touch() {
-    let bolTouchEnabled;
-    let bolOut;
-
-    bolTouchEnabled = false;
-    bolOut = null;
-
-    try {
-      if (document.createEvent('TouchEvent')) {
-        bolTouchEnabled = true;
-      }
-      bolOut = bolTouchEnabled;
-      return bolOut;
-    } catch (ignore) {
-      bolOut = bolTouchEnabled;
-      return bolOut;
-    }
-  }
-
-  function metaMaskAvailable() {
-    try {
-      if ((window as any).ethereum && (window as any).ethereum.isMetaMask) {
-        return true;
-      }
-    } catch (e) {
-      console.log((e as Error).message);
-    }
+/**
+ * Detects if the device supports touch events.
+ * Used to determine if the user is on a touch-enabled device.
+ *
+ * @returns {boolean} True if touch events are supported, false otherwise
+ */
+function isTouchEnabled(): boolean {
+  try {
+    return !!document.createEvent('TouchEvent');
+  } catch {
     return false;
   }
-  const solAddress = await getConnectedSolanaWallet();
-  const ethAddress = await getConnectedWalletAddress();
-  const walletName = await getWalletName();
-  const solWalletName = await getSolanaWalletName();
-  const providerInfo = await getExtendedProviderInfo();
-
-  const url = new URL(window.location.href);
-  const redirectHash = url.searchParams.get('lucia');
-
-  return {
-    redirectHash,
-    data: {
-      isMetaMaskInstalled: metaMaskAvailable(),
-      walletAddress: ethAddress,
-      solanaAddress: solAddress,
-      providerInfo,
-      walletName,
-      solWalletName,
-      touch: fingerprint_touch(),
-      memory: mem,
-      cores,
-      language: lang,
-      devicePixelRatio: scale,
-      encoding,
-      timezone: timeZone,
-      pluginsLength,
-      pluginNames,
-      screenWidth,
-      screenHeight,
-      navPer,
-      renderedPer,
-      geoPer,
-      availHeight,
-      availWidth,
-      screenOrientationType,
-      screenOrientationAngle,
-      uniqueHash: hVal,
-      colorDepth,
-      cpuClass,
-      indexedDB,
-      openDB,
-      localStorage,
-    },
-  };
 }
 
-export function getUtmParams() {
-  const url = new URL(window.location.href);
-  const params = url.searchParams;
-  const utmObject: Record<string, string> = {};
-
-  params.forEach((value, key) => {
-    if (key.startsWith('utm_') || key.includes('id') || key === 'ref' || key === 'source') {
-      utmObject[key] = value;
+/**
+ * Detects if Apple Pay is available in the current browser.
+ * Checks for the presence and functionality of the ApplePaySession API.
+ *
+ * @returns {boolean | undefined} True if Apple Pay is available, false if it's not,
+ *                               or undefined if detection fails
+ */
+function getApplePayAvailable(): boolean | undefined {
+  try {
+    // @ts-ignore
+    if (typeof window.ApplePaySession?.canMakePayments !== 'function') {
+      return false;
     }
-  });
-
-  return utmObject;
+    // @ts-ignore
+    return window.ApplePaySession.canMakePayments();
+  } catch {
+    return undefined;
+  }
 }
+
+/**
+ * Detects the user's contrast preference setting from the browser.
+ * Uses the matchMedia API to determine if the user has specified any
+ * contrast preference in their system settings.
+ *
+ * @returns {string | undefined} The contrast preference ('None', 'More', 'Less', 'ForcedColors'),
+ *                              or undefined if detection fails
+ */
+function getContrastPreference(): string | undefined {
+  try {
+    const { matchMedia } = window;
+    const doesMatch = (value: string) => matchMedia(`(prefers-contrast: ${value})`).matches;
+    if (doesMatch('no-preference')) return 'None';
+    if (doesMatch('high') || doesMatch('more')) return 'More';
+    if (doesMatch('low') || doesMatch('less')) return 'Less';
+    if (doesMatch('forced')) return 'ForcedColors';
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Detects the color gamuts supported by the user's device.
+ * Uses the matchMedia API to test for support of various color gamut formats.
+ *
+ * @returns {string[]} An array of supported color gamut identifiers
+ *                    (e.g., 'rec2020', 'p3', 'srgb', etc.)
+ */
+function getColorGamut(): string[] {
+  try {
+    const gamuts = ['rec2020', 'p3', 'srgb', 'display-p3', 'adobe-rgb'];
+    return gamuts.filter((g) => window.matchMedia(`(color-gamut: ${g})`).matches);
+  } catch {
+    return [];
+  }
+}
+
+export {
+  safeAccess,
+  filterObject,
+  getCanvasFingerprint,
+  isTouchEnabled,
+  getApplePayAvailable,
+  getContrastPreference,
+  getColorGamut,
+};

@@ -7,7 +7,7 @@ module.exports = {
       statements: 80,
     },
   },
-  coveragePathIgnorePatterns: ['/node_modules/', '<rootDir>/src/utils/data.ts'],
+  coveragePathIgnorePatterns: ['/node_modules/'],
   moduleFileExtensions: ['ts', 'js'],
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
