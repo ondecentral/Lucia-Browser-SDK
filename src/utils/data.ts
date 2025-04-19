@@ -94,16 +94,6 @@ export async function udata() {
   //     console.log((e as Error).message)
   // }
 
-  let srch;
-  try {
-    srch = window.location.search;
-    if (srch && srch.length > 0) {
-      srch = srch.replace(/.*?=/, '');
-    }
-  } catch (e) {
-    console.log((e as Error).message);
-  }
-
   let mem;
   try {
     mem = (navigator as any).deviceMemory;
@@ -518,9 +508,12 @@ export async function udata() {
   const walletName = await getWalletName();
   const solWalletName = await getSolanaWalletName();
   const providerInfo = await getExtendedProviderInfo();
-  console.log('provider', providerInfo);
+
+  const url = new URL(window.location.href);
+  const redirectHash = url.searchParams.get('lucia');
+
   return {
-    redirectHash: srch,
+    redirectHash,
     data: {
       isMetaMaskInstalled: metaMaskAvailable(),
       walletAddress: ethAddress,
