@@ -7,12 +7,7 @@ module.exports = {
       statements: 80,
     },
   },
-  coveragePathIgnorePatterns: [
-    '/node_modules/',
-    '<rootDir>/src/utils/evm.ts',
-    '<rootDir>/src/utils/solana.ts',
-    '<rootDir>/src/utils/data.ts',
-  ],
+  coveragePathIgnorePatterns: ['/node_modules/', '<rootDir>/src/utils/solana.ts', '<rootDir>/src/utils/data.ts'],
   moduleFileExtensions: ['ts', 'js'],
   moduleNameMapper: {
     '\\.(css|less|scss|sass)$': 'identity-obj-proxy',
