@@ -16,14 +16,18 @@ class LuciaSDK extends BaseClass {
     if (!session) {
       session = storeSessionID();
     }
-    const data = await this.httpClient.post<{ lid: string }>('/api/sdk/init', {
-      user: {
-        name: getUser(),
-        data: await udata(),
+    const data = await this.httpClient.post<{ lid: string }>(
+      '/api/sdk/init',
+      {
+        user: {
+          name: getUser(),
+          data: await udata(),
+        },
+        session,
+        utm: getUtmParams(),
       },
-      session,
-      utm: getUtmParams(),
-    });
+      false,
+    );
     if (data) {
       localStorage.setItem('lid', data.lid);
     }

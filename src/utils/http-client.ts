@@ -48,9 +48,27 @@ class HttpClient {
     return null;
   }
 
-  async post<T extends unknown>(url: string, data: unknown): Promise<T | null> {
+  async post<T extends unknown>(url: string, data: unknown, fireAndForget = true): Promise<T | null> {
     if (!this.store.config) {
       this.logger.log('error', 'Config is not set');
+      return null;
+    }
+
+    if (fireAndForget && typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+      try {
+        const fullUrl = `${this.baseURL}${url}`;
+        // Ensure data is an object for spreading
+        const safeData = data && typeof data === 'object' && !Array.isArray(data) ? data : { payload: data };
+        const beaconData = JSON.stringify({ ...safeData, _apiKey: this.store.config.apiKey });
+        const blob = new Blob([beaconData], { type: 'application/json' });
+        const success = navigator.sendBeacon(fullUrl, blob);
+        if (!success) {
+          this.logger.log('error', 'sendBeacon failed');
+        }
+      } catch (e) {
+        this.logger.log('error', e);
+      }
+      // fire-and-forget: always return null
       return null;
     }
 

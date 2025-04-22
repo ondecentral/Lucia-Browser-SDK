@@ -91,9 +91,17 @@ describe('HttpClient', () => {
   });
 
   describe('post', () => {
+    let originalSendBeacon: typeof navigator.sendBeacon;
     beforeEach(() => {
       Store.dispatch({ config: { apiKey: 'test-key' } });
       httpClient = new HttpClient(Store.store);
+      // @ts-ignore
+      originalSendBeacon = navigator.sendBeacon;
+    });
+
+    afterEach(() => {
+      // @ts-ignore
+      navigator.sendBeacon = originalSendBeacon;
     });
 
     it('should return null when config is not set', async () => {
@@ -103,7 +111,7 @@ describe('HttpClient', () => {
       expect(result).toBeNull();
     });
 
-    it('should make a POST request with correct headers and body', async () => {
+    it('should make a POST request with correct headers and body when fireAndForget is false', async () => {
       const mockResponse = { success: true };
       const postData = { foo: 'bar' };
 
@@ -111,7 +119,7 @@ describe('HttpClient', () => {
         json: jest.fn().mockResolvedValueOnce(mockResponse),
       });
 
-      const result = await httpClient.post('/test', postData);
+      const result = await httpClient.post('/test', postData, false);
 
       expect(global.fetch).toHaveBeenCalledWith(`${SERVER_URL}/test`, {
         method: 'POST',
@@ -124,15 +132,49 @@ describe('HttpClient', () => {
       expect(result).toEqual(mockResponse);
     });
 
-    it('should return null and log error when fetch fails', async () => {
-      const error = new Error('Network error');
-      global.fetch = jest.fn().mockRejectedValueOnce(error);
+    it('should use sendBeacon and not call fetch when fireAndForget is true', async () => {
+      const postData = { foo: 'bar' };
+      const sendBeaconMock = jest.fn().mockReturnValue(true);
+      // @ts-ignore
+      navigator.sendBeacon = sendBeaconMock;
+      global.fetch = jest.fn();
 
-      const loggerSpy = jest.spyOn(httpClient.logger, 'log');
-      const result = await httpClient.post('/test', { foo: 'bar' });
+      const result = await httpClient.post('/test', postData, true);
 
+      expect(sendBeaconMock).toHaveBeenCalled();
+      expect(global.fetch).not.toHaveBeenCalled();
       expect(result).toBeNull();
+    });
+
+    it('should log error if sendBeacon fails', async () => {
+      const postData = { foo: 'bar' };
+      const sendBeaconMock = jest.fn().mockReturnValue(false);
+      // @ts-ignore
+      navigator.sendBeacon = sendBeaconMock;
+      const loggerSpy = jest.spyOn(httpClient.logger, 'log');
+
+      const result = await httpClient.post('/test', postData, true);
+
+      expect(sendBeaconMock).toHaveBeenCalled();
+      expect(loggerSpy).toHaveBeenCalledWith('error', 'sendBeacon failed');
+      expect(result).toBeNull();
+    });
+
+    it('should log error if sendBeacon throws', async () => {
+      const postData = { foo: 'bar' };
+      const error = new Error('sendBeacon error');
+      const sendBeaconMock = jest.fn().mockImplementation(() => {
+        throw error;
+      });
+      // @ts-ignore
+      navigator.sendBeacon = sendBeaconMock;
+      const loggerSpy = jest.spyOn(httpClient.logger, 'log');
+
+      const result = await httpClient.post('/test', postData, true);
+
+      expect(sendBeaconMock).toHaveBeenCalled();
       expect(loggerSpy).toHaveBeenCalledWith('error', error);
+      expect(result).toBeNull();
     });
   });
 });

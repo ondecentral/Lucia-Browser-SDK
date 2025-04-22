@@ -64,14 +64,18 @@ describe('LuciaSDK', () => {
     it('should make a POST request to initialize the SDK', async () => {
       await sdk.init();
 
-      expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/init', {
-        user: {
-          name: mockUser,
-          data: mockUdata,
+      expect(httpClientPostSpy).toHaveBeenCalledWith(
+        '/api/sdk/init',
+        {
+          user: {
+            name: mockUser,
+            data: mockUdata,
+          },
+          session: mockSession,
+          utm: mockUtm,
         },
-        session: mockSession,
-        utm: mockUtm,
-      });
+        false,
+      );
     });
 
     it('should store lid in localStorage if response data is received', async () => {
