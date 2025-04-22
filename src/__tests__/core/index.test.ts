@@ -75,6 +75,7 @@ describe('LuciaSDK', () => {
           },
           session: mockSession,
           utm: mockUtm,
+          sdkVersion: '0.0.0-unknown.0',
         },
         false,
       );
@@ -105,6 +106,7 @@ describe('LuciaSDK', () => {
           },
           session: mockSession, // This is our mocked return value from storeSessionID
           utm: mockUtm,
+          sdkVersion: '0.0.0-unknown.0',
         },
         false,
       );

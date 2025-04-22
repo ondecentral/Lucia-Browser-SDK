@@ -1,6 +1,7 @@
 import BaseClass from '../base';
 import { getUtmParams, udata } from '../utils/data';
 import { getSessionData, getLidData, getUser, storeSessionID } from '../utils/session';
+import { SDK_VERSION } from '../version';
 
 class LuciaSDK extends BaseClass {
   authenticate() {
@@ -25,6 +26,7 @@ class LuciaSDK extends BaseClass {
         },
         session,
         utm: getUtmParams(),
+        sdkVersion: SDK_VERSION,
       },
       false,
     );

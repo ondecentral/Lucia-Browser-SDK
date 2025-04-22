@@ -1,12 +1,14 @@
 import commonjs from '@rollup/plugin-commonjs';
 import resolve from '@rollup/plugin-node-resolve';
+import replace from '@rollup/plugin-replace';
 import terser from '@rollup/plugin-terser';
+import { defineConfig } from 'rollup';
 import peerDepsExternal from 'rollup-plugin-peer-deps-external';
 import typescript from 'rollup-plugin-typescript2';
 
 const packageJson = require('./package.json');
 
-export default {
+export default defineConfig({
   input: 'src/index.ts',
   output: [
     {
@@ -31,5 +33,15 @@ export default {
       name: 'LuciaSDK',
     },
   ],
-  plugins: [peerDepsExternal(), resolve(), commonjs(), typescript({ useTsconfigDeclarationDir: true }), terser()],
-};
+  plugins: [
+    peerDepsExternal(),
+    resolve(),
+    commonjs(),
+    typescript({ useTsconfigDeclarationDir: true }),
+    replace({
+      __LUCIA_SDK_VERSION__: JSON.stringify(packageJson.version),
+      preventAssignment: true,
+    }),
+    terser(),
+  ],
+});
