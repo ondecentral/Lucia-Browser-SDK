@@ -29,7 +29,8 @@ export async function hash(string: string): Promise<string> {
  * @returns Session data object or null if no session exists
  */
 export function getSessionData(): {
-  clientSessionId: string;
+  id: string;
+  hash: string;
   serverSessionId: string | null;
   timestamp: number;
 } | null {
@@ -45,16 +46,21 @@ export function getSessionData(): {
 /**
  * Stores a new session ID in sessionStorage
  * @param serverSessionId Optional server session ID
- * @returns The newly created session object
+ * @returns Promise that resolves to the newly created session object
  */
-export function storeSessionID(serverSessionId: string | null = null): {
-  clientSessionId: string;
+export async function storeSessionID(serverSessionId: string | null = null): Promise<{
+  id: string;
+  hash: string;
   serverSessionId: string | null;
   timestamp: number;
-} {
+}> {
   const clientSessionId = generateSessionID();
+  // TODO: Consider removing the hash function
+  const sessionHash = await hash(clientSessionId);
+
   const sessionData = {
-    clientSessionId,
+    id: clientSessionId,
+    hash: sessionHash,
     serverSessionId,
     timestamp: Date.now(),
   };

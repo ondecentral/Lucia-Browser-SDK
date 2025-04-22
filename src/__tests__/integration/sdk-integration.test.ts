@@ -1,11 +1,21 @@
 import LuciaSDK from '../../core';
+import * as sessionUtils from '../../utils/session';
 
 // Helper to mock fetch and capture requests
 let fetchMock: jest.Mock;
 let fetchCalls: any[];
 
-// Helper to mock localStorage
+// Helper to mock localStorage and sessionStorage
 let localStorageMock: { [key: string]: string };
+let sessionStorageMock: { [key: string]: string };
+
+// Mock session data with the new structure
+const mockSession = {
+  id: 'mock-session-id',
+  hash: 'mock-session-hash',
+  serverSessionId: null,
+  timestamp: Date.now(),
+};
 
 beforeEach(() => {
   // Reset fetch mock
@@ -42,6 +52,28 @@ beforeEach(() => {
     },
     writable: true,
   });
+
+  // Reset sessionStorage mock
+  sessionStorageMock = {};
+  Object.defineProperty(window, 'sessionStorage', {
+    value: {
+      getItem: jest.fn((key: string) => sessionStorageMock[key] || null),
+      setItem: jest.fn((key: string, value: string) => {
+        sessionStorageMock[key] = value;
+      }),
+      removeItem: jest.fn((key: string) => {
+        delete sessionStorageMock[key];
+      }),
+      clear: jest.fn(() => {
+        Object.keys(sessionStorageMock).forEach((k) => delete sessionStorageMock[k]);
+      }),
+    },
+    writable: true,
+  });
+
+  // Mock session utils - getSessionData and storeSessionID
+  jest.spyOn(sessionUtils, 'getSessionData').mockReturnValue(mockSession);
+  jest.spyOn(sessionUtils, 'storeSessionID').mockResolvedValue(mockSession);
 });
 
 afterEach(() => {
@@ -80,11 +112,43 @@ describe('LuciaSDK Integration User Flow', () => {
     expect(fetchCalls[1].url).toContain('/api/sdk/page');
     expect(fetchCalls[2].url).toContain('/api/sdk/user');
 
-    // Optionally, check payload structure
+    // 5. Verify the session structure in the payload
     const initPayload = JSON.parse(fetchCalls[0].options.body);
     expect(initPayload).toHaveProperty('user');
     expect(initPayload).toHaveProperty('session');
+    expect(initPayload.session).toHaveProperty('id');
+    expect(initPayload.session).toHaveProperty('hash');
+    expect(initPayload.session).toHaveProperty('serverSessionId');
+    expect(initPayload.session).toHaveProperty('timestamp');
     expect(initPayload).toHaveProperty('utm');
+
+    // 6. Verify the session structure in the page view payload
+    const pageViewPayload = JSON.parse(fetchCalls[1].options.body);
+    expect(pageViewPayload.session).toHaveProperty('id');
+    expect(pageViewPayload.session).toHaveProperty('hash');
+  });
+
+  it('should create a new session if none exists during init', async () => {
+    // Mock getSessionData to return null for this test
+    jest.spyOn(sessionUtils, 'getSessionData').mockReturnValueOnce(null);
+
+    const sdk = new LuciaSDK({ apiKey: 'integration-test-key' });
+
+    // Initialize SDK
+    await sdk.init();
+
+    // Verify storeSessionID was called
+    expect(sessionUtils.storeSessionID).toHaveBeenCalled();
+
+    // Verify API call was made with the correct session structure
+    const initCall = fetchCalls.find((call) => call.url.includes('/api/sdk/init'));
+    expect(initCall).toBeDefined();
+
+    const initPayload = JSON.parse(initCall.options.body);
+    expect(initPayload.session).toHaveProperty('id');
+    expect(initPayload.session).toHaveProperty('hash');
+    expect(initPayload.session).toHaveProperty('serverSessionId');
+    expect(initPayload.session).toHaveProperty('timestamp');
   });
 });
 
@@ -109,6 +173,8 @@ describe('LuciaSDK UTM/Analytics Integration', () => {
     const initCall = fetchCalls.find((call) => call.url.includes('/api/sdk/init'));
     expect(initCall).toBeDefined();
     const initPayload = JSON.parse(initCall.options.body);
+
+    // Verify UTM parameters
     expect(initPayload.utm).toEqual({
       utm_source: 'google',
       utm_medium: 'cpc',
@@ -117,14 +183,27 @@ describe('LuciaSDK UTM/Analytics Integration', () => {
       utm_content: 'ad1',
     });
 
-    // Find the page view call and check UTM params if present
+    // Verify session structure
+    expect(initPayload.session).toHaveProperty('id');
+    expect(initPayload.session).toHaveProperty('hash');
+    expect(initPayload.session).toHaveProperty('serverSessionId');
+    expect(initPayload.session).toHaveProperty('timestamp');
+
+    // Find the page view call
     const pageViewCall = fetchCalls.find((call) => call.url.includes('/api/sdk/page'));
     expect(pageViewCall).toBeDefined();
     const pagePayload = JSON.parse(pageViewCall.options.body);
-    // UTM are not included in page view at this stage, but at least user/session/lid should be present
+
+    // Verify expected properties
     expect(pagePayload).toHaveProperty('user');
     expect(pagePayload).toHaveProperty('session');
     expect(pagePayload).toHaveProperty('lid');
+
+    // Verify session structure in page view
+    expect(pagePayload.session).toHaveProperty('id');
+    expect(pagePayload.session).toHaveProperty('hash');
+    expect(pagePayload.session).toHaveProperty('serverSessionId');
+    expect(pagePayload.session).toHaveProperty('timestamp');
   });
 });
 
@@ -160,6 +239,12 @@ describe('LuciaSDK Wallet Connection Integration', () => {
     expect(walletPayload.walletAddress).toBe(mockAddress);
     expect(walletPayload.chainId).toBe(mockChainId);
     expect(walletPayload.walletName).toBe(mockWalletName);
+
+    // Verify session structure
+    expect(walletPayload.session).toHaveProperty('id');
+    expect(walletPayload.session).toHaveProperty('hash');
+    expect(walletPayload.session).toHaveProperty('serverSessionId');
+    expect(walletPayload.session).toHaveProperty('timestamp');
   });
 
   it('should connect Solana wallet (Phantom) and send wallet info', async () => {
@@ -186,5 +271,11 @@ describe('LuciaSDK Wallet Connection Integration', () => {
     expect(walletPayload.walletAddress).toBe(mockSolanaAddress);
     expect(walletPayload.chainId).toBe('solana');
     expect(walletPayload.walletName).toBe('Phantom');
+
+    // Verify session structure
+    expect(walletPayload.session).toHaveProperty('id');
+    expect(walletPayload.session).toHaveProperty('hash');
+    expect(walletPayload.session).toHaveProperty('serverSessionId');
+    expect(walletPayload.session).toHaveProperty('timestamp');
   });
 });

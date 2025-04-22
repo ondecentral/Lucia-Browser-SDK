@@ -209,8 +209,10 @@ describe('Session Manager', () => {
 
     it('should return true when session is valid', () => {
       const validSession = {
-        clientSessionId: 'client123',
+        id: 'client123',
+        hash: 'session-hash-123',
         serverSessionId: 'server456',
+        timestamp: mockCurrentTimestamp,
       };
 
       mockSessionStorage['luci_session'] = JSON.stringify(validSession);
@@ -226,8 +228,10 @@ describe('Session Manager', () => {
 
     it('should return session data when it exists', () => {
       const sessionData = {
-        clientSessionId: 'client123',
+        id: 'client123',
+        hash: 'session-hash-123',
         serverSessionId: 'server456',
+        timestamp: mockCurrentTimestamp,
       };
 
       mockSessionStorage['luci_session'] = JSON.stringify(sessionData);
@@ -260,11 +264,27 @@ describe('Session Manager', () => {
   });
 
   describe('storeSessionID', () => {
-    it('should store a new session with generated client ID', () => {
-      const result = storeSessionID();
+    beforeEach(() => {
+      // Mock the hash function to return a predictable value
+      jest.spyOn(global.crypto.subtle, 'digest').mockImplementation(() => {
+        const buffer = new ArrayBuffer(32);
+        const view = new Uint8Array(buffer);
+        // Fill with predictable values
+        for (let i = 0; i < 32; i += 1) {
+          view[i] = i;
+        }
+        return Promise.resolve(buffer);
+      });
+    });
+
+    it('should store a new session with generated client ID', async () => {
+      const result = await storeSessionID();
+
+      const expectedHash = '000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f';
 
       expect(result).toEqual({
-        clientSessionId: 'mock-uuid',
+        id: 'mock-uuid',
+        hash: expectedHash,
         serverSessionId: null,
         timestamp: mockCurrentTimestamp,
       });
@@ -272,25 +292,30 @@ describe('Session Manager', () => {
       // Verify sessionStorage was updated
       expect(mockSessionStorage['luci_session']).toBeTruthy();
       expect(JSON.parse(mockSessionStorage['luci_session'])).toEqual({
-        clientSessionId: 'mock-uuid',
+        id: 'mock-uuid',
+        hash: expectedHash,
         serverSessionId: null,
         timestamp: mockCurrentTimestamp,
       });
     });
 
-    it('should store a new session with provided server ID', () => {
+    it('should store a new session with provided server ID', async () => {
       const serverSessionId = 'server-provided-id';
-      const result = storeSessionID(serverSessionId);
+      const result = await storeSessionID(serverSessionId);
+
+      const expectedHash = '000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f';
 
       expect(result).toEqual({
-        clientSessionId: 'mock-uuid',
+        id: 'mock-uuid',
+        hash: expectedHash,
         serverSessionId,
         timestamp: mockCurrentTimestamp,
       });
 
       // Verify sessionStorage was updated
       expect(JSON.parse(mockSessionStorage['luci_session'])).toEqual({
-        clientSessionId: 'mock-uuid',
+        id: 'mock-uuid',
+        hash: expectedHash,
         serverSessionId,
         timestamp: mockCurrentTimestamp,
       });

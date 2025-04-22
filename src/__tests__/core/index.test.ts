@@ -17,7 +17,8 @@ describe('LuciaSDK', () => {
   };
   const mockUser = 'test-user';
   const mockSession = {
-    clientSessionId: 'client123',
+    id: 'client123',
+    hash: 'session-hash-123',
     serverSessionId: 'server456' as string | null,
     timestamp: Date.now(),
   };
@@ -31,6 +32,7 @@ describe('LuciaSDK', () => {
     jest.spyOn(dataUtils, 'udata').mockImplementation(() => Promise.resolve(mockUdata) as Promise<any>);
     jest.spyOn(sessionUtils, 'getLidData').mockReturnValue(mockLid);
     jest.spyOn(sessionUtils, 'getSessionData').mockReturnValue(mockSession);
+    jest.spyOn(sessionUtils, 'storeSessionID').mockImplementation(() => Promise.resolve(mockSession) as Promise<any>);
     jest.spyOn(sessionUtils, 'getUser').mockReturnValue(mockUser);
 
     // Create SDK instance with config
@@ -82,6 +84,30 @@ describe('LuciaSDK', () => {
       await sdk.init();
 
       expect(window.localStorage.setItem).toHaveBeenCalledWith('lid', 'new-lid');
+    });
+
+    it('should create a new session if none exists', async () => {
+      // Mock getSessionData to return null for this test
+      jest.spyOn(sessionUtils, 'getSessionData').mockReturnValueOnce(null);
+
+      await sdk.init();
+
+      // Verify storeSessionID was called
+      expect(sessionUtils.storeSessionID).toHaveBeenCalled();
+
+      // Verify the POST request was made with the new session
+      expect(httpClientPostSpy).toHaveBeenCalledWith(
+        '/api/sdk/init',
+        {
+          user: {
+            name: mockUser,
+            data: mockUdata,
+          },
+          session: mockSession, // This is our mocked return value from storeSessionID
+          utm: mockUtm,
+        },
+        false,
+      );
     });
   });
 

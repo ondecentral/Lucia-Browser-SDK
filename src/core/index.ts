@@ -14,7 +14,7 @@ class LuciaSDK extends BaseClass {
     // Ensure a session exists before making the init request
     let session = getSessionData();
     if (!session) {
-      session = storeSessionID();
+      session = await storeSessionID();
     }
     const data = await this.httpClient.post<{ lid: string }>(
       '/api/sdk/init',
