@@ -1,5 +1,6 @@
 import LuciaSDKClass from './core';
 import { Config, SDK } from './types';
+import { SDK_VERSION } from './version';
 
 let instance: LuciaSDKClass | null = null;
 
@@ -36,6 +37,7 @@ const LuciaSDK: SDK = {
   buttonClick: async (...args) => ensureInitialized().buttonClick(...args),
   sendWalletInfo: async (...args) => ensureInitialized().sendWalletInfo(...args),
   checkMetaMaskConnection: () => ensureInitialized().checkMetaMaskConnection(),
+  VERSION: SDK_VERSION,
 };
 
 if (typeof window !== 'undefined') {

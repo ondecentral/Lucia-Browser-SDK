@@ -17,8 +17,9 @@ export interface SDK {
     walletName?: 'Metamask' | 'Phantom',
   ) => Promise<void>;
   checkMetaMaskConnection: () => boolean;
+  VERSION: string;
 }
 
-export interface LuciaSDKClass extends Omit<SDK, 'init'> {
+export interface LuciaSDKClass extends Omit<SDK, 'init' | 'VERSION'> {
   init: () => void;
 }
