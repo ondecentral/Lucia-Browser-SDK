@@ -3,13 +3,10 @@ import { v4 as uuidv4 } from 'uuid';
 
 import Logger from '../../utils/logger';
 import {
-  isSessionExpired,
   isSessionValid,
   getSessionData,
   getLidData,
   storeSessionID,
-  incrementSessionExpiry,
-  getExpiry,
   generateSessionID,
   getUser,
   hash,
@@ -26,9 +23,9 @@ jest.mock('../../utils/logger');
 describe('Session Manager', () => {
   // Mock Date.now() for stable tests
   const mockCurrentTimestamp = 1626847200000; // 2021-07-21
-  const mockExpiredTimestamp = mockCurrentTimestamp - 31 * 60 * 1000; // 31 minutes ago (beyond expiry)
-  const mockValidTimestamp = mockCurrentTimestamp - 15 * 60 * 1000; // 15 minutes ago (within expiry)
 
+  let originalSessionStorage: Storage;
+  let mockSessionStorage: { [key: string]: string };
   let originalLocalStorage: Storage;
   let mockLocalStorage: { [key: string]: string };
   let logMock: jest.SpyInstance;
@@ -47,6 +44,28 @@ describe('Session Manager', () => {
 
     // Mock Date.now
     jest.spyOn(Date, 'now').mockImplementation(() => mockCurrentTimestamp);
+
+    // Setup mock sessionStorage
+    mockSessionStorage = {};
+    originalSessionStorage = global.sessionStorage;
+
+    Object.defineProperty(global, 'sessionStorage', {
+      value: {
+        getItem: jest.fn().mockImplementation((key: string) => mockSessionStorage[key] || null),
+        setItem: jest.fn().mockImplementation((key: string, value: string) => {
+          mockSessionStorage[key] = value;
+        }),
+        removeItem: jest.fn().mockImplementation((key: string) => {
+          delete mockSessionStorage[key];
+        }),
+        clear: jest.fn().mockImplementation(() => {
+          mockSessionStorage = {};
+        }),
+        length: 0,
+        key: jest.fn(),
+      },
+      writable: true,
+    });
 
     // Setup mock localStorage
     mockLocalStorage = {};
@@ -84,6 +103,7 @@ describe('Session Manager', () => {
 
   afterEach(() => {
     jest.restoreAllMocks();
+    global.sessionStorage = originalSessionStorage;
     global.localStorage = originalLocalStorage;
     global.TextEncoder = originalTextEncoder;
   });
@@ -182,30 +202,8 @@ describe('Session Manager', () => {
     });
   });
 
-  describe('isSessionExpired', () => {
-    it('should return true for timestamps older than 30 minutes', () => {
-      expect(isSessionExpired(mockExpiredTimestamp)).toBe(true);
-    });
-
-    it('should return false for timestamps within 30 minutes', () => {
-      expect(isSessionExpired(mockValidTimestamp)).toBe(false);
-    });
-  });
-
   describe('isSessionValid', () => {
     it('should return false when no session data exists', () => {
-      expect(isSessionValid()).toBe(false);
-    });
-
-    it('should return false when session has expired', () => {
-      const expiredSession = {
-        clientSessionId: 'client123',
-        serverSessionId: 'server456',
-        timestamp: mockExpiredTimestamp,
-      };
-
-      mockLocalStorage['luci_session'] = JSON.stringify(expiredSession);
-
       expect(isSessionValid()).toBe(false);
     });
 
@@ -213,10 +211,9 @@ describe('Session Manager', () => {
       const validSession = {
         clientSessionId: 'client123',
         serverSessionId: 'server456',
-        timestamp: mockValidTimestamp,
       };
 
-      mockLocalStorage['luci_session'] = JSON.stringify(validSession);
+      mockSessionStorage['luci_session'] = JSON.stringify(validSession);
 
       expect(isSessionValid()).toBe(true);
     });
@@ -231,17 +228,16 @@ describe('Session Manager', () => {
       const sessionData = {
         clientSessionId: 'client123',
         serverSessionId: 'server456',
-        timestamp: mockCurrentTimestamp,
       };
 
-      mockLocalStorage['luci_session'] = JSON.stringify(sessionData);
+      mockSessionStorage['luci_session'] = JSON.stringify(sessionData);
 
       expect(getSessionData()).toEqual(sessionData);
     });
 
     it('should handle JSON parsing errors gracefully', () => {
       // Set invalid JSON
-      mockLocalStorage['luci_session'] = '{invalid-json';
+      mockSessionStorage['luci_session'] = '{invalid-json';
 
       expect(getSessionData()).toBeNull();
 
@@ -273,9 +269,9 @@ describe('Session Manager', () => {
         timestamp: mockCurrentTimestamp,
       });
 
-      // Verify localStorage was updated
-      expect(mockLocalStorage['luci_session']).toBeTruthy();
-      expect(JSON.parse(mockLocalStorage['luci_session'])).toEqual({
+      // Verify sessionStorage was updated
+      expect(mockSessionStorage['luci_session']).toBeTruthy();
+      expect(JSON.parse(mockSessionStorage['luci_session'])).toEqual({
         clientSessionId: 'mock-uuid',
         serverSessionId: null,
         timestamp: mockCurrentTimestamp,
@@ -292,63 +288,12 @@ describe('Session Manager', () => {
         timestamp: mockCurrentTimestamp,
       });
 
-      // Verify localStorage was updated
-      expect(JSON.parse(mockLocalStorage['luci_session'])).toEqual({
+      // Verify sessionStorage was updated
+      expect(JSON.parse(mockSessionStorage['luci_session'])).toEqual({
         clientSessionId: 'mock-uuid',
         serverSessionId,
         timestamp: mockCurrentTimestamp,
       });
-    });
-  });
-
-  describe('incrementSessionExpiry', () => {
-    it('should return null when no session exists', () => {
-      expect(incrementSessionExpiry()).toBeNull();
-    });
-
-    it('should update timestamp of existing session', () => {
-      // Setup existing session with old timestamp
-      const oldSession = {
-        clientSessionId: 'client123',
-        serverSessionId: 'server456',
-        timestamp: mockValidTimestamp,
-      };
-
-      mockLocalStorage['luci_session'] = JSON.stringify(oldSession);
-
-      const result = incrementSessionExpiry();
-
-      // Should have updated timestamp but kept other data
-      expect(result).toEqual({
-        clientSessionId: 'client123',
-        serverSessionId: 'server456',
-        timestamp: mockCurrentTimestamp,
-      });
-
-      // Verify localStorage was updated
-      expect(JSON.parse(mockLocalStorage['luci_session'])).toEqual({
-        clientSessionId: 'client123',
-        serverSessionId: 'server456',
-        timestamp: mockCurrentTimestamp,
-      });
-    });
-  });
-
-  describe('getExpiry', () => {
-    it('should return null when no session exists', () => {
-      expect(getExpiry()).toBeNull();
-    });
-
-    it('should return timestamp of existing session', () => {
-      const sessionData = {
-        clientSessionId: 'client123',
-        serverSessionId: 'server456',
-        timestamp: mockCurrentTimestamp,
-      };
-
-      mockLocalStorage['luci_session'] = JSON.stringify(sessionData);
-
-      expect(getExpiry()).toBe(mockCurrentTimestamp);
     });
   });
 

@@ -4,7 +4,6 @@ import Logger from './logger';
 import Store from './store';
 
 const SESSION_STORAGE_KEY = 'luci_session';
-const SESSION_EXPIRY_MINUTES = 30;
 const logger = new Logger(Store.store);
 
 /**
@@ -26,32 +25,7 @@ export async function hash(string: string): Promise<string> {
 }
 
 /**
- * Checks if the current session has expired
- * @param timestamp The timestamp to check against
- * @returns Boolean indicating if the session is expired
- */
-export function isSessionExpired(timestamp: number): boolean {
-  const now = Date.now();
-  const minutesPassed = (now - timestamp) / (1000 * 60);
-  return minutesPassed > SESSION_EXPIRY_MINUTES;
-}
-
-/**
- * Checks if the current session is valid
- * @returns Boolean indicating if the session is valid
- */
-export function isSessionValid(): boolean {
-  const sessionData = getSessionData();
-  if (!sessionData) {
-    return false;
-  }
-
-  const { timestamp } = sessionData;
-  return !isSessionExpired(timestamp);
-}
-
-/**
- * Retrieves session data from localStorage
+ * Retrieves session data from sessionStorage
  * @returns Session data object or null if no session exists
  */
 export function getSessionData(): {
@@ -60,7 +34,7 @@ export function getSessionData(): {
   timestamp: number;
 } | null {
   try {
-    const storedSession = localStorage.getItem(SESSION_STORAGE_KEY);
+    const storedSession = sessionStorage.getItem(SESSION_STORAGE_KEY);
     return storedSession ? JSON.parse(storedSession) : null;
   } catch (e) {
     logger.log('error', 'Error retrieving session data:', e);
@@ -69,15 +43,7 @@ export function getSessionData(): {
 }
 
 /**
- * Retrieves the LuciaID data from localStorage
- * @returns LuciaID string or null if not found
- */
-export function getLidData(): string | null {
-  return localStorage.getItem('lid');
-}
-
-/**
- * Stores a new session ID in localStorage
+ * Stores a new session ID in sessionStorage
  * @param serverSessionId Optional server session ID
  * @returns The newly created session object
  */
@@ -93,40 +59,16 @@ export function storeSessionID(serverSessionId: string | null = null): {
     timestamp: Date.now(),
   };
 
-  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionData));
+  sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionData));
   return sessionData;
 }
 
 /**
- * Updates the expiry timestamp of the current session
- * @returns The updated session object or null if no session exists
+ * Checks if the current session is valid (exists in sessionStorage)
+ * @returns Boolean indicating if the session is valid
  */
-export function incrementSessionExpiry(): {
-  clientSessionId: string;
-  serverSessionId: string | null;
-  timestamp: number;
-} | null {
-  const sessionData = getSessionData();
-  if (!sessionData) {
-    return null;
-  }
-
-  const updatedSession = {
-    ...sessionData,
-    timestamp: Date.now(),
-  };
-
-  localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(updatedSession));
-  return updatedSession;
-}
-
-/**
- * Gets the current session expiry timestamp
- * @returns The expiry timestamp or null if no session exists
- */
-export function getExpiry(): number | null {
-  const sessionData = getSessionData();
-  return sessionData ? sessionData.timestamp : null;
+export function isSessionValid(): boolean {
+  return !!getSessionData();
 }
 
 /**
@@ -135,6 +77,14 @@ export function getExpiry(): number | null {
  */
 export function generateSessionID(): string {
   return uuidv4();
+}
+
+/**
+ * Retrieves the LuciaID data from localStorage
+ * @returns LuciaID string or null if not found
+ */
+export function getLidData(): string | null {
+  return localStorage.getItem('lid');
 }
 
 /**
