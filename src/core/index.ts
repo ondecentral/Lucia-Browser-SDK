@@ -1,6 +1,6 @@
 import BaseClass from '../base';
 import { getUtmParams, udata } from '../utils/data';
-import { getSessionData, getLidData, getUser } from '../utils/session';
+import { getSessionData, getLidData, getUser, storeSessionID } from '../utils/session';
 
 class LuciaSDK extends BaseClass {
   authenticate() {
@@ -11,12 +11,17 @@ class LuciaSDK extends BaseClass {
    * Initializes the SDK with the provided configuration
    */
   async init() {
+    // Ensure a session exists before making the init request
+    let session = getSessionData();
+    if (!session) {
+      session = storeSessionID();
+    }
     const data = await this.httpClient.post<{ lid: string }>('/api/sdk/init', {
       user: {
         name: getUser(),
         data: await udata(),
       },
-      session: getSessionData(),
+      session,
       utm: getUtmParams(),
     });
     if (data) {
@@ -32,6 +37,10 @@ class LuciaSDK extends BaseClass {
   async userInfo(userId: string, userInfo: object) {
     const lid = getLidData();
     const session = getSessionData();
+
+    if (userId) {
+      localStorage.setItem('luc_uid', userId);
+    }
 
     await this.httpClient.post('/api/sdk/user', {
       user: {
@@ -127,9 +136,12 @@ class LuciaSDK extends BaseClass {
     });
   }
 
+  /**
+   * Checks if MetaMask is installed and connected
+   * @returns false if MetaMask is not connected, otherwise returns the wallet address
+   */
   // eslint-disable-next-line class-methods-use-this
   checkMetaMaskConnection() {
-    // Check if MetaMask is installed and connected
     return window.ethereum && window.ethereum.isConnected() && window.ethereum.selectedAddress;
   }
 }
