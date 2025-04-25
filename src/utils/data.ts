@@ -104,32 +104,6 @@ export async function getWalletData(): Promise<object> {
 }
 
 /**
- * Collects user data including wallet information, device capabilities, and browser features.
- * Gathers both Ethereum and Solana wallet information if available.
- *
- * This function combines both static browser data and dynamic wallet data.
- * Static data is cached after first call for optimization.
- *
- * @returns {Promise<Object>} A structured object containing user data such as wallet addresses,
- *                           device information, screen specifications, and browser capabilities.
- */
-export async function udata(): Promise<object> {
-  const dynamicData = await getWalletData();
-  const staticData = getBrowserData();
-
-  const url = new URL(window.location.href);
-  const redirectHash = url.searchParams.get('lucia');
-
-  return {
-    redirectHash,
-    data: {
-      ...dynamicData,
-      ...staticData,
-    },
-  };
-}
-
-/**
  * Extracts tracking parameters from the current URL.
  * Captures UTM parameters, ID-related values, and referrer information.
  *
