@@ -92,6 +92,7 @@ describe('HttpClient', () => {
         headers: {
           'Content-Type': 'application/json',
           'X-API-KEY': 'test-key',
+          'SDK-VERSION': '0.0.0-unknown.0',
         },
       });
       expect(result).toEqual(mockResponse);

@@ -10,9 +10,34 @@ import {
   getColorGamut,
   getCanvasFingerprint,
   isTouchEnabled,
+  getBrowserData,
+  getWalletData,
 } from '../../utils/data';
 import * as evmUtils from '../../utils/evm';
+import { ProviderInfo } from '../../utils/evm';
 import * as solanaUtils from '../../utils/solana';
+
+// Define interfaces for type safety in tests
+interface BrowserData {
+  device: any;
+  screen: any;
+  browser: any;
+  permissions: any;
+  storage: any;
+}
+
+interface WalletData {
+  walletAddress: string | null;
+  solanaAddress: string | null;
+  providerInfo: ProviderInfo | null;
+  walletName: string | null;
+  solWalletName: string | null;
+}
+
+interface UdataResult {
+  redirectHash: string | null;
+  data: WalletData & BrowserData;
+}
 
 declare global {
   interface Window {
@@ -26,6 +51,9 @@ describe('Data Utilities', () => {
   beforeEach(() => {
     // Store original window and navigator
     originalWindow = { ...window };
+
+    // Clear cached browser data between tests
+    delete getBrowserData.cachedData;
 
     // Mock localStorage
     Object.defineProperty(window, 'localStorage', {
@@ -56,18 +84,149 @@ describe('Data Utilities', () => {
     jest.restoreAllMocks();
   });
 
-  describe('udata', () => {
-    it('should collect browser information', async () => {
+  describe('getBrowserData', () => {
+    it('should collect static browser information', () => {
       const mockUserAgent = 'Mozilla/5.0 Test Browser';
       Object.defineProperty(navigator, 'userAgent', {
         value: mockUserAgent,
         writable: true,
       });
 
-      const data = await udata();
+      const data = getBrowserData() as BrowserData;
+
+      // Check the structure
+      expect(data).toHaveProperty('device');
+      expect(data).toHaveProperty('screen');
+      expect(data).toHaveProperty('browser');
+      expect(data).toHaveProperty('permissions');
+      expect(data).toHaveProperty('storage');
+    });
+
+    it('should cache the result after the first call', () => {
+      // First call
+      const firstResult = getBrowserData();
+
+      // Modify a value that would affect the result if not cached
+      Object.defineProperty(navigator, 'language', {
+        value: 'fr-FR', // Changed from default
+        writable: true,
+      });
+
+      // Second call should return the cached result
+      const secondResult = getBrowserData();
+
+      expect(secondResult).toBe(firstResult); // Should be the same object reference
+    });
+
+    it('should handle errors when browser features are missing', () => {
+      // Prepare a mock that throws for specific properties
+      Object.defineProperty(window, 'screen', {
+        value: {
+          get width() {
+            throw new Error('Screen width not available');
+          },
+          get height() {
+            throw new Error('Screen height not available');
+          },
+          colorDepth: 24,
+          availHeight: 1040,
+          availWidth: 1900,
+          orientation: {
+            type: 'landscape-primary',
+            angle: 0,
+          },
+        },
+        configurable: true,
+        writable: true,
+      });
+
+      const data = getBrowserData() as BrowserData;
+
+      // Even with errors, we should get a result with undefined for problematic properties
+      expect(data).toHaveProperty('screen');
+      expect(data.screen.width).toBeUndefined();
+      expect(data.screen.height).toBeUndefined();
+      expect(data.screen.colorDepth).toBe(24);
+    });
+  });
+
+  describe('getWalletData', () => {
+    beforeEach(() => {
+      // Mock wallet-related functions
+      jest.spyOn(evmUtils, 'getConnectedWalletAddress').mockResolvedValue('0x123');
+      jest.spyOn(evmUtils, 'getWalletName').mockResolvedValue('MetaMask');
+      jest.spyOn(evmUtils, 'getExtendedProviderInfo').mockResolvedValue({
+        chainId: '0x1',
+        name: 'Ethereum',
+        isMetaMask: true,
+        isCoinbaseWallet: false,
+        isWalletConnect: false,
+        isTrust: false,
+        // Add other required properties from ProviderInfo
+      } as ProviderInfo);
+      jest.spyOn(solanaUtils, 'getConnectedSolanaWallet').mockResolvedValue('abc123');
+      jest.spyOn(solanaUtils, 'getSolanaWalletName').mockResolvedValue('Phantom');
+    });
+
+    it('should collect wallet information correctly', async () => {
+      const walletData = (await getWalletData()) as WalletData;
+
+      expect(walletData).toHaveProperty('walletAddress', '0x123');
+      expect(walletData).toHaveProperty('solanaAddress', 'abc123');
+      expect(walletData).toHaveProperty('providerInfo');
+      expect(walletData).toHaveProperty('walletName', 'MetaMask');
+      expect(walletData).toHaveProperty('solWalletName', 'Phantom');
+    });
+
+    it('handles null provider info with valid addresses', async () => {
+      jest.spyOn(evmUtils, 'getExtendedProviderInfo').mockResolvedValue(null);
+
+      const walletData = (await getWalletData()) as WalletData;
+
+      expect(walletData.walletAddress).toBe('0x123');
+      expect(walletData.providerInfo).toBeNull();
+      expect(walletData.walletName).toBe('MetaMask');
+    });
+
+    it('handles all wallet data returning null', async () => {
+      jest.spyOn(evmUtils, 'getConnectedWalletAddress').mockResolvedValue(null);
+      jest.spyOn(evmUtils, 'getWalletName').mockResolvedValue(null);
+      jest.spyOn(evmUtils, 'getExtendedProviderInfo').mockResolvedValue(null);
+      jest.spyOn(solanaUtils, 'getConnectedSolanaWallet').mockResolvedValue(null);
+      jest.spyOn(solanaUtils, 'getSolanaWalletName').mockResolvedValue(null);
+
+      const walletData = (await getWalletData()) as WalletData;
+
+      expect(walletData.walletAddress).toBeNull();
+      expect(walletData.solanaAddress).toBeNull();
+      expect(walletData.providerInfo).toBeNull();
+      expect(walletData.walletName).toBeNull();
+      expect(walletData.solWalletName).toBeNull();
+    });
+  });
+
+  describe('udata', () => {
+    it('should combine static and dynamic data', async () => {
+      const mockUserAgent = 'Mozilla/5.0 Test Browser';
+      Object.defineProperty(navigator, 'userAgent', {
+        value: mockUserAgent,
+        writable: true,
+      });
+
+      // Mock wallet functions
+      jest.spyOn(evmUtils, 'getConnectedWalletAddress').mockResolvedValue('0x123');
+      jest.spyOn(evmUtils, 'getWalletName').mockResolvedValue('MetaMask');
+
+      const data = (await udata()) as UdataResult;
       // Check for data structure based on actual implementation
       expect(data).toHaveProperty('redirectHash');
       expect(data).toHaveProperty('data');
+
+      // Should include both static browser data and dynamic wallet data
+      expect(data.data).toHaveProperty('walletAddress');
+      expect(data.data).toHaveProperty('device');
+      expect(data.data).toHaveProperty('screen');
+      expect(data.data).toHaveProperty('browser');
     });
 
     it('should collect screen information when available', async () => {
@@ -86,7 +245,7 @@ describe('Data Utilities', () => {
         writable: true,
       });
 
-      const data = await udata();
+      const data = (await udata()) as UdataResult;
       expect(data.data.screen.width).toBe(1920);
       expect(data.data.screen.height).toBe(1080);
       expect(data.data.screen.colorDepth).toBe(24);
@@ -120,7 +279,7 @@ describe('Data Utilities', () => {
         writable: true,
       });
 
-      const data = await udata();
+      const data = (await udata()) as UdataResult;
 
       expect(data).toHaveProperty('data');
     });
@@ -132,7 +291,7 @@ describe('Data Utilities', () => {
       jest.spyOn(solanaUtils, 'getConnectedSolanaWallet').mockResolvedValue('abc123');
       jest.spyOn(solanaUtils, 'getSolanaWalletName').mockResolvedValue('Phantom');
 
-      const data = await udata();
+      const data = (await udata()) as UdataResult;
       expect(data.data.walletAddress).toBe('0x123');
       expect(data.data.providerInfo).toBeNull();
       expect(data.data.walletName).toBe('MetaMask');
@@ -146,7 +305,7 @@ describe('Data Utilities', () => {
       jest.spyOn(evmUtils, 'getExtendedProviderInfo').mockResolvedValue(null);
       jest.spyOn(solanaUtils, 'getConnectedSolanaWallet').mockResolvedValue(null);
       jest.spyOn(solanaUtils, 'getSolanaWalletName').mockResolvedValue(null);
-      const data = await udata();
+      const data = (await udata()) as UdataResult;
       expect(data.data.walletAddress).toBeNull();
       expect(data.data.solanaAddress).toBeNull();
       expect(data.data.providerInfo).toBeNull();
@@ -162,11 +321,11 @@ describe('Data Utilities', () => {
         },
         writable: true,
       });
-      const data = await udata();
+      const data = (await udata()) as UdataResult;
       expect(data.redirectHash).toBeNull();
     });
 
-    it('returns screen properties with mocked contrast and gamut', async () => {
+    it('returns browser properties with mocked contrast and gamut', async () => {
       // Mock both contrast and gamut detection
       const originalMatchMedia = window.matchMedia;
       const mockMatchMedia = (query: string) => {
@@ -187,9 +346,9 @@ describe('Data Utilities', () => {
       window.matchMedia = mockMatchMedia;
 
       try {
-        const data = await udata();
-        expect(data.data.screen.contrastPreference).toBe('More');
-        expect(data.data.screen.colorGamut).toContain('p3');
+        const data = (await udata()) as UdataResult;
+        expect(data.data.browser.contrastPreference).toBe('More');
+        expect(data.data.browser.colorGamut).toContain('p3');
       } finally {
         // Restore original
         window.matchMedia = originalMatchMedia;
@@ -232,8 +391,8 @@ describe('Data Utilities', () => {
 
     it('includes applePayAvailable status', async () => {
       window.ApplePaySession = { canMakePayments: jest.fn(() => true) };
-      const data = await udata();
-      expect(data.data.applePayAvailable).toBe(true);
+      const data = (await udata()) as UdataResult;
+      expect(data.data.browser.applePayAvailable).toBe(true);
       delete window.ApplePaySession;
     });
   });
