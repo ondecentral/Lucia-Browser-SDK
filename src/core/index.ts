@@ -51,7 +51,6 @@ class LuciaSDK extends BaseClass {
     await this.httpClient.post('/api/sdk/user', {
       user: {
         name: userId,
-        data: await udata(),
         userInfo,
       },
       lid,
@@ -71,7 +70,6 @@ class LuciaSDK extends BaseClass {
       page,
       user: {
         name: getUser(),
-        data: await udata(),
       },
       lid,
       session,
@@ -94,7 +92,6 @@ class LuciaSDK extends BaseClass {
       event: eventDetails,
       user: {
         name: getUser(),
-        data: await udata(),
       },
       lid,
       session,
@@ -113,7 +110,6 @@ class LuciaSDK extends BaseClass {
       button,
       user: {
         name: getUser(),
-        data: await udata(),
       },
       lid,
       session,
@@ -135,7 +131,6 @@ class LuciaSDK extends BaseClass {
       walletName,
       user: {
         name: getUser(),
-        data: await udata(),
       },
       lid,
       session,

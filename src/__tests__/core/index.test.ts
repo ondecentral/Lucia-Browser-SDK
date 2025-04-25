@@ -123,7 +123,6 @@ describe('LuciaSDK', () => {
       expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/user', {
         user: {
           name: userId,
-          data: mockUdata,
           userInfo,
         },
         lid: mockLid,
@@ -142,7 +141,6 @@ describe('LuciaSDK', () => {
         page,
         user: {
           name: mockUser,
-          data: mockUdata,
         },
         lid: mockLid,
         session: mockSession,
@@ -164,7 +162,6 @@ describe('LuciaSDK', () => {
         event: eventDetails,
         user: {
           name: mockUser,
-          data: mockUdata,
         },
         lid: mockLid,
         session: mockSession,
@@ -182,7 +179,6 @@ describe('LuciaSDK', () => {
         button,
         user: {
           name: mockUser,
-          data: mockUdata,
         },
         lid: mockLid,
         session: mockSession,
@@ -204,7 +200,6 @@ describe('LuciaSDK', () => {
         walletName,
         user: {
           name: mockUser,
-          data: mockUdata,
         },
         lid: mockLid,
         session: mockSession,
