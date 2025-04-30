@@ -14,7 +14,7 @@ export default defineConfig({
     {
       file: packageJson.main,
       format: 'cjs',
-      exports: 'default',
+      exports: 'named',
       sourcemap: true,
     },
     {
@@ -26,11 +26,13 @@ export default defineConfig({
       file: `${packageJson.umd}/lucia-sdk-${packageJson.version}.min.js`,
       format: 'umd',
       name: 'LuciaSDK',
+      exports: 'named',
     },
     {
       file: `${packageJson.umd}/lucia-sdk-latest.min.js`,
       format: 'umd',
       name: 'LuciaSDK',
+      exports: 'named',
     },
   ],
   plugins: [
