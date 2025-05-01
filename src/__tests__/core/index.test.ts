@@ -7,14 +7,56 @@ describe('LuciaSDK', () => {
   let httpClientPostSpy: jest.SpyInstance;
 
   // Common mock implementations with proper types
-  const mockUdata = {
-    userAgent: 'test-agent',
-    screen: { width: 1920, height: 1080 },
-    // Add other properties expected by the udata function
-    plugins: [],
-    language: 'en-US',
-    timeZone: -4,
+  const mockBrowserData = {
+    device: {
+      cores: 8,
+      memory: 16,
+      cpuClass: 'mock-cpu',
+      touch: false,
+      devicePixelRatio: 2,
+    },
+    screen: {
+      width: 1920,
+      height: 1080,
+      colorDepth: 24,
+      availHeight: 1040,
+      availWidth: 1900,
+      orientation: {
+        type: 'landscape-primary',
+        angle: 0,
+      },
+    },
+    browser: {
+      language: 'en-US',
+      encoding: 'UTF-8',
+      timezone: -4,
+      pluginsLength: 3,
+      pluginNames: ['PDF Viewer', 'Chrome PDF Viewer'],
+      applePayAvailable: false,
+      uniqueHash: 'mockhash123',
+      colorGamut: ['srgb'],
+      contrastPreference: 'None',
+    },
+    permissions: {
+      navPer: null,
+      renderedPer: null,
+      geoPer: null,
+    },
+    storage: {
+      localStorage: true,
+      indexedDB: true,
+      openDB: false,
+    },
   };
+
+  const mockWalletData = {
+    walletAddress: '0xmock123',
+    solanaAddress: 'mock456',
+    providerInfo: { chainId: '0x1', isMetaMask: true },
+    walletName: 'MockWallet',
+    solWalletName: 'MockSolWallet',
+  };
+
   const mockUser = 'test-user';
   const mockSession = {
     id: 'client123',
@@ -28,8 +70,8 @@ describe('LuciaSDK', () => {
   beforeEach(() => {
     // Setup spies on the utility functions instead of full mocks
     jest.spyOn(dataUtils, 'getUtmParams').mockReturnValue(mockUtm);
-    // Using type assertion to bypass TypeScript's type checking for the mock
-    jest.spyOn(dataUtils, 'udata').mockImplementation(() => Promise.resolve(mockUdata) as Promise<any>);
+    jest.spyOn(dataUtils, 'getBrowserData').mockReturnValue(mockBrowserData);
+    jest.spyOn(dataUtils, 'getWalletData').mockResolvedValue(mockWalletData);
     jest.spyOn(sessionUtils, 'getLidData').mockReturnValue(mockLid);
     jest.spyOn(sessionUtils, 'getSessionData').mockReturnValue(mockSession);
     jest.spyOn(sessionUtils, 'storeSessionID').mockImplementation(() => Promise.resolve(mockSession) as Promise<any>);
@@ -71,11 +113,12 @@ describe('LuciaSDK', () => {
         {
           user: {
             name: mockUser,
-            data: mockUdata,
           },
+          data: mockBrowserData,
+          walletData: mockWalletData,
           session: mockSession,
+          redirectHash: null,
           utm: mockUtm,
-          sdkVersion: '0.0.0-unknown.0',
         },
         false,
       );
@@ -102,11 +145,12 @@ describe('LuciaSDK', () => {
         {
           user: {
             name: mockUser,
-            data: mockUdata,
           },
+          data: mockBrowserData,
+          walletData: mockWalletData,
           session: mockSession, // This is our mocked return value from storeSessionID
+          redirectHash: null,
           utm: mockUtm,
-          sdkVersion: '0.0.0-unknown.0',
         },
         false,
       );
@@ -123,7 +167,6 @@ describe('LuciaSDK', () => {
       expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/user', {
         user: {
           name: userId,
-          data: mockUdata,
           userInfo,
         },
         lid: mockLid,
@@ -142,7 +185,6 @@ describe('LuciaSDK', () => {
         page,
         user: {
           name: mockUser,
-          data: mockUdata,
         },
         lid: mockLid,
         session: mockSession,
@@ -164,7 +206,6 @@ describe('LuciaSDK', () => {
         event: eventDetails,
         user: {
           name: mockUser,
-          data: mockUdata,
         },
         lid: mockLid,
         session: mockSession,
@@ -182,7 +223,6 @@ describe('LuciaSDK', () => {
         button,
         user: {
           name: mockUser,
-          data: mockUdata,
         },
         lid: mockLid,
         session: mockSession,
@@ -204,7 +244,6 @@ describe('LuciaSDK', () => {
         walletName,
         user: {
           name: mockUser,
-          data: mockUdata,
         },
         lid: mockLid,
         session: mockSession,

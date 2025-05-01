@@ -1,7 +1,6 @@
 import BaseClass from '../base';
-import { getUtmParams, udata } from '../utils/data';
+import { getBrowserData, getUtmParams, getWalletData } from '../utils/data';
 import { getSessionData, getLidData, getUser, storeSessionID } from '../utils/session';
-import { SDK_VERSION } from '../version';
 
 class LuciaSDK extends BaseClass {
   authenticate() {
@@ -17,21 +16,28 @@ class LuciaSDK extends BaseClass {
     if (!session) {
       session = await storeSessionID();
     }
-    const data = await this.httpClient.post<{ lid: string }>(
+
+    const data = getBrowserData();
+    const url = new URL(window.location.href);
+    const redirectHash = url.searchParams.get('lucia');
+    const walletData = await getWalletData();
+
+    const result = await this.httpClient.post<{ lid: string }>(
       '/api/sdk/init',
       {
         user: {
           name: getUser(),
-          data: await udata(),
         },
+        data,
+        walletData,
         session,
+        redirectHash,
         utm: getUtmParams(),
-        sdkVersion: SDK_VERSION,
       },
       false,
     );
-    if (data) {
-      localStorage.setItem('lid', data.lid);
+    if (result) {
+      localStorage.setItem('lid', result.lid);
     }
   }
 
@@ -51,7 +57,6 @@ class LuciaSDK extends BaseClass {
     await this.httpClient.post('/api/sdk/user', {
       user: {
         name: userId,
-        data: await udata(),
         userInfo,
       },
       lid,
@@ -71,7 +76,6 @@ class LuciaSDK extends BaseClass {
       page,
       user: {
         name: getUser(),
-        data: await udata(),
       },
       lid,
       session,
@@ -94,7 +98,6 @@ class LuciaSDK extends BaseClass {
       event: eventDetails,
       user: {
         name: getUser(),
-        data: await udata(),
       },
       lid,
       session,
@@ -113,7 +116,6 @@ class LuciaSDK extends BaseClass {
       button,
       user: {
         name: getUser(),
-        data: await udata(),
       },
       lid,
       session,
@@ -135,7 +137,6 @@ class LuciaSDK extends BaseClass {
       walletName,
       user: {
         name: getUser(),
-        data: await udata(),
       },
       lid,
       session,

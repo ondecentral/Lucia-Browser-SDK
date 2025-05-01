@@ -4,13 +4,88 @@ import { getConnectedWalletAddress, getWalletName, getExtendedProviderInfo } fro
 import { getConnectedSolanaWallet, getSolanaWalletName } from './solana';
 
 /**
- * Collects user data including wallet information, device capabilities, and browser features.
- * Gathers both Ethereum and Solana wallet information if available.
+ * Collects static browser and hardware data that's unlikely to change during a session.
+ * This data can be cached for performance optimization.
  *
- * @returns {Promise<Object>} A structured object containing user data such as wallet addresses,
- *                           device information, screen specifications, and browser capabilities.
+ * @returns {Object} Static browser and hardware data including device capabilities,
+ *                  screen specifications, and browser features.
  */
-export async function udata() {
+export function getBrowserData(): object {
+  // Use a static variable to cache the result after first call
+  if (getBrowserData.cachedData) {
+    return getBrowserData.cachedData;
+  }
+
+  const device = {
+    cores: safeAccess(() => navigator.hardwareConcurrency),
+    memory: safeAccess(() => (navigator as any).deviceMemory),
+    cpuClass: safeAccess(() => (navigator as any).cpuClass),
+    touch: isTouchEnabled(),
+    devicePixelRatio: safeAccess(() => window.devicePixelRatio),
+  };
+
+  const screen = {
+    width: safeAccess(() => window.screen.width),
+    height: safeAccess(() => window.screen.height),
+    colorDepth: safeAccess(() => window.screen.colorDepth),
+    availHeight: safeAccess(() => window.screen.availHeight),
+    availWidth: safeAccess(() => window.screen.availWidth),
+    orientation: {
+      type: safeAccess(() => window.screen.orientation.type),
+      angle: safeAccess(() => window.screen.orientation.angle),
+    },
+  };
+
+  const browser = {
+    language: safeAccess(() => navigator.language),
+    encoding: safeAccess(() => (TextDecoder as any).encoding),
+    timezone: safeAccess(() => -new Date().getTimezoneOffset() / 60),
+    pluginsLength: safeAccess(() => navigator.plugins.length),
+    pluginNames: safeAccess(() => Array.from(navigator.plugins, (p) => p.name)),
+    applePayAvailable: getApplePayAvailable(),
+    uniqueHash: getCanvasFingerprint(),
+    colorGamut: getColorGamut(),
+    contrastPreference: getContrastPreference(),
+  };
+  const permissions = {
+    navPer: safeAccess(() => (navigator.permissions as any).webglVersion),
+    renderedPer: safeAccess(() => (navigator.permissions as any).RENDERER),
+    geoPer: safeAccess(() => (navigator.permissions as any).geolocation),
+  };
+
+  const storage = {
+    localStorage: safeAccess(() => window.localStorage),
+    indexedDB: safeAccess(() => window.indexedDB),
+    openDB: safeAccess(() => (window as any).openDatabase),
+  };
+
+  const staticData = {
+    device,
+    screen,
+    browser,
+    permissions,
+    storage,
+  };
+
+  // Cache the result
+  getBrowserData.cachedData = staticData;
+  return staticData;
+}
+
+// TypeScript type definition for the static data cache
+declare global {
+  interface Function {
+    cachedData?: any;
+  }
+}
+
+/**
+ * Collects dynamic wallet information that may change during a session.
+ * This data should be fetched each time it's needed for up-to-date values.
+ *
+ * @returns {Promise<Object>} Dynamic wallet data including addresses and provider information.
+ */
+export async function getWalletData(): Promise<object> {
   const [solAddress, ethAddress, walletName, solWalletName, providerInfo] = await Promise.all([
     getConnectedSolanaWallet(),
     getConnectedWalletAddress(),
@@ -19,49 +94,12 @@ export async function udata() {
     getExtendedProviderInfo(),
   ]);
 
-  const url = new URL(window.location.href);
-  const redirectHash = url.searchParams.get('lucia');
-
   return {
-    redirectHash,
-    data: {
-      walletAddress: ethAddress,
-      solanaAddress: solAddress,
-      providerInfo: providerInfo && filterObject(providerInfo),
-      walletName,
-      solWalletName,
-      touch: isTouchEnabled(),
-      memory: safeAccess(() => (navigator as any).deviceMemory),
-      cores: safeAccess(() => navigator.hardwareConcurrency),
-      language: safeAccess(() => navigator.language),
-      devicePixelRatio: safeAccess(() => window.devicePixelRatio),
-      encoding: safeAccess(() => (TextDecoder as any).encoding),
-      timezone: safeAccess(() => -new Date().getTimezoneOffset() / 60),
-      pluginsLength: safeAccess(() => navigator.plugins.length),
-      pluginNames: safeAccess(() => Array.from(navigator.plugins, (p) => p.name)),
-      applePayAvailable: getApplePayAvailable(),
-      screen: {
-        width: safeAccess(() => window.screen.width),
-        height: safeAccess(() => window.screen.height),
-        colorDepth: safeAccess(() => window.screen.colorDepth),
-        availHeight: safeAccess(() => window.screen.availHeight),
-        availWidth: safeAccess(() => window.screen.availWidth),
-        orientation: {
-          type: safeAccess(() => window.screen.orientation.type),
-          angle: safeAccess(() => window.screen.orientation.angle),
-        },
-        colorGamut: getColorGamut(),
-        contrastPreference: getContrastPreference(),
-      },
-      navPer: safeAccess(() => (navigator.permissions as any).webglVersion),
-      renderedPer: safeAccess(() => (navigator.permissions as any).RENDERER),
-      geoPer: safeAccess(() => (navigator.permissions as any).geolocation),
-      cpuClass: safeAccess(() => (navigator as any).cpuClass),
-      indexedDB: safeAccess(() => window.indexedDB),
-      openDB: safeAccess(() => (window as any).openDatabase),
-      localStorage: safeAccess(() => window.localStorage),
-      uniqueHash: getCanvasFingerprint(),
-    },
+    walletAddress: ethAddress,
+    solanaAddress: solAddress,
+    providerInfo: providerInfo && filterObject(providerInfo),
+    walletName,
+    solWalletName,
   };
 }
 

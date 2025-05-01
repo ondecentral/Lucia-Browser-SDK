@@ -2,6 +2,7 @@ import Logger from './logger';
 import Store from './store';
 
 import { SERVER_URL, TEST_SERVER_URL } from '../constants';
+import { SDK_VERSION } from '../version';
 
 interface QueueItem<T> {
   url: string;
@@ -54,6 +55,7 @@ class HttpClient {
         headers: {
           'Content-Type': 'application/json',
           'X-API-KEY': this.store.config.apiKey,
+          'SDK-VERSION': SDK_VERSION,
         },
       });
       return (await response.json()) as T;
@@ -148,6 +150,7 @@ class HttpClient {
         headers: {
           'Content-Type': 'application/json',
           'X-API-KEY': this.store.config.apiKey,
+          'SDK-VERSION': SDK_VERSION,
         },
         body: JSON.stringify(data),
       });

@@ -1,7 +1,7 @@
 import CryptoJS from 'crypto-js';
 
+import * as dataModule from '../../utils/data';
 import {
-  udata,
   getUtmParams,
   filterObject,
   safeAccess,
@@ -10,13 +10,34 @@ import {
   getColorGamut,
   getCanvasFingerprint,
   isTouchEnabled,
+  getBrowserData,
+  getWalletData,
 } from '../../utils/data';
 import * as evmUtils from '../../utils/evm';
+import { ProviderInfo } from '../../utils/evm';
 import * as solanaUtils from '../../utils/solana';
+
+// Define interfaces for type safety in tests
+interface BrowserData {
+  device: any;
+  screen: any;
+  browser: any;
+  permissions: any;
+  storage: any;
+}
+
+interface WalletData {
+  walletAddress: string | null;
+  solanaAddress: string | null;
+  providerInfo: ProviderInfo | null;
+  walletName: string | null;
+  solWalletName: string | null;
+}
 
 declare global {
   interface Window {
     ApplePaySession?: any;
+    openDatabase?: any;
   }
 }
 
@@ -26,6 +47,9 @@ describe('Data Utilities', () => {
   beforeEach(() => {
     // Store original window and navigator
     originalWindow = { ...window };
+
+    // Clear cached browser data between tests
+    delete getBrowserData.cachedData;
 
     // Mock localStorage
     Object.defineProperty(window, 'localStorage', {
@@ -56,21 +80,109 @@ describe('Data Utilities', () => {
     jest.restoreAllMocks();
   });
 
-  describe('udata', () => {
-    it('should collect browser information', async () => {
+  describe('getBrowserData', () => {
+    it('should collect static browser information', () => {
       const mockUserAgent = 'Mozilla/5.0 Test Browser';
       Object.defineProperty(navigator, 'userAgent', {
         value: mockUserAgent,
         writable: true,
       });
 
-      const data = await udata();
-      // Check for data structure based on actual implementation
-      expect(data).toHaveProperty('redirectHash');
-      expect(data).toHaveProperty('data');
+      const data = getBrowserData() as BrowserData;
+
+      // Check the structure
+      expect(data).toHaveProperty('device');
+      expect(data).toHaveProperty('screen');
+      expect(data).toHaveProperty('browser');
+      expect(data).toHaveProperty('permissions');
+      expect(data).toHaveProperty('storage');
     });
 
-    it('should collect screen information when available', async () => {
+    it('should cache the result after the first call', () => {
+      // First call
+      const firstResult = getBrowserData();
+
+      // Modify a value that would affect the result if not cached
+      Object.defineProperty(navigator, 'language', {
+        value: 'fr-FR', // Changed from default
+        writable: true,
+      });
+
+      // Second call should return the cached result
+      const secondResult = getBrowserData();
+
+      expect(secondResult).toBe(firstResult); // Should be the same object reference
+    });
+
+    it('should handle errors when browser features are missing', () => {
+      // Prepare a mock that throws for specific properties
+      Object.defineProperty(window, 'screen', {
+        value: {
+          get width() {
+            throw new Error('Screen width not available');
+          },
+          get height() {
+            throw new Error('Screen height not available');
+          },
+          colorDepth: 24,
+          availHeight: 1040,
+          availWidth: 1900,
+          orientation: {
+            type: 'landscape-primary',
+            angle: 0,
+          },
+        },
+        configurable: true,
+        writable: true,
+      });
+
+      const data = getBrowserData() as BrowserData;
+
+      // Even with errors, we should get a result with undefined for problematic properties
+      expect(data).toHaveProperty('screen');
+      expect(data.screen.width).toBeUndefined();
+      expect(data.screen.height).toBeUndefined();
+      expect(data.screen.colorDepth).toBe(24);
+    });
+
+    it('should collect device information correctly', () => {
+      // Mock hardware concurrency
+      Object.defineProperty(navigator, 'hardwareConcurrency', {
+        value: 8,
+        writable: true,
+      });
+
+      // Mock deviceMemory
+      Object.defineProperty(navigator, 'deviceMemory', {
+        value: 4,
+        writable: true,
+      });
+
+      // Mock devicePixelRatio
+      Object.defineProperty(window, 'devicePixelRatio', {
+        value: 2,
+        writable: true,
+      });
+
+      // Mock cpuClass
+      Object.defineProperty(navigator, 'cpuClass', {
+        value: 'x86',
+        writable: true,
+      });
+
+      // Mock touch capability
+      jest.spyOn(document, 'createEvent').mockImplementation(() => ({}) as Event);
+
+      const data = getBrowserData() as BrowserData;
+
+      expect(data.device.cores).toBe(8);
+      expect(data.device.memory).toBe(4);
+      expect(data.device.cpuClass).toBe('x86');
+      expect(data.device.touch).toBe(true);
+      expect(data.device.devicePixelRatio).toBe(2);
+    });
+
+    it('should collect screen information correctly', () => {
       Object.defineProperty(window, 'screen', {
         value: {
           width: 1920,
@@ -86,91 +198,82 @@ describe('Data Utilities', () => {
         writable: true,
       });
 
-      const data = await udata();
-      expect(data.data.screen.width).toBe(1920);
-      expect(data.data.screen.height).toBe(1080);
-      expect(data.data.screen.colorDepth).toBe(24);
-      expect(data.data.screen.availHeight).toBe(1040);
-      expect(data.data.screen.availWidth).toBe(1900);
-      expect(data.data.screen.orientation.type).toBe('landscape-primary');
-      expect(data.data.screen.orientation.angle).toBe(0);
+      const data = getBrowserData() as BrowserData;
+
+      expect(data.screen.width).toBe(1920);
+      expect(data.screen.height).toBe(1080);
+      expect(data.screen.colorDepth).toBe(24);
+      expect(data.screen.availHeight).toBe(1040);
+      expect(data.screen.availWidth).toBe(1900);
+      expect(data.screen.orientation.type).toBe('landscape-primary');
+      expect(data.screen.orientation.angle).toBe(0);
     });
 
-    it('should handle errors when browser features are missing', async () => {
-      // Instead of throwing at window.screen level, prepare a mock that throws for specific properties
-      Object.defineProperty(window, 'screen', {
-        value: {
-          get width() {
-            throw new Error('Screen width not available');
+    it('should collect different screen orientations correctly', () => {
+      const orientationScenarios = [
+        { type: 'portrait-primary', angle: 0 },
+        { type: 'portrait-secondary', angle: 180 },
+        { type: 'landscape-primary', angle: 90 },
+        { type: 'landscape-secondary', angle: 270 },
+      ];
+
+      orientationScenarios.forEach((orientation) => {
+        // Clear cached data between iterations
+        delete getBrowserData.cachedData;
+
+        Object.defineProperty(window, 'screen', {
+          value: {
+            width: 1920,
+            height: 1080,
+            colorDepth: 24,
+            availHeight: 1040,
+            availWidth: 1900,
+            orientation,
           },
-          get height() {
-            throw new Error('Screen height not available');
-          },
-          get colorDepth() {
-            throw new Error('Screen colorDepth not available');
-          },
-          availHeight: undefined,
-          availWidth: undefined,
-          orientation: {
-            type: undefined,
-            angle: undefined,
-          },
-        },
-        configurable: true,
+          writable: true,
+        });
+
+        const data = getBrowserData() as BrowserData;
+
+        expect(data.screen.orientation.type).toBe(orientation.type);
+        expect(data.screen.orientation.angle).toBe(orientation.angle);
+      });
+    });
+
+    it('should collect browser language and timezone correctly', () => {
+      Object.defineProperty(navigator, 'language', {
+        value: 'en-US',
         writable: true,
       });
 
-      const data = await udata();
+      jest.spyOn(Date.prototype, 'getTimezoneOffset').mockReturnValue(-240); // -4 hours
 
-      expect(data).toHaveProperty('data');
+      const data = getBrowserData() as BrowserData;
+
+      expect(data.browser.language).toBe('en-US');
+      expect(data.browser.timezone).toBe(4); // Negative of -240 minutes / 60
     });
 
-    it('handles null providerInfo but valid wallet addresses', async () => {
-      jest.spyOn(evmUtils, 'getConnectedWalletAddress').mockResolvedValue('0x123');
-      jest.spyOn(evmUtils, 'getWalletName').mockResolvedValue('MetaMask');
-      jest.spyOn(evmUtils, 'getExtendedProviderInfo').mockResolvedValue(null);
-      jest.spyOn(solanaUtils, 'getConnectedSolanaWallet').mockResolvedValue('abc123');
-      jest.spyOn(solanaUtils, 'getSolanaWalletName').mockResolvedValue('Phantom');
+    it('should collect browser plugins information', () => {
+      const mockPlugins = [{ name: 'PDF Viewer' }, { name: 'Chrome PDF Viewer' }, { name: 'Chrome Web Store' }];
 
-      const data = await udata();
-      expect(data.data.walletAddress).toBe('0x123');
-      expect(data.data.providerInfo).toBeNull();
-      expect(data.data.walletName).toBe('MetaMask');
-      expect(data.data.solanaAddress).toBe('abc123');
-      expect(data.data.solWalletName).toBe('Phantom');
-    });
-
-    it('handles all async calls returning null', async () => {
-      jest.spyOn(evmUtils, 'getConnectedWalletAddress').mockResolvedValue(null);
-      jest.spyOn(evmUtils, 'getWalletName').mockResolvedValue(null);
-      jest.spyOn(evmUtils, 'getExtendedProviderInfo').mockResolvedValue(null);
-      jest.spyOn(solanaUtils, 'getConnectedSolanaWallet').mockResolvedValue(null);
-      jest.spyOn(solanaUtils, 'getSolanaWalletName').mockResolvedValue(null);
-      const data = await udata();
-      expect(data.data.walletAddress).toBeNull();
-      expect(data.data.solanaAddress).toBeNull();
-      expect(data.data.providerInfo).toBeNull();
-      expect(data.data.walletName).toBeNull();
-      expect(data.data.solWalletName).toBeNull();
-    });
-
-    it('handles redirectHash being null when searchParams.get returns null', async () => {
-      Object.defineProperty(window, 'location', {
-        value: {
-          href: 'https://example.com/',
-          search: '',
-        },
+      Object.defineProperty(navigator, 'plugins', {
+        value: mockPlugins,
         writable: true,
       });
-      const data = await udata();
-      expect(data.redirectHash).toBeNull();
+
+      const data = getBrowserData() as BrowserData;
+
+      expect(data.browser.pluginsLength).toBe(3);
+      expect(data.browser.pluginNames).toEqual(['PDF Viewer', 'Chrome PDF Viewer', 'Chrome Web Store']);
     });
 
-    it('returns screen properties with mocked contrast and gamut', async () => {
+    it('should collect browser feature information with mocked contrast and gamut', () => {
       // Mock both contrast and gamut detection
       const originalMatchMedia = window.matchMedia;
       const mockMatchMedia = (query: string) => {
-        const matches = query.includes('prefers-contrast: high') || query === '(color-gamut: p3)';
+        const matches =
+          query.includes('prefers-contrast: high') || query === '(color-gamut: p3)' || query === '(color-gamut: srgb)';
         return {
           matches,
           media: query,
@@ -186,18 +289,13 @@ describe('Data Utilities', () => {
       // Directly replace window.matchMedia
       window.matchMedia = mockMatchMedia;
 
-      try {
-        const data = await udata();
-        expect(data.data.screen.contrastPreference).toBe('More');
-        expect(data.data.screen.colorGamut).toContain('p3');
-      } finally {
-        // Restore original
-        window.matchMedia = originalMatchMedia;
-      }
-    });
+      // Mock ApplePay
+      window.ApplePaySession = { canMakePayments: jest.fn(() => true) };
 
-    it('generates a fingerprint when canvas is supported', () => {
-      // Create a minimal canvas mock with the necessary methods
+      // Mock canvas fingerprint
+      const mockSHA256Result = { toString: jest.fn().mockReturnValue('testfingerprint') };
+      jest.spyOn(CryptoJS, 'SHA256').mockReturnValue(mockSHA256Result as any);
+
       const mockContext = {
         fillStyle: '',
         beginPath: jest.fn(),
@@ -216,25 +314,228 @@ describe('Data Utilities', () => {
       };
 
       const mockCanvas = {
+        id: '',
         getContext: jest.fn().mockReturnValue(mockContext),
         toDataURL: jest.fn().mockReturnValue('data:image/png;base64,fakehash'),
       };
 
-      jest.spyOn(document, 'createElement').mockReturnValueOnce(mockCanvas as unknown as HTMLCanvasElement);
-      // Mock the entire SHA256 process
-      const mockSHA256Result = { toString: jest.fn().mockReturnValue('testfingerprint') };
-      jest.spyOn(CryptoJS, 'SHA256').mockReturnValue(mockSHA256Result as any);
+      jest.spyOn(document, 'createElement').mockReturnValue(mockCanvas as unknown as HTMLCanvasElement);
 
-      const fingerprint = getCanvasFingerprint();
-      expect(fingerprint).toBeDefined();
-      expect(typeof fingerprint).toBe('string');
+      try {
+        const data = getBrowserData() as BrowserData;
+
+        // Check results
+        expect(data.browser.contrastPreference).toBe('More');
+        expect(data.browser.colorGamut).toContain('p3');
+        expect(data.browser.colorGamut).toContain('srgb');
+        expect(data.browser.applePayAvailable).toBe(true);
+        expect(data.browser.uniqueHash).toBe('testfingerprint');
+      } finally {
+        // Restore originals
+        window.matchMedia = originalMatchMedia;
+        delete window.ApplePaySession;
+      }
     });
 
-    it('includes applePayAvailable status', async () => {
-      window.ApplePaySession = { canMakePayments: jest.fn(() => true) };
-      const data = await udata();
-      expect(data.data.applePayAvailable).toBe(true);
-      delete window.ApplePaySession;
+    it('should handle different permission states', () => {
+      const scenarios = [
+        { navPer: '2.0', renderedPer: 'Mock Renderer', geoPer: { state: 'granted' } },
+        { navPer: undefined, renderedPer: undefined, geoPer: undefined },
+        { navPer: '1.0', renderedPer: 'Other Renderer', geoPer: { state: 'denied' } },
+      ];
+
+      scenarios.forEach((perms) => {
+        // Clear cached data between iterations
+        delete getBrowserData.cachedData;
+
+        // If permissions property already exists and is not configurable, skip redefining
+        // (JSDOM sometimes makes it non-configurable)
+        try {
+          Object.defineProperty(navigator, 'permissions', {
+            value: {
+              webglVersion: perms.navPer,
+              RENDERER: perms.renderedPer,
+              geolocation: perms.geoPer,
+            },
+            configurable: true,
+            writable: true,
+          });
+        } catch (e) {
+          // fallback: assign directly if defineProperty fails
+          (navigator as any).permissions = {
+            webglVersion: perms.navPer,
+            RENDERER: perms.renderedPer,
+            geolocation: perms.geoPer,
+          };
+        }
+
+        const data = getBrowserData() as BrowserData;
+        expect(data.permissions.navPer).toBe(perms.navPer);
+        expect(data.permissions.renderedPer).toBe(perms.renderedPer);
+        expect(data.permissions.geoPer).toBe(perms.geoPer);
+      });
+    });
+
+    it('should collect storage availability information', () => {
+      // Mock indexedDB
+      Object.defineProperty(window, 'indexedDB', {
+        value: {},
+        writable: true,
+      });
+
+      // Mock openDatabase
+      window.openDatabase = jest.fn();
+
+      const data = getBrowserData() as BrowserData;
+
+      expect(data.storage.localStorage).toBeDefined();
+      expect(data.storage.indexedDB).toBeDefined();
+      expect(data.storage.openDB).toBeDefined();
+    });
+
+    it('should handle missing storage APIs gracefully', () => {
+      // Remove indexedDB
+      Object.defineProperty(window, 'indexedDB', {
+        value: undefined,
+        writable: true,
+      });
+
+      // Mock localStorage to return undefined instead of throwing
+      const originalLocalStorage = window.localStorage;
+      Object.defineProperty(window, 'localStorage', {
+        get: jest.fn(() => undefined),
+        configurable: true,
+      });
+
+      try {
+        const data = getBrowserData() as BrowserData;
+
+        expect(data.storage.localStorage).toBeUndefined();
+        expect(data.storage.indexedDB).toBeUndefined();
+      } finally {
+        // Restore localStorage
+        Object.defineProperty(window, 'localStorage', {
+          value: originalLocalStorage,
+          configurable: true,
+          writable: true,
+        });
+      }
+    });
+
+    it('should handle missing or invalid TextDecoder', () => {
+      // Create a spy on safeAccess that returns undefined for TextDecoder
+      const safeAccessSpy = jest.spyOn(dataModule, 'safeAccess');
+
+      // Mock the TextDecoder-related access to return undefined
+      safeAccessSpy.mockImplementation((fn: () => any) => {
+        try {
+          // Execute the original function but catch any TextDecoder-related call
+          const callStr = fn.toString();
+          if (callStr.includes('TextDecoder')) {
+            return undefined;
+          }
+          return fn();
+        } catch {
+          return undefined;
+        }
+      });
+
+      try {
+        const data = getBrowserData() as BrowserData;
+
+        expect(data.browser.encoding).toBeUndefined();
+      } finally {
+        // Restore original safeAccess implementation
+        safeAccessSpy.mockRestore();
+      }
+    });
+  });
+
+  describe('getWalletData', () => {
+    beforeEach(() => {
+      // Mock wallet-related functions
+      jest.spyOn(evmUtils, 'getConnectedWalletAddress').mockResolvedValue('0x123');
+      jest.spyOn(evmUtils, 'getWalletName').mockResolvedValue('MetaMask');
+      jest.spyOn(evmUtils, 'getExtendedProviderInfo').mockResolvedValue({
+        chainId: '0x1',
+        name: 'Ethereum',
+        isMetaMask: true,
+        isCoinbaseWallet: false,
+        isWalletConnect: false,
+        isTrust: false,
+        // Add other required properties from ProviderInfo
+      } as ProviderInfo);
+      jest.spyOn(solanaUtils, 'getConnectedSolanaWallet').mockResolvedValue('abc123');
+      jest.spyOn(solanaUtils, 'getSolanaWalletName').mockResolvedValue('Phantom');
+    });
+
+    it('should collect wallet information correctly', async () => {
+      const walletData = (await getWalletData()) as WalletData;
+
+      expect(walletData).toHaveProperty('walletAddress', '0x123');
+      expect(walletData).toHaveProperty('solanaAddress', 'abc123');
+      expect(walletData).toHaveProperty('providerInfo');
+      expect(walletData).toHaveProperty('walletName', 'MetaMask');
+      expect(walletData).toHaveProperty('solWalletName', 'Phantom');
+    });
+
+    it('handles null provider info with valid addresses', async () => {
+      jest.spyOn(evmUtils, 'getExtendedProviderInfo').mockResolvedValue(null);
+
+      const walletData = (await getWalletData()) as WalletData;
+
+      expect(walletData.walletAddress).toBe('0x123');
+      expect(walletData.providerInfo).toBeNull();
+      expect(walletData.walletName).toBe('MetaMask');
+    });
+
+    it('handles all wallet data returning null', async () => {
+      jest.spyOn(evmUtils, 'getConnectedWalletAddress').mockResolvedValue(null);
+      jest.spyOn(evmUtils, 'getWalletName').mockResolvedValue(null);
+      jest.spyOn(evmUtils, 'getExtendedProviderInfo').mockResolvedValue(null);
+      jest.spyOn(solanaUtils, 'getConnectedSolanaWallet').mockResolvedValue(null);
+      jest.spyOn(solanaUtils, 'getSolanaWalletName').mockResolvedValue(null);
+
+      const walletData = (await getWalletData()) as WalletData;
+
+      expect(walletData.walletAddress).toBeNull();
+      expect(walletData.solanaAddress).toBeNull();
+      expect(walletData.providerInfo).toBeNull();
+      expect(walletData.walletName).toBeNull();
+      expect(walletData.solWalletName).toBeNull();
+    });
+
+    it('should filter the provider info object', async () => {
+      jest.spyOn(evmUtils, 'getExtendedProviderInfo').mockResolvedValue({
+        chainId: '0x1',
+        name: 'Ethereum',
+        isMetaMask: true,
+        isCoinbaseWallet: false, // falsy value
+        isWalletConnect: '', // falsy value
+        isTrust: null, // falsy value
+        networkVersion: '1',
+        selectedAddress: '0x123',
+      } as unknown as ProviderInfo);
+
+      const walletData = (await getWalletData()) as WalletData;
+
+      // Verify that only truthy values were kept
+      expect(walletData.providerInfo).toEqual({
+        chainId: '0x1',
+        name: 'Ethereum',
+        isMetaMask: true,
+        networkVersion: '1',
+        selectedAddress: '0x123',
+      });
+    });
+
+    it('should handle provider info with empty object', async () => {
+      jest.spyOn(evmUtils, 'getExtendedProviderInfo').mockResolvedValue({} as ProviderInfo);
+
+      const walletData = (await getWalletData()) as WalletData;
+
+      // Empty object should result in empty filtered object
+      expect(walletData.providerInfo).toEqual({});
     });
   });
 
@@ -261,6 +562,41 @@ describe('Data Utilities', () => {
       const utmParams = getUtmParams();
       expect(utmParams).toEqual({});
     });
+
+    it('should extract id-related and ref/source parameters', () => {
+      Object.defineProperty(window, 'location', {
+        value: {
+          href: 'https://example.com/?affiliate_id=123&ref=partner&source=email&product_id=456',
+          search: '?affiliate_id=123&ref=partner&source=email&product_id=456',
+        },
+        writable: true,
+      });
+
+      const utmParams = getUtmParams();
+      expect(utmParams).toEqual({
+        affiliate_id: '123',
+        ref: 'partner',
+        source: 'email',
+        product_id: '456',
+      });
+    });
+
+    it('should handle malformed URLs gracefully', () => {
+      Object.defineProperty(window, 'location', {
+        value: {
+          href: 'https://example.com/:invalid-url',
+          get search() {
+            throw new Error('Invalid URL');
+          },
+        },
+        writable: true,
+      });
+
+      // This test verifies that the function doesn't throw
+      // when dealing with problematic URLs
+      expect(() => getUtmParams()).not.toThrow();
+      expect(getUtmParams()).toEqual({});
+    });
   });
 
   describe('filterObject', () => {
@@ -285,6 +621,18 @@ describe('Data Utilities', () => {
       const result = filterObject(input);
       expect(result).toEqual({ a: 1, b: { x: '', y: 'value' } });
       // Note: nested falsy values like x: '' are NOT filtered
+    });
+
+    it.each([
+      [{ a: 1, b: false }, { a: 1 }],
+      [{ a: 0, b: null }, {}],
+      [{ a: 'hello', b: '' }, { a: 'hello' }],
+      [
+        { a: [], b: {} },
+        { a: [], b: {} },
+      ], // empty arrays/objects are truthy
+    ])('correctly filters %j to %j', (input, expected) => {
+      expect(filterObject(input)).toEqual(expected);
     });
   });
 
@@ -316,6 +664,30 @@ describe('Data Utilities', () => {
     it('returns falsy values like 0 and empty string correctly', () => {
       expect(safeAccess(() => 0)).toBe(0);
       expect(safeAccess(() => '')).toBe('');
+    });
+
+    it('handles complex errors correctly', () => {
+      const customError = new TypeError('Custom error');
+
+      expect(
+        safeAccess(() => {
+          // eslint-disable-next-line no-throw-literal
+          throw 'string error'; // Non-Error object throw
+        }, 'fallback for string'),
+      ).toBe('fallback for string');
+
+      expect(
+        safeAccess(() => {
+          throw customError; // TypeError
+        }, 'fallback for TypeError'),
+      ).toBe('fallback for TypeError');
+
+      expect(
+        safeAccess(() => {
+          // eslint-disable-next-line no-throw-literal
+          throw null; // null throw
+        }, 'fallback for null'),
+      ).toBe('fallback for null');
     });
   });
 
