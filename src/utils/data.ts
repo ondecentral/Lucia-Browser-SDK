@@ -54,8 +54,8 @@ export function getBrowserData(): object {
   };
 
   const storage = {
-    localStorage: safeAccess(() => window.localStorage),
-    indexedDB: safeAccess(() => window.indexedDB),
+    localStorage: safeAccess(() => !!window.localStorage),
+    indexedDB: safeAccess(() => !!window.indexedDB),
     openDB: safeAccess(() => (window as any).openDatabase),
   };
 

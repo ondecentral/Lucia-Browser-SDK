@@ -410,8 +410,8 @@ describe('Data Utilities', () => {
       try {
         const data = getBrowserData() as BrowserData;
 
-        expect(data.storage.localStorage).toBeUndefined();
-        expect(data.storage.indexedDB).toBeUndefined();
+        expect(data.storage.localStorage).toBeFalsy();
+        expect(data.storage.indexedDB).toBeFalsy();
       } finally {
         // Restore localStorage
         Object.defineProperty(window, 'localStorage', {
