@@ -3,6 +3,50 @@
 All notable changes to this project will be documented in this file.
 
 
+## [0.5.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.4.0...v0.5.0) (2025-05-10)
+
+
+### Features
+
+* add queue to make sure init is called first ([27d2258](https://github.com/ondecentral/Lucia-Browser-SDK/commit/27d2258fd7f2671b018a1fd6c7d3b2da32b8478c))
+* refactor session to use session storage indefinitely ([05f9a81](https://github.com/ondecentral/Lucia-Browser-SDK/commit/05f9a815d2b2bd411525cf6bc2646848b3c3364e))
+* send sdk version info to backend ([d1718f4](https://github.com/ondecentral/Lucia-Browser-SDK/commit/d1718f4040cde9a1f54297562a6ec4c43bc51fd3))
+* sort payload by categories ([4fe9126](https://github.com/ondecentral/Lucia-Browser-SDK/commit/4fe91264dbb344692726e734e422b5310f7db0d1))
+* use sendBeacon to post data ([9cca238](https://github.com/ondecentral/Lucia-Browser-SDK/commit/9cca2381d304992aa05b25083260b7dcfe85f41c))
+
+
+### Bug Fixes
+
+* collect only access for storage ([ac31223](https://github.com/ondecentral/Lucia-Browser-SDK/commit/ac3122307f8e379b6dcb26f1f3015456c5303e27))
+* fix saving and retrieving session data ([5a7fd74](https://github.com/ondecentral/Lucia-Browser-SDK/commit/5a7fd740da6070c7ff7a8f1c44dc03b880cdccc0))
+* fix utm collection ([07a1701](https://github.com/ondecentral/Lucia-Browser-SDK/commit/07a17016c94fb600066c25bcc8116d17fac918f9))
+* put back the session structure expected by current backend ([872f3b9](https://github.com/ondecentral/Lucia-Browser-SDK/commit/872f3b97ee78ce559ef8681ca96ac238f132e46d))
+
+
+### Tests
+
+* add integration tests ([b773c70](https://github.com/ondecentral/Lucia-Browser-SDK/commit/b773c70516bcd6180ca25d0c9b8f7f54f5a0016f))
+* add tests ([6846812](https://github.com/ondecentral/Lucia-Browser-SDK/commit/6846812104ec69a343114fc9a9039cb884952d9a))
+* add tests for ethereum module ([82eefda](https://github.com/ondecentral/Lucia-Browser-SDK/commit/82eefda876dec4c233f140f185ede65b37ca9f3e))
+* add tests for solana module ([c0f94a0](https://github.com/ondecentral/Lucia-Browser-SDK/commit/c0f94a050e1412081e24ff05fc2f2ea046c9621c))
+* reduce mocks through spys ([3344a39](https://github.com/ondecentral/Lucia-Browser-SDK/commit/3344a398c28268ef6eca8d947d00ea53ba833cb0))
+* tidy up data tools tests ([0e36f1f](https://github.com/ondecentral/Lucia-Browser-SDK/commit/0e36f1f7eec682efde87400d5a06cb41f733412d))
+
+
+### Code Refactoring
+
+* collect redirect hash explicitly ([a99a40a](https://github.com/ondecentral/Lucia-Browser-SDK/commit/a99a40a7df1526a5d9c5821e877bd339181061f2))
+* move agent parsing to backend ([83271c2](https://github.com/ondecentral/Lucia-Browser-SDK/commit/83271c2f7160abb491912c819bf93fcb89b9d572))
+* refactor session management ([cc15809](https://github.com/ondecentral/Lucia-Browser-SDK/commit/cc158093579fd2e1a2746d1aa2c327844d51c0f1))
+* refactor user data and add more tests for it ([5f82c6a](https://github.com/ondecentral/Lucia-Browser-SDK/commit/5f82c6ac5dbaf3531d807c734a81819184e2685d))
+* remove collecting data from analytics events ([a36c8e2](https://github.com/ondecentral/Lucia-Browser-SDK/commit/a36c8e289f60df7fd0fb5c81598d4fcaa6cc3833))
+
+
+### Miscellaneous
+
+* remove unused udata and add more tests for data collection ([68f0fbb](https://github.com/ondecentral/Lucia-Browser-SDK/commit/68f0fbbc4b35f2f4c55ba8b092f7eed7be9484c5))
+* replace logging in wallet utils ([9f4da81](https://github.com/ondecentral/Lucia-Browser-SDK/commit/9f4da81c892c2ebe76cec70e3143cb670114fc3e))
+
 ## [0.4.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.3.0...v0.4.0) (2025-04-15)
 
 
