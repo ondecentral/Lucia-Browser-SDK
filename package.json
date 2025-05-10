@@ -12,6 +12,8 @@
   "scripts": {
     "build": "rollup -c",
     "test": "jest --passWithNoTests",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
     "package:clean": "rm -rf dist",
     "package:copy": "cp package.json dist && cp README.md dist",
     "package:build": "yarn package:clean && rollup -c && yarn package:copy",
@@ -32,6 +34,7 @@
     "@release-it/conventional-changelog": "^8.0.1",
     "@rollup/plugin-commonjs": "^24.0.0",
     "@rollup/plugin-node-resolve": "^15.0.1",
+    "@rollup/plugin-replace": "^5.0.5",
     "@rollup/plugin-terser": "^0.4.4",
     "@testing-library/jest-dom": "^5.16.5",
     "@types/crypto-js": "^4.2.2",

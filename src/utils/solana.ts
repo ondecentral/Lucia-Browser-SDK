@@ -1,4 +1,9 @@
 // Type definitions for the Solana wallet objects
+import Logger from './logger';
+import Store from './store';
+
+const logger = new Logger(Store.store);
+
 interface SolanaProvider {
   isPhantom?: boolean;
   isConnected: boolean;
@@ -70,7 +75,7 @@ export async function getConnectedSolanaWallet(): Promise<string | null> {
           return window.phantom.solana.publicKey.toString();
         }
       } catch (error) {
-        console.error('Error silently connecting to Phantom wallet:', error);
+        logger.log('error', 'Error silently connecting to Phantom wallet:', error);
         // If silent connection fails, we return null but don't throw an error
       }
     }
@@ -99,6 +104,7 @@ export async function getConnectedSolanaWallet(): Promise<string | null> {
     return null;
   } catch (err) {
     // Error detecting Solana wallet
+    logger.log('error', 'Error detecting Solana wallet:', err);
     return null;
   }
 }
