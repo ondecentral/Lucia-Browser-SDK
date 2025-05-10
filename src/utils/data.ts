@@ -3,14 +3,16 @@ import CryptoJS from 'crypto-js';
 import { getConnectedWalletAddress, getWalletName, getExtendedProviderInfo } from './evm';
 import { getConnectedSolanaWallet, getSolanaWalletName } from './solana';
 
+import { BrowserData, WalletData } from '../types';
+
 /**
  * Collects static browser and hardware data that's unlikely to change during a session.
  * This data can be cached for performance optimization.
  *
- * @returns {Object} Static browser and hardware data including device capabilities,
+ * @returns {BrowserData} Static browser and hardware data including device capabilities,
  *                  screen specifications, and browser features.
  */
-export function getBrowserData(): object {
+export function getBrowserData(): BrowserData {
   // Use a static variable to cache the result after first call
   if (getBrowserData.cachedData) {
     return getBrowserData.cachedData;
@@ -59,7 +61,7 @@ export function getBrowserData(): object {
     openDB: safeAccess(() => (window as any).openDatabase),
   };
 
-  const staticData = {
+  const staticData: BrowserData = {
     device,
     screen,
     browser,
@@ -83,9 +85,9 @@ declare global {
  * Collects dynamic wallet information that may change during a session.
  * This data should be fetched each time it's needed for up-to-date values.
  *
- * @returns {Promise<Object>} Dynamic wallet data including addresses and provider information.
+ * @returns {Promise<WalletData>} Dynamic wallet data including addresses and provider information.
  */
-export async function getWalletData(): Promise<object> {
+export async function getWalletData(): Promise<WalletData> {
   const [solAddress, ethAddress, walletName, solWalletName, providerInfo] = await Promise.all([
     getConnectedSolanaWallet(),
     getConnectedWalletAddress(),
@@ -139,9 +141,9 @@ export function getUtmParams(): Record<string, string> {
  * // Returns window.width or 800 if accessing window.width throws
  * const width = safeAccess(() => window.width, 800);
  */
-function safeAccess<T>(fn: () => T): T | undefined;
-function safeAccess<T>(fn: () => T, fallback: T): T;
-function safeAccess<T>(fn: () => T, fallback?: T) {
+export function safeAccess<T>(fn: () => T): T | undefined;
+export function safeAccess<T>(fn: () => T, fallback: T): T;
+export function safeAccess<T>(fn: () => T, fallback?: T) {
   try {
     return fn();
   } catch {
@@ -160,7 +162,7 @@ function safeAccess<T>(fn: () => T, fallback?: T) {
  * // Returns { name: 'John', age: 30 }
  * filterObject({ name: 'John', age: 30, address: '', active: false });
  */
-function filterObject<T extends object>(obj: T): Partial<T> {
+export function filterObject<T extends object>(obj: T): Partial<T> {
   const result: Partial<T> = {};
   Object.keys(obj).forEach((key) => {
     const typedKey = key as keyof T;
@@ -179,7 +181,7 @@ function filterObject<T extends object>(obj: T): Partial<T> {
  * @returns {string | undefined} A SHA-256 hexadecimal hash string representing the canvas fingerprint,
  *                              or undefined if canvas is not supported or operation fails
  */
-function getCanvasFingerprint(): string | undefined {
+export function getCanvasFingerprint(): string | undefined {
   try {
     const canvas = document.createElement('canvas');
     canvas.id = 'canvasLucia';
@@ -224,7 +226,7 @@ function getCanvasFingerprint(): string | undefined {
  *
  * @returns {boolean} True if touch events are supported, false otherwise
  */
-function isTouchEnabled(): boolean {
+export function isTouchEnabled(): boolean {
   try {
     return !!document.createEvent('TouchEvent');
   } catch {
@@ -239,7 +241,7 @@ function isTouchEnabled(): boolean {
  * @returns {boolean | undefined} True if Apple Pay is available, false if it's not,
  *                               or undefined if detection fails
  */
-function getApplePayAvailable(): boolean | undefined {
+export function getApplePayAvailable(): boolean | undefined {
   try {
     // @ts-ignore
     if (typeof window.ApplePaySession?.canMakePayments !== 'function') {
@@ -260,7 +262,7 @@ function getApplePayAvailable(): boolean | undefined {
  * @returns {string | undefined} The contrast preference ('None', 'More', 'Less', 'ForcedColors'),
  *                              or undefined if detection fails
  */
-function getContrastPreference(): string | undefined {
+export function getContrastPreference(): string | undefined {
   try {
     const { matchMedia } = window;
     const doesMatch = (value: string) => matchMedia(`(prefers-contrast: ${value})`).matches;
@@ -281,7 +283,7 @@ function getContrastPreference(): string | undefined {
  * @returns {string[]} An array of supported color gamut identifiers
  *                    (e.g., 'rec2020', 'p3', 'srgb', etc.)
  */
-function getColorGamut(): string[] {
+export function getColorGamut(): string[] {
   try {
     const gamuts = ['rec2020', 'p3', 'srgb', 'display-p3', 'adobe-rgb'];
     return gamuts.filter((g) => window.matchMedia(`(color-gamut: ${g})`).matches);
@@ -289,13 +291,3 @@ function getColorGamut(): string[] {
     return [];
   }
 }
-
-export {
-  safeAccess,
-  filterObject,
-  getCanvasFingerprint,
-  isTouchEnabled,
-  getApplePayAvailable,
-  getContrastPreference,
-  getColorGamut,
-};

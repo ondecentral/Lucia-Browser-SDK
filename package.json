@@ -5,6 +5,7 @@
   "description": "Lucia JavaScript Library",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
+  "types": "dist/index.d.ts",
   "umd": "dist/umd",
   "files": [
     "dist"

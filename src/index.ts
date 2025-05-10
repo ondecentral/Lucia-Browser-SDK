@@ -1,5 +1,17 @@
 import LuciaSDKClass from './core';
 import { Config, SDK } from './types';
+import {
+  getBrowserData,
+  getWalletData,
+  getUtmParams,
+  safeAccess,
+  filterObject,
+  getCanvasFingerprint,
+  isTouchEnabled,
+  getApplePayAvailable,
+  getContrastPreference,
+  getColorGamut,
+} from './utils/data';
 import { SDK_VERSION } from './version';
 
 let instance: LuciaSDKClass | null = null;
@@ -45,3 +57,17 @@ if (typeof window !== 'undefined') {
 }
 
 export default LuciaSDK;
+
+// Export utility functions individually for better documentation and IDE support
+export {
+  getBrowserData,
+  getWalletData,
+  getUtmParams,
+  safeAccess,
+  filterObject,
+  getCanvasFingerprint,
+  isTouchEnabled,
+  getApplePayAvailable,
+  getContrastPreference,
+  getColorGamut,
+};
