@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 
 
+## [0.6.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.5.0...v0.6.0) (2025-05-10)
+
+
+### Features
+
+* export utility tools ([7014612](https://github.com/ondecentral/Lucia-Browser-SDK/commit/70146126a260e169e6088462f1792dac23fe2fd5))
+
 ## [0.5.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.4.0...v0.5.0) (2025-05-10)
 
 
