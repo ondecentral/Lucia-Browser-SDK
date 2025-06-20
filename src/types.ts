@@ -16,6 +16,7 @@ export interface SDK {
     chainId: number | string,
     walletName?: 'Metamask' | 'Phantom',
   ) => Promise<void>;
+  trackUserAcquisition: (userId: string, acquisitionData?: object) => Promise<void>;
   checkMetaMaskConnection: () => boolean;
   VERSION: string;
 }

@@ -144,6 +144,30 @@ class LuciaSDK extends BaseClass {
   }
 
   /**
+   * Track a user acquisition event when a user signs up or logs in
+   * @param userId - Unique identifier for the user
+   * @param acquisitionData - Optional additional data about the acquisition
+   */
+  async trackUserAcquisition(userId: string, acquisitionData: object = {}) {
+    const browserData = getBrowserData();
+    const utmParams = getUtmParams();
+    const session = getSessionData();
+    
+    await this.httpClient.post('/api/sdk/acquisition', {
+      user: {
+        name: userId
+      },
+      session,
+      data: {
+        timestamp: new Date().toISOString(),
+        browserData,
+        utmParams,
+        ...acquisitionData
+      }
+    });
+  }
+
+  /**
    * Checks if MetaMask is installed and connected
    * @returns false if MetaMask is not connected, otherwise returns the wallet address
    */
