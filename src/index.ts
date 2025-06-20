@@ -48,6 +48,7 @@ const LuciaSDK: SDK = {
   trackConversion: async (...args) => ensureInitialized().trackConversion(...args),
   buttonClick: async (...args) => ensureInitialized().buttonClick(...args),
   sendWalletInfo: async (...args) => ensureInitialized().sendWalletInfo(...args),
+  trackUserAcquisition: async (...args) => ensureInitialized().trackUserAcquisition(...args),
   checkMetaMaskConnection: () => ensureInitialized().checkMetaMaskConnection(),
   VERSION: SDK_VERSION,
 };
