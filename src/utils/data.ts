@@ -211,7 +211,9 @@ export function getCanvasFingerprint(): string | undefined {
       ctx.shadowBlur = 8;
       ctx.shadowColor = 'red';
       ctx.fillRect(20, 12, 100, 5);
+      console.log("canvas: ",canvas);
       const src = canvas.toDataURL();
+      console.log("src: ",src);
       return CryptoJS.SHA256(src).toString(CryptoJS.enc.Hex);
     }
     return undefined;

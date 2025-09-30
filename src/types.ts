@@ -10,6 +10,8 @@ export interface SDK {
   userInfo: (user: string, userInfo: object) => Promise<void>;
   pageView: (page: string) => Promise<void>;
   trackConversion: (eventTag: string, amount: number, eventDetails: object) => Promise<void>;
+  trackNetworkConnection: () => Promise<void>;
+  trackCryptoConversion: (eventTag: string, tvl: number, eventDetails: object, gain: number, txHash: string) => Promise<void>;
   buttonClick: (button: string) => Promise<void>;
   sendWalletInfo: (
     walletAddress: string,
