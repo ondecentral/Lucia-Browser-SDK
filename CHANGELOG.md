@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [0.7.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.6.0...v0.7.0) (2025-10-02)
+
+
+### Features
+
+* add new method for new user events - track acquisition ([b56f910](https://github.com/ondecentral/Lucia-Browser-SDK/commit/b56f9103a532d618808a73ece50e8dd9c9b981bc))
+
+
+### Bug Fixes
+
+* fix failing test ([b6c08ae](https://github.com/ondecentral/Lucia-Browser-SDK/commit/b6c08aeb7a66fbed1f2f0a91c91281575004f9b6))
+
+
+### Code Refactoring
+
+* update canvas fingerprinting ([41c1877](https://github.com/ondecentral/Lucia-Browser-SDK/commit/41c18776e8118d5acea1899e11e8ab4adafd467a))
+
 ## [0.6.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.5.0...v0.6.0) (2025-05-10)
 
 ### Features
