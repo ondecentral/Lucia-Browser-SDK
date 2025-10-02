@@ -296,6 +296,13 @@ describe('Data Utilities', () => {
       const mockSHA256Result = { toString: jest.fn().mockReturnValue('testfingerprint') };
       jest.spyOn(CryptoJS, 'SHA256').mockReturnValue(mockSHA256Result as any);
 
+      // Create mock ImageData with realistic RGBA data
+      const mockImageData = {
+        data: new Uint8ClampedArray(200 * 120 * 4).fill(255), // width * height * 4 (RGBA)
+        width: 200,
+        height: 120,
+      };
+
       const mockContext = {
         fillStyle: '',
         beginPath: jest.fn(),
@@ -311,10 +318,14 @@ describe('Data Utilities', () => {
         shadowBlur: 0,
         shadowColor: '',
         fillRect: jest.fn(),
+        getImageData: jest.fn().mockReturnValue(mockImageData),
       };
 
       const mockCanvas = {
         id: '',
+        width: 0,
+        height: 0,
+        style: {},
         getContext: jest.fn().mockReturnValue(mockContext),
         toDataURL: jest.fn().mockReturnValue('data:image/png;base64,fakehash'),
       };
