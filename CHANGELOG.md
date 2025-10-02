@@ -3,6 +3,13 @@
 All notable changes to this project will be documented in this file.
 
 
+## [0.7.2](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.7.0...v0.7.2) (2025-10-02)
+
+
+### Bug Fixes
+
+* match version to npm for failing publish ([7ae7f59](https://github.com/ondecentral/Lucia-Browser-SDK/commit/7ae7f597bd7731f505421a1e658e6788dbfdf740))
+
 ## [0.7.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.6.0...v0.7.0) (2025-10-02)
 
 
