@@ -152,18 +152,18 @@ class LuciaSDK extends BaseClass {
     const browserData = getBrowserData();
     const utmParams = getUtmParams();
     const session = getSessionData();
-    
+
     await this.httpClient.post('/api/sdk/acquisition', {
       user: {
-        name: userId
+        name: userId,
       },
       session,
       data: {
         timestamp: new Date().toISOString(),
         browserData,
         utmParams,
-        ...acquisitionData
-      }
+        ...acquisitionData,
+      },
     });
   }
 
