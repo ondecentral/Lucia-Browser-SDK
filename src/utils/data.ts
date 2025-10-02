@@ -184,37 +184,52 @@ export function filterObject<T extends object>(obj: T): Partial<T> {
 export function getCanvasFingerprint(): string | undefined {
   try {
     const canvas = document.createElement('canvas');
-    canvas.id = 'canvasLucia';
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.fillStyle = 'rgb(255,0,255)';
-      ctx.beginPath();
-      ctx.rect(20, 20, 150, 100);
-      ctx.fill();
-      ctx.stroke();
-      ctx.closePath();
-      ctx.beginPath();
-      ctx.fillStyle = 'rgb(0,255,255)';
-      ctx.arc(50, 50, 50, 0, Math.PI * 2, true);
-      ctx.fill();
-      ctx.stroke();
-      ctx.closePath();
+    // Ask for a 2D context we'll read frequently (safe to ignore if unsupported)
+    const ctx = canvas.getContext('2d', { willReadFrequently: true } as any) as CanvasRenderingContext2D | null;
+    if (!ctx) return undefined;
 
-      const txt = 'abz190#$%^@£éú';
-      ctx.textBaseline = 'top';
-      ctx.font = '17px "Arial 17"';
-      ctx.textBaseline = 'alphabetic';
-      ctx.fillStyle = 'rgb(255,5,5)';
-      ctx.rotate(0.03);
-      ctx.fillText(txt, 4, 17);
-      ctx.fillStyle = 'rgb(155,255,5)';
-      ctx.shadowBlur = 8;
-      ctx.shadowColor = 'red';
-      ctx.fillRect(20, 12, 100, 5);
-      const src = canvas.toDataURL();
-      return CryptoJS.SHA256(src).toString(CryptoJS.enc.Hex);
-    }
-    return undefined;
+    // Fixed canvas size in CSS pixels (no DPR scaling)
+    const width = 200;
+    const height = 120;
+    canvas.width = width;
+    canvas.height = height;
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+
+    // 1) Opaque background to avoid alpha/premultiplication surprises
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+
+    // 2) Deterministic, integer-aligned, filled shapes (no strokes/shadows/text)
+    ctx.fillStyle = '#ff00ff'; // magenta
+    ctx.fillRect(10, 10, 100, 100); // fully covered interior pixels
+
+    ctx.fillStyle = '#00ffff'; // cyan
+    ctx.beginPath();
+    ctx.arc(150, 50, 40, 0, Math.PI * 2, true);
+    ctx.fill();
+
+    // 3) Read raw pixels and sample only interior points (far from edges)
+    const { data } = ctx.getImageData(0, 0, width, height);
+    const pts: Array<[number, number]> = [
+      [20, 20],
+      [60, 60],
+      [100, 100], // inside rectangle
+      [150, 50],
+      [150, 60],
+      [140, 50], // inside circle
+      [5, 5], // background
+    ];
+    const acc = pts
+      .map(([x, y]) => {
+        const i = (y * width + x) * 4;
+        return `${data[i]},${data[i + 1]},${data[i + 2]},${data[i + 3]};`;
+      })
+      .join('');
+
+    // 4) Hash the sampled RGBA bytes (engine-agnostic)
+    // (assumes CryptoJS is available in your bundle)
+    return CryptoJS.SHA256(acc).toString(CryptoJS.enc.Hex);
   } catch {
     return undefined;
   }
