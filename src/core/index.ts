@@ -1,6 +1,6 @@
 import BaseClass from '../base';
 import { getBrowserData, getUtmParams, getWalletData } from '../utils/data';
-import { getSessionData, getLidData, getUser, storeSessionID } from '../utils/session';
+import { getSessionData, getLidData, getUser, storeSessionID, updateSessionFromServer } from '../utils/session';
 
 class LuciaSDK extends BaseClass {
   authenticate() {
@@ -14,7 +14,7 @@ class LuciaSDK extends BaseClass {
     // Ensure a session exists before making the init request
     let session = getSessionData();
     if (!session) {
-      session = await storeSessionID();
+      session = storeSessionID();
     }
 
     const data = getBrowserData();
@@ -22,7 +22,13 @@ class LuciaSDK extends BaseClass {
     const redirectHash = url.searchParams.get('lucia');
     const walletData = await getWalletData();
 
-    const result = await this.httpClient.post<{ lid: string }>(
+    // Prepare session payload - only include hash if it exists (from backend)
+    const sessionPayload: { id: string; hash?: string } = { id: session.id };
+    if (session.hash) {
+      sessionPayload.hash = session.hash;
+    }
+
+    const result = await this.httpClient.post<{ lid: string; session: { hash: string; id: string } }>(
       '/api/sdk/init',
       {
         user: {
@@ -30,14 +36,20 @@ class LuciaSDK extends BaseClass {
         },
         data,
         walletData,
-        session,
+        session: sessionPayload,
         redirectHash,
         utm: getUtmParams(),
       },
       false,
     );
     if (result) {
+      // Store the lid from server response
       localStorage.setItem('lid', result.lid);
+
+      // Update session storage with server-provided session data
+      if (result.session) {
+        updateSessionFromServer(result.session);
+      }
     }
   }
 

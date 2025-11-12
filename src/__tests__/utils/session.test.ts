@@ -7,9 +7,9 @@ import {
   getSessionData,
   getLidData,
   storeSessionID,
+  updateSessionFromServer,
   generateSessionID,
   getUser,
-  hash,
 } from '../../utils/session';
 
 // Mock the uuid module
@@ -108,100 +108,6 @@ describe('Session Manager', () => {
     global.TextEncoder = originalTextEncoder;
   });
 
-  describe('hash', () => {
-    let subtleCryptoMock: any;
-    let originalSubtleCrypto: any;
-
-    beforeEach(() => {
-      // Save original subtle crypto
-      originalSubtleCrypto = crypto.subtle;
-
-      // Create a predictable mock buffer for the digest result
-      const buffer = new ArrayBuffer(32);
-      const view = new Uint8Array(buffer);
-      // Fill with predictable values
-      for (let i = 0; i < 32; i += 1) {
-        view[i] = i;
-      }
-
-      // Create a mock for crypto.subtle
-      subtleCryptoMock = {
-        digest: jest.fn().mockResolvedValue(buffer),
-      };
-
-      // Replace crypto.subtle with our mock
-      Object.defineProperty(crypto, 'subtle', {
-        value: subtleCryptoMock,
-        configurable: true,
-      });
-    });
-
-    afterEach(() => {
-      // Restore original crypto.subtle
-      Object.defineProperty(crypto, 'subtle', {
-        value: originalSubtleCrypto,
-        configurable: true,
-      });
-    });
-
-    it('should return a hexadecimal string hash', async () => {
-      const result = await hash('test-string');
-
-      // Verify TextEncoder was used
-      expect(global.TextEncoder).toHaveBeenCalled();
-      expect(mockTextEncoderInstance.encode).toHaveBeenCalledWith('test-string');
-
-      // Verify crypto.subtle.digest was called with the encoded data
-      expect(subtleCryptoMock.digest).toHaveBeenCalledWith('SHA-256', expect.any(Uint8Array));
-
-      expect(typeof result).toBe('string');
-      expect(result.length).toBe(64); // SHA-256 hash is 64 hex characters
-
-      // The hash should be consistent with our mock implementation
-      expect(result).toBe('000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f');
-    });
-
-    it('should handle different input strings', async () => {
-      const input1 = 'test-string-1';
-      const input2 = 'test-string-2';
-
-      await hash(input1);
-      await hash(input2);
-
-      // Verify TextEncoder.encode was called for each input
-      expect(mockTextEncoderInstance.encode).toHaveBeenCalledWith(input1);
-      expect(mockTextEncoderInstance.encode).toHaveBeenCalledWith(input2);
-
-      // Verify crypto.subtle.digest was called twice
-      expect(subtleCryptoMock.digest).toHaveBeenCalledTimes(2);
-    });
-
-    it('should handle errors gracefully', async () => {
-      // Setup TextEncoder to throw an error
-      mockTextEncoderInstance.encode.mockImplementationOnce(() => {
-        throw new Error('Mock encoding error');
-      });
-
-      // Test that hash properly rejects when TextEncoder throws
-      await expect(hash('test-string')).rejects.toThrow('Mock encoding error');
-
-      // Verify logger.log was called with error
-      expect(logMock).toHaveBeenCalledWith('error', 'Mock encoding error');
-    });
-
-    it('should handle crypto.subtle.digest rejections', async () => {
-      // Setup crypto.subtle.digest to reject
-      const digestError = new Error('Digest error');
-      subtleCryptoMock.digest.mockRejectedValueOnce(digestError);
-
-      // Test that hash properly rejects when digest rejects
-      await expect(hash('test-string')).rejects.toThrow('Digest error');
-
-      // Verify that the error was logged
-      expect(logMock).toHaveBeenCalledWith('error', 'Digest error');
-    });
-  });
-
   describe('isSessionValid', () => {
     it('should return false when no session data exists', () => {
       expect(isSessionValid()).toBe(false);
@@ -210,8 +116,18 @@ describe('Session Manager', () => {
     it('should return true when session is valid', () => {
       const validSession = {
         id: 'client123',
-        hash: 'session-hash-123',
-        serverSessionId: 'server456',
+        timestamp: mockCurrentTimestamp,
+      };
+
+      mockSessionStorage['luci_session'] = JSON.stringify(validSession);
+
+      expect(isSessionValid()).toBe(true);
+    });
+
+    it('should return true when session has hash from backend', () => {
+      const validSession = {
+        id: 'client123',
+        hash: 'backend-hash-123',
         timestamp: mockCurrentTimestamp,
       };
 
@@ -226,11 +142,21 @@ describe('Session Manager', () => {
       expect(getSessionData()).toBeNull();
     });
 
-    it('should return session data when it exists', () => {
+    it('should return session data when it exists without hash', () => {
       const sessionData = {
         id: 'client123',
-        hash: 'session-hash-123',
-        serverSessionId: 'server456',
+        timestamp: mockCurrentTimestamp,
+      };
+
+      mockSessionStorage['luci_session'] = JSON.stringify(sessionData);
+
+      expect(getSessionData()).toEqual(sessionData);
+    });
+
+    it('should return session data when it exists with hash from backend', () => {
+      const sessionData = {
+        id: 'client123',
+        hash: 'backend-hash-123',
         timestamp: mockCurrentTimestamp,
       };
 
@@ -264,28 +190,11 @@ describe('Session Manager', () => {
   });
 
   describe('storeSessionID', () => {
-    beforeEach(() => {
-      // Mock the hash function to return a predictable value
-      jest.spyOn(global.crypto.subtle, 'digest').mockImplementation(() => {
-        const buffer = new ArrayBuffer(32);
-        const view = new Uint8Array(buffer);
-        // Fill with predictable values
-        for (let i = 0; i < 32; i += 1) {
-          view[i] = i;
-        }
-        return Promise.resolve(buffer);
-      });
-    });
-
-    it('should store a new session with generated client ID', async () => {
-      const result = await storeSessionID();
-
-      const expectedHash = '000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f';
+    it('should store a new session with generated client ID (no hash)', () => {
+      const result = storeSessionID();
 
       expect(result).toEqual({
         id: 'mock-uuid',
-        hash: expectedHash,
-        serverSessionId: null,
         timestamp: mockCurrentTimestamp,
       });
 
@@ -293,32 +202,71 @@ describe('Session Manager', () => {
       expect(mockSessionStorage['luci_session']).toBeTruthy();
       expect(JSON.parse(mockSessionStorage['luci_session'])).toEqual({
         id: 'mock-uuid',
-        hash: expectedHash,
-        serverSessionId: null,
         timestamp: mockCurrentTimestamp,
       });
     });
 
-    it('should store a new session with provided server ID', async () => {
-      const serverSessionId = 'server-provided-id';
-      const result = await storeSessionID(serverSessionId);
+    it('should not generate a hash on the client side', () => {
+      const result = storeSessionID();
 
-      const expectedHash = '000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f';
+      // Ensure no hash property exists
+      expect('hash' in result).toBe(false);
+
+      const storedSession = JSON.parse(mockSessionStorage['luci_session']);
+      expect('hash' in storedSession).toBe(false);
+    });
+  });
+
+  describe('updateSessionFromServer', () => {
+    it('should update session storage with server-provided data', () => {
+      const serverSession = {
+        hash: '99442d0d97d565dde60f2d3b196309622b55a3c5220bd89ed37eb1ee6bdeca4d',
+        id: '7CC64140-7F41-4F66-B31C-9219FCBE20C1',
+      };
+
+      const result = updateSessionFromServer(serverSession);
 
       expect(result).toEqual({
-        id: 'mock-uuid',
-        hash: expectedHash,
-        serverSessionId,
+        id: serverSession.id,
+        hash: serverSession.hash,
         timestamp: mockCurrentTimestamp,
       });
 
       // Verify sessionStorage was updated
-      expect(JSON.parse(mockSessionStorage['luci_session'])).toEqual({
-        id: 'mock-uuid',
-        hash: expectedHash,
-        serverSessionId,
+      expect(mockSessionStorage['luci_session']).toBeTruthy();
+      const storedSession = JSON.parse(mockSessionStorage['luci_session']);
+      expect(storedSession).toEqual({
+        id: serverSession.id,
+        hash: serverSession.hash,
         timestamp: mockCurrentTimestamp,
       });
+    });
+
+    it('should overwrite existing session data', () => {
+      // Set initial session
+      const initialSession = {
+        id: 'old-client-id',
+        hash: 'old-hash',
+        timestamp: mockCurrentTimestamp - 1000,
+      };
+      mockSessionStorage['luci_session'] = JSON.stringify(initialSession);
+
+      // Update with server session
+      const serverSession = {
+        hash: 'new-server-hash',
+        id: 'new-server-id',
+      };
+
+      const result = updateSessionFromServer(serverSession);
+
+      expect(result.id).toBe(serverSession.id);
+      expect(result.hash).toBe(serverSession.hash);
+      expect(result.timestamp).toBe(mockCurrentTimestamp);
+
+      // Verify old session was replaced
+      const storedSession = JSON.parse(mockSessionStorage['luci_session']);
+      expect(storedSession.id).not.toBe(initialSession.id);
+      expect(storedSession.hash).not.toBe(initialSession.hash);
     });
   });
 

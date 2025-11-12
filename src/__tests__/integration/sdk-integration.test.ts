@@ -9,11 +9,9 @@ let fetchCalls: any[];
 let localStorageMock: { [key: string]: string };
 let sessionStorageMock: { [key: string]: string };
 
-// Mock session data with the new structure
+// Mock session data with the new structure (no hash on client side)
 const mockSession = {
   id: 'mock-session-id',
-  hash: 'mock-session-hash',
-  serverSessionId: null,
   timestamp: Date.now(),
 };
 
@@ -73,7 +71,7 @@ beforeEach(() => {
 
   // Mock session utils - getSessionData and storeSessionID
   jest.spyOn(sessionUtils, 'getSessionData').mockReturnValue(mockSession);
-  jest.spyOn(sessionUtils, 'storeSessionID').mockResolvedValue(mockSession);
+  jest.spyOn(sessionUtils, 'storeSessionID').mockReturnValue(mockSession);
 });
 
 afterEach(() => {
@@ -117,15 +115,15 @@ describe('LuciaSDK Integration User Flow', () => {
     expect(initPayload).toHaveProperty('user');
     expect(initPayload).toHaveProperty('session');
     expect(initPayload.session).toHaveProperty('id');
-    expect(initPayload.session).toHaveProperty('hash');
-    expect(initPayload.session).toHaveProperty('serverSessionId');
-    expect(initPayload.session).toHaveProperty('timestamp');
+    // Hash is optional - only present if returned from backend
+    // No serverSessionId - removed from structure
     expect(initPayload).toHaveProperty('utm');
 
     // 6. Verify the session structure in the page view payload
     const pageViewPayload = JSON.parse(fetchCalls[1].options.body);
     expect(pageViewPayload.session).toHaveProperty('id');
-    expect(pageViewPayload.session).toHaveProperty('hash');
+    expect(pageViewPayload.session).toHaveProperty('timestamp');
+    // Hash is optional - only present if returned from backend
   });
 
   it('should create a new session if none exists during init', async () => {
@@ -146,9 +144,8 @@ describe('LuciaSDK Integration User Flow', () => {
 
     const initPayload = JSON.parse(initCall.options.body);
     expect(initPayload.session).toHaveProperty('id');
-    expect(initPayload.session).toHaveProperty('hash');
-    expect(initPayload.session).toHaveProperty('serverSessionId');
-    expect(initPayload.session).toHaveProperty('timestamp');
+    // Hash is optional - only present if returned from backend previously
+    // No serverSessionId - removed from structure
   });
 });
 
@@ -185,9 +182,8 @@ describe('LuciaSDK UTM/Analytics Integration', () => {
 
     // Verify session structure
     expect(initPayload.session).toHaveProperty('id');
-    expect(initPayload.session).toHaveProperty('hash');
-    expect(initPayload.session).toHaveProperty('serverSessionId');
-    expect(initPayload.session).toHaveProperty('timestamp');
+    // Hash is optional - only present if returned from backend
+    // No serverSessionId - removed from structure
 
     // Find the page view call
     const pageViewCall = fetchCalls.find((call) => call.url.includes('/api/sdk/page'));
@@ -201,9 +197,9 @@ describe('LuciaSDK UTM/Analytics Integration', () => {
 
     // Verify session structure in page view
     expect(pagePayload.session).toHaveProperty('id');
-    expect(pagePayload.session).toHaveProperty('hash');
-    expect(pagePayload.session).toHaveProperty('serverSessionId');
     expect(pagePayload.session).toHaveProperty('timestamp');
+    // Hash is optional - only present if returned from backend
+    // No serverSessionId - removed from structure
   });
 });
 
@@ -242,9 +238,9 @@ describe('LuciaSDK Wallet Connection Integration', () => {
 
     // Verify session structure
     expect(walletPayload.session).toHaveProperty('id');
-    expect(walletPayload.session).toHaveProperty('hash');
-    expect(walletPayload.session).toHaveProperty('serverSessionId');
     expect(walletPayload.session).toHaveProperty('timestamp');
+    // Hash is optional - only present if returned from backend
+    // No serverSessionId - removed from structure
   });
 
   it('should connect Solana wallet (Phantom) and send wallet info', async () => {
@@ -274,8 +270,8 @@ describe('LuciaSDK Wallet Connection Integration', () => {
 
     // Verify session structure
     expect(walletPayload.session).toHaveProperty('id');
-    expect(walletPayload.session).toHaveProperty('hash');
-    expect(walletPayload.session).toHaveProperty('serverSessionId');
     expect(walletPayload.session).toHaveProperty('timestamp');
+    // Hash is optional - only present if returned from backend
+    // No serverSessionId - removed from structure
   });
 });

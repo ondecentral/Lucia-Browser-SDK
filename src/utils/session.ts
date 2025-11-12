@@ -7,31 +7,12 @@ const SESSION_STORAGE_KEY = 'luci_session';
 const logger = new Logger(Store.store);
 
 /**
- * Creates a cryptographic hash of a string using SHA-256
- * @param string The string to hash
- * @returns Promise that resolves to the hash
- */
-export async function hash(string: string): Promise<string> {
-  try {
-    const utf8 = new TextEncoder().encode(string);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', utf8);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map((byte) => byte.toString(16).padStart(2, '0')).join('');
-    return hashHex;
-  } catch (e) {
-    logger.log('error', (e as Error).message);
-    throw e;
-  }
-}
-
-/**
  * Retrieves session data from sessionStorage
  * @returns Session data object or null if no session exists
  */
 export function getSessionData(): {
   id: string;
-  hash: string;
-  serverSessionId: string | null;
+  hash?: string;
   timestamp: number;
 } | null {
   try {
@@ -44,24 +25,38 @@ export function getSessionData(): {
 }
 
 /**
- * Stores a new session ID in sessionStorage
- * @param serverSessionId Optional server session ID
- * @returns Promise that resolves to the newly created session object
+ * Stores a new client session ID in sessionStorage (before init call)
+ * No hash is generated - hash comes from backend after init
+ * @returns The newly created session object
  */
-export async function storeSessionID(serverSessionId: string | null = null): Promise<{
+export function storeSessionID(): {
   id: string;
-  hash: string;
-  serverSessionId: string | null;
   timestamp: number;
-}> {
+} {
   const clientSessionId = generateSessionID();
-  // TODO: Consider removing the hash function
-  const sessionHash = await hash(clientSessionId);
 
   const sessionData = {
     id: clientSessionId,
-    hash: sessionHash,
-    serverSessionId,
+    timestamp: Date.now(),
+  };
+
+  sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(sessionData));
+  return sessionData;
+}
+
+/**
+ * Updates session storage with server-provided session data (after init call)
+ * @param serverSession Server session object containing hash and id
+ * @returns The updated session object
+ */
+export function updateSessionFromServer(serverSession: { hash: string; id: string }): {
+  id: string;
+  hash: string;
+  timestamp: number;
+} {
+  const sessionData = {
+    id: serverSession.id,
+    hash: serverSession.hash,
     timestamp: Date.now(),
   };
 
