@@ -13,8 +13,7 @@
     "release": true,
     "releaseName": "Release ${version}",
     "autoGenerate": true,
-    "draft": false,
-    "tokenRef": "GITHUB_TOKEN"
+    "draft": false
   },
   "plugins": {
     "@release-it/conventional-changelog": {
