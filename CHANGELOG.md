@@ -3,6 +3,19 @@
 All notable changes to this project will be documented in this file.
 
 
+## [0.8.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.7.2...v0.8.0) (2025-11-13)
+
+
+### Features
+
+* receive session hash from backend ([8fdd41c](https://github.com/ondecentral/Lucia-Browser-SDK/commit/8fdd41cc37f032bacd7c839d9c31b9e81896e023))
+
+
+### Miscellaneous
+
+* update dependencies and ignore package-lock.json ([bc679bc](https://github.com/ondecentral/Lucia-Browser-SDK/commit/bc679bc69d14db9c49a03a4e497c59bbf46d5a37))
+* update release-it ([06561d9](https://github.com/ondecentral/Lucia-Browser-SDK/commit/06561d934379d2ec02a2267a69611eb9da2640c2))
+
 ## [0.7.2](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.7.0...v0.7.2) (2025-10-02)
 
 
