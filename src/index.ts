@@ -30,8 +30,16 @@ const ensureInitialized = () => {
 
 // Helper for tests to reset instance
 export const __resetInstance = () => {
+  // Clean up existing instance before resetting
+  if (instance) {
+    instance.destroy();
+  }
   instance = null;
   if (typeof window !== 'undefined') {
+    const windowInstance = (window as any).__luciaInstance;
+    if (windowInstance && windowInstance.destroy) {
+      windowInstance.destroy();
+    }
     delete (window as any).__luciaInstance;
   }
 };

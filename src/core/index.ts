@@ -257,6 +257,16 @@ class LuciaSDK extends BaseClass {
   checkMetaMaskConnection() {
     return window.ethereum && window.ethereum.isConnected() && window.ethereum.selectedAddress;
   }
+
+  /**
+   * Clean up SDK resources (mainly for testing)
+   */
+  destroy() {
+    if (this.clickTracker) {
+      this.clickTracker.destroy();
+      this.clickTracker = null;
+    }
+  }
 }
 
 export default LuciaSDK;

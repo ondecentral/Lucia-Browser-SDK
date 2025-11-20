@@ -151,12 +151,35 @@ export class ClickTracker {
   private findTrackableElement(element: Element): Element | null {
     const selectors = this.config.selectors || DEFAULT_SELECTORS;
 
-    // Add [data-lucia-track] to ensure explicit tracking works on any element type
-    const allSelectors = [...selectors, '[data-lucia-track]:not([data-lucia-track="false"])'];
-    const combinedSelector = allSelectors.join(', ');
-
     try {
-      // Use native closest() for optimal performance
+      // First, check if element or ancestor has explicit data-lucia-track attribute
+      const explicitElement = element.closest('[data-lucia-track]:not([data-lucia-track="false"])');
+      if (explicitElement && explicitElement !== document.body && document.body.contains(explicitElement)) {
+        // If explicit tracking is found, check if it matches configured selectors (if custom selectors provided)
+        // Only apply selector restriction if custom selectors were explicitly provided
+        if (this.config.selectors && this.config.selectors !== DEFAULT_SELECTORS) {
+          // Custom selectors provided - element must match them
+          const matchesCustomSelector = selectors.some((selector) => {
+            try {
+              return explicitElement.matches(selector);
+            } catch (e) {
+              return false;
+            }
+          });
+
+          if (matchesCustomSelector) {
+            return explicitElement;
+          }
+          // Doesn't match custom selectors, so don't track
+          return null;
+        }
+
+        // No custom selectors (using defaults), so track explicit elements
+        return explicitElement;
+      }
+
+      // No explicit tracking, check if element matches configured selectors
+      const combinedSelector = selectors.join(', ');
       const trackableElement = element.closest(combinedSelector);
 
       // Ensure we don't traverse beyond document.body
