@@ -28,6 +28,14 @@ const ensureInitialized = () => {
   return instance;
 };
 
+// Helper for tests to reset instance
+export const __resetInstance = () => {
+  instance = null;
+  if (typeof window !== 'undefined') {
+    delete (window as any).__luciaInstance;
+  }
+};
+
 const LuciaSDK: SDK = {
   init: async (config: Config) => {
     if (typeof window === 'undefined') {
@@ -85,11 +93,30 @@ if (typeof window !== 'undefined') {
       // Auto-init if data-api-key is present
       if (apiKey) {
         const debugURL = scriptTag.getAttribute('data-debug-url');
+        const autoTrackClicks = scriptTag.getAttribute('data-auto-track-clicks');
+        const trackSelectors = scriptTag.getAttribute('data-track-selectors');
 
         const config: Config = {
           apiKey,
           ...(debugURL && { debugURL }),
         };
+
+        // Parse auto-track-clicks configuration
+        if (autoTrackClicks === 'true') {
+          // Simple boolean enable
+          if (trackSelectors) {
+            // Custom selectors provided
+            config.autoTrackClicks = {
+              enabled: true,
+              selectors: trackSelectors.split(',').map((s) => s.trim()),
+            };
+          } else {
+            // Use defaults
+            config.autoTrackClicks = true;
+          }
+        } else if (autoTrackClicks === 'false') {
+          config.autoTrackClicks = false;
+        }
 
         // Initialize the SDK
         try {
