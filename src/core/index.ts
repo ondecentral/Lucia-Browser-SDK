@@ -1,8 +1,12 @@
 import BaseClass from '../base';
+import { ClickEventMetadata } from '../types';
+import { ClickTracker, ClickEventData, AutoTrackClicksConfig } from '../utils/click-tracker';
 import { getBrowserData, getUtmParams, getWalletData } from '../utils/data';
 import { getSessionData, getLidData, getUser, storeSessionID, updateSessionFromServer } from '../utils/session';
 
 class LuciaSDK extends BaseClass {
+  private clickTracker: ClickTracker | null = null;
+
   authenticate() {
     this.httpClient.post('/api/key/auth', {});
   }
@@ -51,6 +55,60 @@ class LuciaSDK extends BaseClass {
         updateSessionFromServer(result.session);
       }
     }
+
+    // Initialize auto-tracking if configured
+    this.initAutoTracking();
+  }
+
+  /**
+   * Initialize automated click tracking if enabled
+   */
+  private initAutoTracking(): void {
+    // Destroy existing tracker if any
+    if (this.clickTracker) {
+      this.clickTracker.destroy();
+      this.clickTracker = null;
+    }
+
+    const autoTrackConfig = this.store.config?.autoTrackClicks;
+
+    if (!autoTrackConfig) {
+      return;
+    }
+
+    // Normalize config to object format
+    let config: AutoTrackClicksConfig;
+    if (typeof autoTrackConfig === 'boolean') {
+      config = { enabled: autoTrackConfig };
+    } else {
+      config = autoTrackConfig;
+    }
+
+    // Only initialize if enabled
+    if (config.enabled !== false) {
+      this.clickTracker = new ClickTracker(
+        this.store.config!,
+        config,
+        this.handleAutoTrackedClick.bind(this),
+        this.logger,
+      );
+
+      this.logger.log('log', 'Auto-tracking initialized', config);
+    }
+  }
+
+  /**
+   * Handle automatically tracked click events
+   */
+  private handleAutoTrackedClick(data: ClickEventData): void {
+    const metadata: ClickEventMetadata = {
+      elementType: data.elementType,
+      text: data.text,
+      href: data.href,
+      meta: data.meta,
+    };
+
+    this.buttonClick(data.button, metadata);
   }
 
   /**
@@ -118,20 +176,32 @@ class LuciaSDK extends BaseClass {
 
   /**
    * Sends button click information to the server
-   * @param button The button that was clicked
+   * @param button The button identifier that was clicked
+   * @param metadata Optional metadata about the click event (elementType, text, href, meta)
    */
-  async buttonClick(button: string) {
+  async buttonClick(button: string, metadata?: ClickEventMetadata) {
     const lid = getLidData();
     const session = getSessionData();
 
-    await this.httpClient.post('/api/sdk/click', {
+    const payload: any = {
       button,
       user: {
         name: getUser(),
       },
       lid,
       session,
-    });
+    };
+
+    // Add metadata if provided (from auto-tracking or manual calls)
+    if (metadata) {
+      if (metadata.elementType) payload.elementType = metadata.elementType;
+      if (metadata.text) payload.text = metadata.text;
+      if (metadata.href !== undefined) payload.href = metadata.href;
+      if (metadata.meta) payload.meta = metadata.meta;
+      payload.timestamp = Date.now();
+    }
+
+    await this.httpClient.post('/api/sdk/click', payload);
   }
 
   /**
@@ -186,6 +256,16 @@ class LuciaSDK extends BaseClass {
   // eslint-disable-next-line class-methods-use-this
   checkMetaMaskConnection() {
     return window.ethereum && window.ethereum.isConnected() && window.ethereum.selectedAddress;
+  }
+
+  /**
+   * Clean up SDK resources (mainly for testing)
+   */
+  destroy() {
+    if (this.clickTracker) {
+      this.clickTracker.destroy();
+      this.clickTracker = null;
+    }
   }
 }
 

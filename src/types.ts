@@ -1,8 +1,28 @@
+/**
+ * Configuration for automated click tracking
+ */
+export interface AutoTrackClicksConfig {
+  enabled?: boolean;
+  selectors?: string[];
+  ignore?: string[];
+}
+
 export interface Config {
   apiKey: string;
   debug?: boolean;
   testENV?: boolean;
   debugURL?: string;
+  autoTrackClicks?: boolean | AutoTrackClicksConfig;
+}
+
+/**
+ * Click event data payload
+ */
+export interface ClickEventMetadata {
+  elementType?: string;
+  text?: string;
+  href?: string | null;
+  meta?: Record<string, string>;
 }
 
 export interface SDK {
@@ -10,7 +30,7 @@ export interface SDK {
   userInfo: (user: string, userInfo: object) => Promise<void>;
   pageView: (page: string) => Promise<void>;
   trackConversion: (eventTag: string, amount: number, eventDetails: object) => Promise<void>;
-  buttonClick: (button: string) => Promise<void>;
+  buttonClick: (button: string, metadata?: ClickEventMetadata) => Promise<void>;
   sendWalletInfo: (
     walletAddress: string,
     chainId: number | string,
