@@ -146,19 +146,39 @@ export class ClickTracker {
 
   /**
    * Find the trackable element starting from the clicked element
-   * Walks up the DOM tree to find an element matching selectors
+   * Uses native closest() for optimized DOM traversal
    */
   private findTrackableElement(element: Element): Element | null {
-    let current: Element | null = element;
+    const selectors = this.config.selectors || DEFAULT_SELECTORS;
 
-    while (current && current !== document.body) {
-      if (this.isTrackable(current)) {
-        return current;
+    // Add [data-lucia-track] to ensure explicit tracking works on any element type
+    const allSelectors = [...selectors, '[data-lucia-track]:not([data-lucia-track="false"])'];
+    const combinedSelector = allSelectors.join(', ');
+
+    try {
+      // Use native closest() for optimal performance
+      const trackableElement = element.closest(combinedSelector);
+
+      // Ensure we don't traverse beyond document.body
+      if (trackableElement && trackableElement !== document.body && document.body.contains(trackableElement)) {
+        return trackableElement;
       }
-      current = current.parentElement;
-    }
 
-    return null;
+      return null;
+    } catch (e) {
+      // Fallback to iterative approach if selector is invalid
+      this.logger.log('warn', 'ClickTracker: Invalid combined selector, using fallback', e);
+
+      let current: Element | null = element;
+      while (current && current !== document.body) {
+        if (this.isTrackable(current)) {
+          return current;
+        }
+        current = current.parentElement;
+      }
+
+      return null;
+    }
   }
 
   /**
