@@ -36,6 +36,8 @@ Optional configuration attributes:
 
 - `data-api-key` (required) - Your Lucia API key
 - `data-debug-url` (optional) - Custom debug endpoint URL
+- `data-auto-track-clicks` (optional) - Enable automatic click tracking (`"true"` or `"false"`)
+- `data-track-selectors` (optional) - Custom CSS selectors for click tracking (comma-separated)
 
 **Option 2: Manual initialization**
 
@@ -71,6 +73,7 @@ import LuciaSDK from 'lucia-sdk';
 
 await LuciaSDK.init({
   apiKey: 'your-api-key-here',
+  autoTrackClicks: true, // optional: enable automatic click tracking
 });
 ```
 
@@ -101,6 +104,70 @@ export default function Page() {
 }
 ```
 
+### Automated Click Tracking
+
+Lucia SDK provides zero-config automated click tracking. When enabled, it automatically tracks clicks on buttons, links, and other interactive elements.
+
+#### Enable via CDN
+
+```html
+<script
+  src="https://cdn.luciaprotocol.com/lucia-sdk-latest.min.js"
+  data-api-key="your-api-key-here"
+  data-auto-track-clicks="true"
+></script>
+```
+
+#### Enable Programmatically
+
+```javascript
+await LuciaSDK.init({
+  apiKey: 'your-api-key-here',
+  autoTrackClicks: true, // Enable with defaults
+});
+
+// Or with custom configuration
+await LuciaSDK.init({
+  apiKey: 'your-api-key-here',
+  autoTrackClicks: {
+    enabled: true,
+    selectors: ['button', '.cta', '[data-track]'], // Custom selectors
+    ignore: ['.no-track'], // Elements to ignore
+  },
+});
+```
+
+#### Element-Level Control
+
+Add tracking attributes to specific elements:
+
+```html
+<!-- Explicit tracking with custom identifier -->
+<button data-lucia-track="signup-cta">Sign Up</button>
+
+<!-- Add metadata to tracked clicks -->
+<button data-lucia-track="purchase-btn" data-lucia-meta-variant="primary" data-lucia-meta-location="hero">
+  Buy Now
+</button>
+
+<!-- Ignore specific elements -->
+<button data-lucia-ignore>Don't Track This</button>
+```
+
+**Default Tracked Elements:**
+
+- `<button>` elements
+- `<a>` elements with `href` attribute
+- Elements with `role="button"`
+- Any element with `data-lucia-track` attribute
+
+**Privacy Features:**
+
+- Automatically ignores password inputs
+- Skips credit card fields
+- Filters sensitive data from text content
+- Respects `data-lucia-ignore` attribute
+
 ### Track events
 
 Page views, conversions, and user information can be tracked using the following methods:
@@ -126,7 +193,12 @@ LuciaSDK.trackConversion(
   },
 );
 
-LuciaSDK.buttonClick('cta-button');
+// Manual click tracking (optional with auto-tracking enabled)
+LuciaSDK.buttonClick('cta-button', {
+  elementType: 'button',
+  text: 'Sign Up Now',
+  meta: { variant: 'primary', location: 'hero' },
+});
 
 LuciaSDK.sendWalletInfo('0x1234567890', 59141);
 ```
