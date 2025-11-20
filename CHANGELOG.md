@@ -3,6 +3,25 @@
 All notable changes to this project will be documented in this file.
 
 
+## [0.9.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.8.0...v0.9.0) (2025-11-20)
+
+
+### Features
+
+* add auto-init with api key provided in script tag ([fa358a7](https://github.com/ondecentral/Lucia-Browser-SDK/commit/fa358a77151203d90252bbe00f44a407b97b129d))
+* add automated click tracking ([af95407](https://github.com/ondecentral/Lucia-Browser-SDK/commit/af95407d021a4dc464e41fd255a20782d9f235b3))
+* use closest to find trackable elements ([aae6ff6](https://github.com/ondecentral/Lucia-Browser-SDK/commit/aae6ff61fd42f447867130921370d22cc10e7761))
+
+
+### Documentation
+
+* update readme ([160130c](https://github.com/ondecentral/Lucia-Browser-SDK/commit/160130c9f82fc39b520b89360523b25bfba65ada))
+
+
+### Code Refactoring
+
+* optimize click tracking with closest() and add cleanup ([78cf55f](https://github.com/ondecentral/Lucia-Browser-SDK/commit/78cf55f09ff8fbb2ccb69ea50887ec11366e98d1))
+
 ## [0.8.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.7.2...v0.8.0) (2025-11-13)
 
 
