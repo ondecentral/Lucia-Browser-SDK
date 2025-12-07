@@ -85,7 +85,13 @@ export function generateSessionID(): string {
  * @returns LuciaID string or null if not found
  */
 export function getLidData(): string | null {
-  return localStorage.getItem('lid');
+  const lid = localStorage.getItem('lid');
+  // Handle edge case where previous SDK version stored "undefined" as a string
+  if (lid === 'undefined' || lid === 'null') {
+    localStorage.removeItem('lid');
+    return null;
+  }
+  return lid;
 }
 
 /**
@@ -93,5 +99,11 @@ export function getLidData(): string | null {
  * @returns User ID or null if not found
  */
 export function getUser(): string | null {
-  return localStorage.getItem('luc_uid');
+  const uid = localStorage.getItem('luc_uid');
+  // Handle edge case where previous SDK version stored "undefined" as a string
+  if (uid === 'undefined' || uid === 'null') {
+    localStorage.removeItem('luc_uid');
+    return null;
+  }
+  return uid;
 }
