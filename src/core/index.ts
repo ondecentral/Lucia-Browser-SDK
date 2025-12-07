@@ -47,8 +47,11 @@ class LuciaSDK extends BaseClass {
       false,
     );
     if (result) {
-      // Store the lid from server response
-      localStorage.setItem('lid', result.lid);
+      // Store the lid from server response - only if it's a valid string
+      // Prevents storing "undefined" as a string when result.lid is undefined
+      if (result.lid) {
+        localStorage.setItem('lid', result.lid);
+      }
 
       // Update session storage with server-provided session data
       if (result.session) {
@@ -124,14 +127,20 @@ class LuciaSDK extends BaseClass {
       localStorage.setItem('luc_uid', userId);
     }
 
-    await this.httpClient.post('/api/sdk/user', {
+    const payload: any = {
       user: {
         name: userId,
         userInfo,
       },
-      lid,
       session,
-    });
+    };
+
+    // Only include lid if it has a value
+    if (lid) {
+      payload.lid = lid;
+    }
+
+    await this.httpClient.post('/api/sdk/user', payload);
   }
 
   /**
@@ -142,14 +151,20 @@ class LuciaSDK extends BaseClass {
     const lid = getLidData();
     const session = getSessionData();
 
-    await this.httpClient.post('/api/sdk/page', {
+    const payload: any = {
       page,
       user: {
         name: getUser(),
       },
-      lid,
       session,
-    });
+    };
+
+    // Only include lid if it has a value
+    if (lid) {
+      payload.lid = lid;
+    }
+
+    await this.httpClient.post('/api/sdk/page', payload);
   }
 
   /**
@@ -162,16 +177,22 @@ class LuciaSDK extends BaseClass {
     const lid = getLidData();
     const session = getSessionData();
 
-    await this.httpClient.post('/api/sdk/conversion', {
+    const payload: any = {
       tag: eventTag,
       amount,
       event: eventDetails,
       user: {
         name: getUser(),
       },
-      lid,
       session,
-    });
+    };
+
+    // Only include lid if it has a value
+    if (lid) {
+      payload.lid = lid;
+    }
+
+    await this.httpClient.post('/api/sdk/conversion', payload);
   }
 
   /**
@@ -188,9 +209,13 @@ class LuciaSDK extends BaseClass {
       user: {
         name: getUser(),
       },
-      lid,
       session,
     };
+
+    // Only include lid if it has a value
+    if (lid) {
+      payload.lid = lid;
+    }
 
     // Add metadata if provided (from auto-tracking or manual calls)
     if (metadata) {
@@ -213,16 +238,22 @@ class LuciaSDK extends BaseClass {
     const lid = getLidData();
     const session = getSessionData();
 
-    await this.httpClient.post('/api/sdk/wallet', {
+    const payload: any = {
       walletAddress,
       chainId,
       walletName,
       user: {
         name: getUser(),
       },
-      lid,
       session,
-    });
+    };
+
+    // Only include lid if it has a value
+    if (lid) {
+      payload.lid = lid;
+    }
+
+    await this.httpClient.post('/api/sdk/wallet', payload);
   }
 
   /**
