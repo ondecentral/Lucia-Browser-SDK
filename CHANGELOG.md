@@ -2,62 +2,52 @@
 
 All notable changes to this project will be documented in this file.
 
-
 ## [0.9.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.8.0...v0.9.0) (2025-11-20)
-
 
 ### Features
 
-* add auto-init with api key provided in script tag ([fa358a7](https://github.com/ondecentral/Lucia-Browser-SDK/commit/fa358a77151203d90252bbe00f44a407b97b129d))
-* add automated click tracking ([af95407](https://github.com/ondecentral/Lucia-Browser-SDK/commit/af95407d021a4dc464e41fd255a20782d9f235b3))
-* use closest to find trackable elements ([aae6ff6](https://github.com/ondecentral/Lucia-Browser-SDK/commit/aae6ff61fd42f447867130921370d22cc10e7761))
-
+- add auto-init with api key provided in script tag ([fa358a7](https://github.com/ondecentral/Lucia-Browser-SDK/commit/fa358a77151203d90252bbe00f44a407b97b129d))
+- add automated click tracking ([af95407](https://github.com/ondecentral/Lucia-Browser-SDK/commit/af95407d021a4dc464e41fd255a20782d9f235b3))
+- use closest to find trackable elements ([aae6ff6](https://github.com/ondecentral/Lucia-Browser-SDK/commit/aae6ff61fd42f447867130921370d22cc10e7761))
 
 ### Documentation
 
-* update readme ([160130c](https://github.com/ondecentral/Lucia-Browser-SDK/commit/160130c9f82fc39b520b89360523b25bfba65ada))
-
+- update readme ([160130c](https://github.com/ondecentral/Lucia-Browser-SDK/commit/160130c9f82fc39b520b89360523b25bfba65ada))
 
 ### Code Refactoring
 
-* optimize click tracking with closest() and add cleanup ([78cf55f](https://github.com/ondecentral/Lucia-Browser-SDK/commit/78cf55f09ff8fbb2ccb69ea50887ec11366e98d1))
+- optimize click tracking with closest() and add cleanup ([78cf55f](https://github.com/ondecentral/Lucia-Browser-SDK/commit/78cf55f09ff8fbb2ccb69ea50887ec11366e98d1))
 
 ## [0.8.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.7.2...v0.8.0) (2025-11-13)
 
-
 ### Features
 
-* receive session hash from backend ([8fdd41c](https://github.com/ondecentral/Lucia-Browser-SDK/commit/8fdd41cc37f032bacd7c839d9c31b9e81896e023))
-
+- receive session hash from backend ([8fdd41c](https://github.com/ondecentral/Lucia-Browser-SDK/commit/8fdd41cc37f032bacd7c839d9c31b9e81896e023))
 
 ### Miscellaneous
 
-* update dependencies and ignore package-lock.json ([bc679bc](https://github.com/ondecentral/Lucia-Browser-SDK/commit/bc679bc69d14db9c49a03a4e497c59bbf46d5a37))
-* update release-it ([06561d9](https://github.com/ondecentral/Lucia-Browser-SDK/commit/06561d934379d2ec02a2267a69611eb9da2640c2))
+- update dependencies and ignore package-lock.json ([bc679bc](https://github.com/ondecentral/Lucia-Browser-SDK/commit/bc679bc69d14db9c49a03a4e497c59bbf46d5a37))
+- update release-it ([06561d9](https://github.com/ondecentral/Lucia-Browser-SDK/commit/06561d934379d2ec02a2267a69611eb9da2640c2))
 
 ## [0.7.2](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.7.0...v0.7.2) (2025-10-02)
 
-
 ### Bug Fixes
 
-* match version to npm for failing publish ([7ae7f59](https://github.com/ondecentral/Lucia-Browser-SDK/commit/7ae7f597bd7731f505421a1e658e6788dbfdf740))
+- match version to npm for failing publish ([7ae7f59](https://github.com/ondecentral/Lucia-Browser-SDK/commit/7ae7f597bd7731f505421a1e658e6788dbfdf740))
 
 ## [0.7.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.6.0...v0.7.0) (2025-10-02)
 
-
 ### Features
 
-* add new method for new user events - track acquisition ([b56f910](https://github.com/ondecentral/Lucia-Browser-SDK/commit/b56f9103a532d618808a73ece50e8dd9c9b981bc))
-
+- add new method for new user events - track acquisition ([b56f910](https://github.com/ondecentral/Lucia-Browser-SDK/commit/b56f9103a532d618808a73ece50e8dd9c9b981bc))
 
 ### Bug Fixes
 
-* fix failing test ([b6c08ae](https://github.com/ondecentral/Lucia-Browser-SDK/commit/b6c08aeb7a66fbed1f2f0a91c91281575004f9b6))
-
+- fix failing test ([b6c08ae](https://github.com/ondecentral/Lucia-Browser-SDK/commit/b6c08aeb7a66fbed1f2f0a91c91281575004f9b6))
 
 ### Code Refactoring
 
-* update canvas fingerprinting ([41c1877](https://github.com/ondecentral/Lucia-Browser-SDK/commit/41c18776e8118d5acea1899e11e8ab4adafd467a))
+- update canvas fingerprinting ([41c1877](https://github.com/ondecentral/Lucia-Browser-SDK/commit/41c18776e8118d5acea1899e11e8ab4adafd467a))
 
 ## [0.6.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.5.0...v0.6.0) (2025-05-10)
 
