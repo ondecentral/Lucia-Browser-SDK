@@ -21,7 +21,7 @@ class LuciaSDK extends BaseClass {
       session = storeSessionID();
     }
 
-    const data = getBrowserData();
+    const data = await getBrowserData();
     const url = new URL(window.location.href);
     const redirectHash = url.searchParams.get('lucia');
     const walletData = await getWalletData();
@@ -262,7 +262,7 @@ class LuciaSDK extends BaseClass {
    * @param acquisitionData - Optional additional data about the acquisition
    */
   async trackUserAcquisition(userId: string, acquisitionData: object = {}) {
-    const browserData = getBrowserData();
+    const browserData = await getBrowserData();
     const utmParams = getUtmParams();
     const session = getSessionData();
 

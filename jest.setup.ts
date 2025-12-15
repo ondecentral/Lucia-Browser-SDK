@@ -1,5 +1,20 @@
 import '@testing-library/jest-dom';
 
+// Mock TextEncoder (required for crypto.subtle.digest)
+Object.defineProperty(global, 'TextEncoder', {
+  value: class MockTextEncoder {
+    encode(str: string): Uint8Array {
+      const arr = new Uint8Array(str.length);
+      for (let i = 0; i < str.length; i++) {
+        arr[i] = str.charCodeAt(i);
+      }
+      return arr;
+    }
+  },
+  writable: true,
+  configurable: true,
+});
+
 // Mock TextDecoder
 Object.defineProperty(global, 'TextDecoder', {
   value: class MockTextDecoder {

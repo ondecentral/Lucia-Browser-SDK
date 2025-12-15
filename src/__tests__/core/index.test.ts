@@ -73,7 +73,7 @@ describe('LuciaSDK', () => {
   beforeEach(() => {
     // Setup spies on the utility functions instead of full mocks
     jest.spyOn(dataUtils, 'getUtmParams').mockReturnValue(mockUtm);
-    jest.spyOn(dataUtils, 'getBrowserData').mockReturnValue(mockBrowserData);
+    jest.spyOn(dataUtils, 'getBrowserData').mockResolvedValue(mockBrowserData);
     jest.spyOn(dataUtils, 'getWalletData').mockResolvedValue(mockWalletData);
     jest.spyOn(sessionUtils, 'getLidData').mockReturnValue(mockLid);
     jest.spyOn(sessionUtils, 'getSessionData').mockReturnValue(mockSession);
