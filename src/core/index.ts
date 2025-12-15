@@ -282,11 +282,11 @@ class LuciaSDK extends BaseClass {
 
   /**
    * Checks if MetaMask is installed and connected
-   * @returns false if MetaMask is not connected, otherwise returns the wallet address
+   * @returns true if MetaMask is connected, false otherwise
    */
   // eslint-disable-next-line class-methods-use-this
-  checkMetaMaskConnection() {
-    return window.ethereum && window.ethereum.isConnected() && window.ethereum.selectedAddress;
+  checkMetaMaskConnection(): boolean {
+    return !!(window.ethereum?.isConnected?.() && window.ethereum?.selectedAddress);
   }
 
   /**

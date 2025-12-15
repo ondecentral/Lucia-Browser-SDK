@@ -1,3 +1,8 @@
+export interface LuciaSDKInstance extends Omit<SDK, 'init' | 'VERSION'> {
+  init: () => Promise<void>;
+  destroy: () => void;
+}
+
 /**
  * Configuration for automated click tracking
  */
@@ -26,7 +31,7 @@ export interface ClickEventMetadata {
 }
 
 export interface SDK {
-  init: (config: Config) => Promise<LuciaSDKClass>;
+  init: (config: Config) => Promise<LuciaSDKInstance>;
   userInfo: (user: string, userInfo: object) => Promise<void>;
   pageView: (page: string) => Promise<void>;
   trackConversion: (eventTag: string, amount: number, eventDetails: object) => Promise<void>;
@@ -39,10 +44,6 @@ export interface SDK {
   trackUserAcquisition: (userId: string, acquisitionData?: object) => Promise<void>;
   checkMetaMaskConnection: () => boolean;
   VERSION: string;
-}
-
-export interface LuciaSDKClass extends Omit<SDK, 'init' | 'VERSION'> {
-  init: () => void;
 }
 
 /**
