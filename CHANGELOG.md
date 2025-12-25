@@ -2,18 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
-
 ## [0.9.1](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.0...v0.9.1) (2025-12-07)
-
 
 ### Bug Fixes
 
-* prevent saving and sending 'undefined' lid ([e33863c](https://github.com/ondecentral/Lucia-Browser-SDK/commit/e33863c53f12fcb23afc211bcb3ea82eccf02c7c))
-
+- prevent saving and sending 'undefined' lid ([e33863c](https://github.com/ondecentral/Lucia-Browser-SDK/commit/e33863c53f12fcb23afc211bcb3ea82eccf02c7c))
 
 ### Continuous Integration
 
-* update ci to use oidc ([c697307](https://github.com/ondecentral/Lucia-Browser-SDK/commit/c6973076390e95afde8e9367656c8ffba0ac4456))
+- update ci to use oidc ([c697307](https://github.com/ondecentral/Lucia-Browser-SDK/commit/c6973076390e95afde8e9367656c8ffba0ac4456))
 
 ## [0.9.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.8.0...v0.9.0) (2025-11-20)
 

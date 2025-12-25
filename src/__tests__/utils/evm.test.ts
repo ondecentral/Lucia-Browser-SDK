@@ -151,7 +151,13 @@ describe('Ethereum Utilities', () => {
 
       setupEthereumAccountListeners(callback);
 
-      expect(mockEthereum.on).toHaveBeenCalledWith('accountsChanged', callback);
+      expect(mockEthereum.on).toHaveBeenCalledWith('accountsChanged', expect.any(Function));
+
+      // Verify the wrapper calls the original callback with the accounts
+      const wrapperFn = mockEthereum.on.mock.calls[0][1];
+      const testAccounts = ['0x123', '0x456'];
+      wrapperFn(testAccounts);
+      expect(callback).toHaveBeenCalledWith(testAccounts);
     });
 
     it('should not set up listeners if ethereum provider does not exist', () => {

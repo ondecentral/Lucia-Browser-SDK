@@ -21,7 +21,7 @@ class LuciaSDK extends BaseClass {
       session = storeSessionID();
     }
 
-    const data = getBrowserData();
+    const data = await getBrowserData();
     const url = new URL(window.location.href);
     const redirectHash = url.searchParams.get('lucia');
     const walletData = await getWalletData();
@@ -233,6 +233,7 @@ class LuciaSDK extends BaseClass {
    * Sends wallet information to the server
    * @param walletAddress The wallet address of the user
    * @param chainId The chain ID of the wallet
+   * @param walletName
    */
   async sendWalletInfo(walletAddress: string, chainId: number | string, walletName?: 'Phantom' | 'Metamask') {
     const lid = getLidData();
@@ -262,7 +263,7 @@ class LuciaSDK extends BaseClass {
    * @param acquisitionData - Optional additional data about the acquisition
    */
   async trackUserAcquisition(userId: string, acquisitionData: object = {}) {
-    const browserData = getBrowserData();
+    const browserData = await getBrowserData();
     const utmParams = getUtmParams();
     const session = getSessionData();
 
@@ -282,11 +283,10 @@ class LuciaSDK extends BaseClass {
 
   /**
    * Checks if MetaMask is installed and connected
-   * @returns false if MetaMask is not connected, otherwise returns the wallet address
+   * @returns true if MetaMask is connected, false otherwise
    */
-  // eslint-disable-next-line class-methods-use-this
-  checkMetaMaskConnection() {
-    return window.ethereum && window.ethereum.isConnected() && window.ethereum.selectedAddress;
+  checkMetaMaskConnection(): boolean {
+    return !!(window.ethereum?.isConnected?.() && window.ethereum?.selectedAddress);
   }
 
   /**

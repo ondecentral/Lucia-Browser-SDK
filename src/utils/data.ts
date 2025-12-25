@@ -1,5 +1,3 @@
-import CryptoJS from 'crypto-js';
-
 import { getConnectedWalletAddress, getWalletName, getExtendedProviderInfo } from './evm';
 import { getConnectedSolanaWallet, getSolanaWalletName } from './solana';
 
@@ -9,13 +7,13 @@ import { BrowserData, WalletData } from '../types';
  * Collects static browser and hardware data that's unlikely to change during a session.
  * This data can be cached for performance optimization.
  *
- * @returns {BrowserData} Static browser and hardware data including device capabilities,
+ * @returns {Promise<BrowserData>} Static browser and hardware data including device capabilities,
  *                  screen specifications, and browser features.
  */
-export function getBrowserData(): BrowserData {
-  // Use a static variable to cache the result after first call
-  if (getBrowserData.cachedData) {
-    return getBrowserData.cachedData;
+export async function getBrowserData(): Promise<BrowserData> {
+  // Use module-level cache for the result after first call
+  if (browserDataCache) {
+    return browserDataCache;
   }
 
   const device = {
@@ -45,7 +43,7 @@ export function getBrowserData(): BrowserData {
     pluginsLength: safeAccess(() => navigator.plugins.length),
     pluginNames: safeAccess(() => Array.from(navigator.plugins, (p) => p.name)),
     applePayAvailable: getApplePayAvailable(),
-    uniqueHash: getCanvasFingerprint(),
+    uniqueHash: await getCanvasFingerprint(),
     colorGamut: getColorGamut(),
     contrastPreference: getContrastPreference(),
   };
@@ -70,15 +68,15 @@ export function getBrowserData(): BrowserData {
   };
 
   // Cache the result
-  getBrowserData.cachedData = staticData;
+  browserDataCache = staticData;
   return staticData;
 }
 
-// TypeScript type definition for the static data cache
-declare global {
-  interface Function {
-    cachedData?: any;
-  }
+/**
+ * Clears the browser data cache (useful for testing)
+ */
+export function clearBrowserDataCache(): void {
+  browserDataCache = null;
 }
 
 /**
@@ -174,14 +172,32 @@ export function filterObject<T extends object>(obj: T): Partial<T> {
 }
 
 /**
+ * Computes SHA-256 hash using the Web Crypto API.
+ * Returns a 64-character hex string.
+ *
+ * @param str - The string to hash
+ * @returns Promise resolving to a 64-char hex string
+ */
+async function sha256(str: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Cache for browser data (module-level to avoid Function interface extension)
+let browserDataCache: BrowserData | null = null;
+
+/**
  * Generates a unique hash based on canvas rendering characteristics.
  * Creates a canvas with specific shapes and colors, then generates a SHA-256 hash
  * of the canvas data. This serves as a fingerprinting mechanism for the browser.
  *
- * @returns {string | undefined} A SHA-256 hexadecimal hash string representing the canvas fingerprint,
+ * @returns {Promise<string | undefined>} A SHA-256 hexadecimal hash string representing the canvas fingerprint,
  *                              or undefined if canvas is not supported or operation fails
  */
-export function getCanvasFingerprint(): string | undefined {
+export async function getCanvasFingerprint(): Promise<string | undefined> {
   try {
     const canvas = document.createElement('canvas');
     // Ask for a 2D context we'll read frequently (safe to ignore if unsupported)
@@ -227,9 +243,8 @@ export function getCanvasFingerprint(): string | undefined {
       })
       .join('');
 
-    // 4) Hash the sampled RGBA bytes (engine-agnostic)
-    // (assumes CryptoJS is available in your bundle)
-    return CryptoJS.SHA256(acc).toString(CryptoJS.enc.Hex);
+    // 4) Hash the sampled RGBA bytes using SHA-256
+    return sha256(acc);
   } catch {
     return undefined;
   }

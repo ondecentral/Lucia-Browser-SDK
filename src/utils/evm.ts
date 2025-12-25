@@ -11,8 +11,7 @@ const logger = new Logger(Store.store);
  * @returns boolean indicating if an Ethereum provider exists
  */
 export function checkIfEthereumProviderExists(): boolean {
-  const { ethereum } = window as any;
-  return !!ethereum;
+  return !!window.ethereum;
 }
 
 /**
@@ -22,14 +21,13 @@ export function checkIfEthereumProviderExists(): boolean {
 export async function getEthereumAddress(): Promise<string | null> {
   try {
     // Check if Ethereum provider exists
-    const { ethereum } = window as any;
-    if (!ethereum) {
+    if (!window.ethereum?.request) {
       logger.log('error', 'No Ethereum wallet detected.');
       return null;
     }
 
     // Request accounts access
-    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+    const accounts = (await window.ethereum.request({ method: 'eth_requestAccounts' })) as string[];
 
     // Get the first account (current account)
     if (accounts && accounts.length > 0) {
@@ -64,10 +62,9 @@ export function formatEthereumAddress(address: string): string {
  * @param callback Function to call when accounts change
  */
 export function setupEthereumAccountListeners(callback: (accounts: string[]) => void): void {
-  const { ethereum } = window as any;
-  if (!ethereum) return;
+  if (!window.ethereum?.on) return;
 
-  ethereum.on('accountsChanged', callback);
+  window.ethereum.on('accountsChanged', (accounts: unknown) => callback(accounts as string[]));
 }
 
 /**
@@ -76,10 +73,9 @@ export function setupEthereumAccountListeners(callback: (accounts: string[]) => 
  */
 export async function getEthereumChainId(): Promise<string | null> {
   try {
-    const { ethereum } = window as any;
-    if (!ethereum) return null;
+    if (!window.ethereum?.request) return null;
 
-    const chainId = await ethereum.request({ method: 'eth_chainId' });
+    const chainId = (await window.ethereum.request({ method: 'eth_chainId' })) as string;
     return chainId;
   } catch (error) {
     logger.log('error', 'Error getting chain ID:', error);
@@ -95,9 +91,9 @@ export async function getConnectedWalletAddress(): Promise<string | null> {
   try {
     const { ethereum } = window;
 
-    if (!ethereum) return null;
+    if (!ethereum?.request) return null;
 
-    const accounts = await ethereum.request({ method: 'eth_accounts' });
+    const accounts = (await ethereum.request({ method: 'eth_accounts' })) as string[] | null;
     if (accounts && accounts.length > 0) {
       return accounts[0];
     }
@@ -114,11 +110,9 @@ export async function getConnectedWalletAddress(): Promise<string | null> {
  */
 export async function isMetaMask(): Promise<boolean> {
   try {
-    const { ethereum } = window as any;
-    if (!ethereum) return false;
+    if (!window.ethereum) return false;
 
-    const isMetaMask = await ethereum.isMetaMask;
-    return !!isMetaMask;
+    return !!window.ethereum.isMetaMask;
   } catch (error) {
     logger.log('error', 'Error checking if MetaMask:', error);
     return false;
@@ -131,15 +125,15 @@ export async function isMetaMask(): Promise<boolean> {
  */
 export async function getWalletName(): Promise<string | null> {
   try {
-    const { ethereum } = window as any;
-    if (!ethereum) return null;
+    if (!window.ethereum) return null;
 
-    const isMetaMask = await ethereum.isMetaMask;
-    if (isMetaMask) {
+    if (window.ethereum.isMetaMask) {
       return 'MetaMask';
     }
 
-    const walletName = (await ethereum.request({ method: 'wallet_getName' })) as string;
+    if (!window.ethereum.request) return null;
+
+    const walletName = (await window.ethereum.request({ method: 'wallet_getName' })) as string;
     return walletName || null;
   } catch (error) {
     logger.log('error', 'Error getting wallet name:', error);
@@ -176,12 +170,7 @@ export interface ProviderInfo {
 }
 
 // Extend the Window interface to include BinanceChain and wallet-specific properties
-declare global {
-  interface Window {
-    BinanceChain?: any;
-    ethereum?: any;
-  }
-}
+// Window.ethereum and Window.BinanceChain declared in src/global.d.ts
 
 export async function getExtendedProviderInfo(): Promise<ProviderInfo | null> {
   if (!window.ethereum) return null;
@@ -195,12 +184,12 @@ export async function getExtendedProviderInfo(): Promise<ProviderInfo | null> {
     isBraveWallet: !!window.ethereum.isBraveWallet,
     isTokenPocket: !!window.ethereum.isTokenPocket,
     isStatus: !!window.ethereum.isStatus,
-    isTally: !!window.ethereum.isTally || window.ethereum.isTallyWallet,
+    isTally: !!(window.ethereum.isTally || window.ethereum.isTallyWallet),
     isAlphaWallet: !!window.ethereum.isAlphaWallet,
     isOpera: !!window.ethereum.isOpera,
     isCoin98: !!window.ethereum.isCoin98,
     isMathWallet: !!window.ethereum.isMathWallet,
-    isOneInch: window.ethereum.isOneInchIOSWallet || window.ethereum.isOneInchAndroidWallet,
+    isOneInch: !!(window.ethereum.isOneInchIOSWallet || window.ethereum.isOneInchAndroidWallet),
     isRainbow: !!window.ethereum.isRainbow,
     isBinanceChainWallet: false, // Will be set later if detected
     isFrame: !!window.ethereum.isFrame,

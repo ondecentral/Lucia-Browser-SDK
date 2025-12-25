@@ -162,7 +162,7 @@ export class ClickTracker {
           const matchesCustomSelector = selectors.some((selector) => {
             try {
               return explicitElement.matches(selector);
-            } catch (e) {
+            } catch (_e) {
               return false;
             }
           });
@@ -379,7 +379,6 @@ export class ClickTracker {
   /**
    * Get the element type (button, link, etc.)
    */
-  // eslint-disable-next-line class-methods-use-this
   private getElementType(element: Element): string {
     const tagName = element.tagName.toLowerCase();
 
@@ -402,7 +401,6 @@ export class ClickTracker {
   /**
    * Sanitize text content (trim, limit length, normalize whitespace)
    */
-  // eslint-disable-next-line class-methods-use-this
   private sanitizeText(text: string): string {
     return text.trim().replace(/\s+/g, ' ').substring(0, 100);
   }
@@ -410,7 +408,6 @@ export class ClickTracker {
   /**
    * Generate a CSS path for an element (simplified version)
    */
-  // eslint-disable-next-line class-methods-use-this
   private generateCSSPath(element: Element): string {
     const path: string[] = [];
     let current: Element | null = element;
@@ -426,8 +423,11 @@ export class ClickTracker {
       }
 
       // Add classes if available
-      if (current.className && typeof current.className === 'string') {
-        const classes = current.className.trim().split(/\s+/).slice(0, 2);
+      // Note: SVG elements have className as SVGAnimatedString (with baseVal), not string
+      // We use getAttribute('class') which works consistently for both HTML and SVG elements
+      const classAttr = current.getAttribute('class');
+      if (classAttr) {
+        const classes = classAttr.trim().split(/\s+/).slice(0, 2);
         if (classes.length > 0) {
           selector += `.${classes.join('.')}`;
         }
@@ -443,7 +443,6 @@ export class ClickTracker {
   /**
    * Extract metadata from data-lucia-meta-* attributes
    */
-  // eslint-disable-next-line class-methods-use-this
   private extractMetadata(element: Element): Record<string, string> | null {
     const meta: Record<string, string> = {};
     const { attributes } = element;

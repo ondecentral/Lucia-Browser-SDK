@@ -1,6 +1,9 @@
 import LuciaSDKClass from './core';
 import { Config, SDK } from './types';
-import {
+import { SDK_VERSION } from './version';
+
+// Re-export utility functions for public API
+export {
   getBrowserData,
   getWalletData,
   getUtmParams,
@@ -12,129 +15,88 @@ import {
   getContrastPreference,
   getColorGamut,
 } from './utils/data';
-import { SDK_VERSION } from './version';
 
-let instance: LuciaSDKClass | null = null;
+let sdk: Promise<LuciaSDKClass> | null = null;
 
-const ensureInitialized = () => {
-  // Check if window.LuciaSDK was already initialized (e.g., via CDN auto-init)
-  if (typeof window !== 'undefined' && (window as any).__luciaInstance) {
-    return (window as any).__luciaInstance;
-  }
-
-  if (!instance) {
-    throw new Error('LuciaSDK not initialized. Please call LuciaSDK.init() first');
-  }
-  return instance;
+const getSdk = () => {
+  const p = sdk || (typeof window !== 'undefined' && window.__luciaInitPromise);
+  if (!p) throw new Error('LuciaSDK not initialized. Please call LuciaSDK.init() first');
+  return p;
 };
 
 // Helper for tests to reset instance
 export const __resetInstance = () => {
-  // Clean up existing instance before resetting
-  if (instance) {
-    instance.destroy();
+  // Get the single promise (avoid double-destroy if sdk === window.__luciaInitPromise)
+  const promise = sdk || (typeof window !== 'undefined' && window.__luciaInitPromise);
+  if (promise) {
+    // Errors swallowed intentionally - cleanup should not throw
+    promise.then((s) => s.destroy()).catch(() => {});
   }
-  instance = null;
+  sdk = null;
   if (typeof window !== 'undefined') {
-    const windowInstance = (window as any).__luciaInstance;
-    if (windowInstance && windowInstance.destroy) {
-      windowInstance.destroy();
-    }
-    delete (window as any).__luciaInstance;
+    delete window.__luciaInitPromise;
   }
 };
 
 const LuciaSDK: SDK = {
-  init: async (config: Config) => {
-    if (typeof window === 'undefined') {
-      throw new Error('LuciaSDK requires a browser environment');
+  init: (config: Config) => {
+    if (typeof window === 'undefined') return Promise.reject(new Error('LuciaSDK requires a browser environment'));
+
+    // Return existing initialization if already in progress or complete
+    // Check sdk first (module-level), then window (cross-context sharing)
+    if (sdk) return sdk;
+    if (window.__luciaInitPromise) {
+      sdk = window.__luciaInitPromise;
+      return sdk;
     }
 
-    // Check if already initialized via CDN/window
-    if ((window as any).__luciaInstance) {
-      // eslint-disable-next-line no-console
-      console.warn('LuciaSDK already initialized via auto-init');
-      return (window as any).__luciaInstance;
-    }
+    if (!config?.apiKey) return Promise.reject(new Error('apiKey is required in config'));
 
-    if (instance) {
-      // eslint-disable-next-line no-console
-      console.warn('LuciaSDK is already initialized');
-      return instance;
-    }
+    // Create and assign promise atomically to prevent race conditions
+    const initPromise = (async () => {
+      const inst = new LuciaSDKClass(config);
+      await inst.init();
+      return inst;
+    })();
 
-    if (!config?.apiKey) {
-      throw new Error('apiKey is required in config');
-    }
-
-    instance = new LuciaSDKClass(config);
-    await instance.init();
-
-    // Store in window for cross-context sharing (CDN + npm import)
-    (window as any).__luciaInstance = instance;
-
-    return instance;
+    sdk = initPromise;
+    window.__luciaInitPromise = initPromise;
+    return initPromise;
   },
-  userInfo: async (...args) => ensureInitialized().userInfo(...args),
-  pageView: async (...args) => ensureInitialized().pageView(...args),
-  trackConversion: async (...args) => ensureInitialized().trackConversion(...args),
-  buttonClick: async (...args) => ensureInitialized().buttonClick(...args),
-  sendWalletInfo: async (...args) => ensureInitialized().sendWalletInfo(...args),
-  trackUserAcquisition: async (...args) => ensureInitialized().trackUserAcquisition(...args),
-  checkMetaMaskConnection: () => ensureInitialized().checkMetaMaskConnection(),
+
+  userInfo: async (user, userInfo) => (await getSdk()).userInfo(user, userInfo),
+  pageView: async (page) => (await getSdk()).pageView(page),
+  trackConversion: async (tag, amount, details) => (await getSdk()).trackConversion(tag, amount, details),
+  buttonClick: async (button, meta) => (await getSdk()).buttonClick(button, meta),
+  sendWalletInfo: async (addr, chain, name) => (await getSdk()).sendWalletInfo(addr, chain, name),
+  trackUserAcquisition: async (userId, data = {}) => (await getSdk()).trackUserAcquisition(userId, data),
+  checkMetaMaskConnection: () => !!(window.ethereum?.isConnected?.() && window.ethereum?.selectedAddress),
   VERSION: SDK_VERSION,
 };
 
 if (typeof window !== 'undefined') {
-  (window as any).LuciaSDK = LuciaSDK;
+  window.LuciaSDK = LuciaSDK;
 
   // Auto-initialization: triggered by presence of data-api-key attribute
-  const autoInit = async () => {
+  const autoInit = () => {
     // Try to get the current script element or find one with data-api-key
-    const scriptTag =
-      (document.currentScript as HTMLScriptElement) ||
-      (document.querySelector('script[data-api-key]') as HTMLScriptElement);
+    const tag = (document.currentScript as HTMLScriptElement) || document.querySelector('script[data-api-key]');
+    const apiKey = tag?.getAttribute('data-api-key');
+    if (!apiKey) return;
 
-    if (scriptTag) {
-      const apiKey = scriptTag.getAttribute('data-api-key');
+    const debugURL = tag.getAttribute('data-debug-url');
+    const autoTrack = tag.getAttribute('data-auto-track-clicks');
+    const selectors = tag.getAttribute('data-track-selectors');
 
-      // Auto-init if data-api-key is present
-      if (apiKey) {
-        const debugURL = scriptTag.getAttribute('data-debug-url');
-        const autoTrackClicks = scriptTag.getAttribute('data-auto-track-clicks');
-        const trackSelectors = scriptTag.getAttribute('data-track-selectors');
-
-        const config: Config = {
-          apiKey,
-          ...(debugURL && { debugURL }),
-        };
-
-        // Parse auto-track-clicks configuration
-        if (autoTrackClicks === 'true') {
-          // Simple boolean enable
-          if (trackSelectors) {
-            // Custom selectors provided
-            config.autoTrackClicks = {
-              enabled: true,
-              selectors: trackSelectors.split(',').map((s) => s.trim()),
-            };
-          } else {
-            // Use defaults
-            config.autoTrackClicks = true;
-          }
-        } else if (autoTrackClicks === 'false') {
-          config.autoTrackClicks = false;
-        }
-
-        // Initialize the SDK
-        try {
-          await LuciaSDK.init(config);
-        } catch (error) {
-          // eslint-disable-next-line no-console
-          console.error('LuciaSDK auto-init failed:', error);
-        }
-      }
-    }
+    // Initialize the SDK
+    LuciaSDK.init({
+      apiKey,
+      ...(debugURL && { debugURL }),
+      ...(autoTrack === 'true' && {
+        autoTrackClicks: selectors ? { enabled: true, selectors: selectors.split(',').map((s) => s.trim()) } : true,
+      }),
+      ...(autoTrack === 'false' && { autoTrackClicks: false }),
+    }).catch((e) => console.error('LuciaSDK auto-init failed:', e));
   };
 
   // Execute auto-init when DOM is ready
@@ -147,17 +109,3 @@ if (typeof window !== 'undefined') {
 }
 
 export default LuciaSDK;
-
-// Export utility functions individually for better documentation and IDE support
-export {
-  getBrowserData,
-  getWalletData,
-  getUtmParams,
-  safeAccess,
-  filterObject,
-  getCanvasFingerprint,
-  isTouchEnabled,
-  getApplePayAvailable,
-  getContrastPreference,
-  getColorGamut,
-};

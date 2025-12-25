@@ -48,7 +48,7 @@ export class PrivacyGuard {
     const elementMatches = this.sensitiveSelectors.some((selector) => {
       try {
         return element.matches(selector);
-      } catch (e) {
+      } catch (_e) {
         // Invalid selector, skip
         return false;
       }
@@ -65,7 +65,7 @@ export class PrivacyGuard {
       const ancestorMatches = this.sensitiveSelectors.some((selector) => {
         try {
           return currentElement.matches(selector);
-        } catch (e) {
+        } catch (_e) {
           // Invalid selector, skip
           return false;
         }
@@ -86,7 +86,7 @@ export class PrivacyGuard {
    * @param text Text to check
    * @returns true if text appears to contain sensitive data
    */
-  // eslint-disable-next-line class-methods-use-this
+
   containsSensitiveData(text: string): boolean {
     if (!text) return false;
 
@@ -98,7 +98,7 @@ export class PrivacyGuard {
    * @param text Text to sanitize
    * @returns Sanitized text
    */
-  // eslint-disable-next-line class-methods-use-this
+
   sanitizeText(text: string): string {
     if (!text) return '';
 
