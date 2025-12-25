@@ -40,7 +40,7 @@ export const __resetInstance = () => {
 
 const LuciaSDK: SDK = {
   init: (config: Config) => {
-    if (typeof window === 'undefined') throw Promise.reject(new Error('LuciaSDK requires a browser environment'));
+    if (typeof window === 'undefined') return Promise.reject(new Error('LuciaSDK requires a browser environment'));
 
     // Return existing initialization if already in progress or complete
     // Check sdk first (module-level), then window (cross-context sharing)
