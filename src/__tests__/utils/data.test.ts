@@ -74,7 +74,6 @@ describe('Data Utilities', () => {
   });
 
   afterEach(() => {
-    // eslint-disable-next-line no-global-assign
     window = originalWindow;
     jest.restoreAllMocks();
   });
@@ -217,7 +216,6 @@ describe('Data Utilities', () => {
       ];
 
       // Test each orientation sequentially (cache must be cleared between each)
-      /* eslint-disable no-restricted-syntax, no-await-in-loop */
       for (const orientation of orientationScenarios) {
         // Clear cached data between iterations
         clearBrowserDataCache();
@@ -239,7 +237,6 @@ describe('Data Utilities', () => {
         expect(data.screen.orientation.type).toBe(orientation.type);
         expect(data.screen.orientation.angle).toBe(orientation.angle);
       }
-      /* eslint-enable no-restricted-syntax, no-await-in-loop */
     });
 
     it('should collect browser language and timezone correctly', async () => {
@@ -355,7 +352,7 @@ describe('Data Utilities', () => {
       ];
 
       // Test each permission state sequentially (cache must be cleared between each)
-      /* eslint-disable no-restricted-syntax, no-await-in-loop */
+
       for (const perms of scenarios) {
         // Clear cached data between iterations
         clearBrowserDataCache();
@@ -372,7 +369,7 @@ describe('Data Utilities', () => {
             configurable: true,
             writable: true,
           });
-        } catch (e) {
+        } catch (_e) {
           // fallback: assign directly if defineProperty fails
           (navigator as any).permissions = {
             webglVersion: perms.navPer,
@@ -386,7 +383,6 @@ describe('Data Utilities', () => {
         expect(data.permissions.renderedPer).toBe(perms.renderedPer);
         expect(data.permissions.geoPer).toBe(perms.geoPer);
       }
-      /* eslint-enable no-restricted-syntax, no-await-in-loop */
     });
 
     it('should collect storage availability information', async () => {
@@ -684,7 +680,6 @@ describe('Data Utilities', () => {
 
       expect(
         safeAccess(() => {
-          // eslint-disable-next-line no-throw-literal
           throw 'string error'; // Non-Error object throw
         }, 'fallback for string'),
       ).toBe('fallback for string');
@@ -697,7 +692,6 @@ describe('Data Utilities', () => {
 
       expect(
         safeAccess(() => {
-          // eslint-disable-next-line no-throw-literal
           throw null; // null throw
         }, 'fallback for null'),
       ).toBe('fallback for null');

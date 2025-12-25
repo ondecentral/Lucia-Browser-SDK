@@ -3,10 +3,9 @@ import resolve from '@rollup/plugin-node-resolve';
 import replace from '@rollup/plugin-replace';
 import terser from '@rollup/plugin-terser';
 import { defineConfig } from 'rollup';
-import peerDepsExternal from 'rollup-plugin-peer-deps-external';
 import typescript from 'rollup-plugin-typescript2';
 
-const packageJson = require('./package.json');
+import packageJson from './package.json' with { type: 'json' };
 
 export default defineConfig({
   input: 'src/index.ts',
@@ -36,7 +35,6 @@ export default defineConfig({
     },
   ],
   plugins: [
-    peerDepsExternal(),
     resolve(),
     commonjs(),
     typescript({ useTsconfigDeclarationDir: true }),

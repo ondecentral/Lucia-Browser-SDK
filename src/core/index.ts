@@ -233,6 +233,7 @@ class LuciaSDK extends BaseClass {
    * Sends wallet information to the server
    * @param walletAddress The wallet address of the user
    * @param chainId The chain ID of the wallet
+   * @param walletName
    */
   async sendWalletInfo(walletAddress: string, chainId: number | string, walletName?: 'Phantom' | 'Metamask') {
     const lid = getLidData();
@@ -284,7 +285,6 @@ class LuciaSDK extends BaseClass {
    * Checks if MetaMask is installed and connected
    * @returns true if MetaMask is connected, false otherwise
    */
-  // eslint-disable-next-line class-methods-use-this
   checkMetaMaskConnection(): boolean {
     return !!(window.ethereum?.isConnected?.() && window.ethereum?.selectedAddress);
   }

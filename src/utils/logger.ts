@@ -9,7 +9,6 @@ class Logger {
 
   log(level: 'log' | 'error' | 'warn' | 'info', ...args: unknown[]) {
     if (this.store.config?.debug) {
-      // eslint-disable-next-line no-console
       console[level](args);
     }
   }

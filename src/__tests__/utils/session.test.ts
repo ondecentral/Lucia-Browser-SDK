@@ -1,4 +1,3 @@
-/* eslint-disable dot-notation, eslint-comments/disable-enable-pair */
 import { v4 as uuidv4 } from 'uuid';
 
 import Logger from '../../utils/logger';

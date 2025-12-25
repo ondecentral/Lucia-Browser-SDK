@@ -96,7 +96,6 @@ if (typeof window !== 'undefined') {
         autoTrackClicks: selectors ? { enabled: true, selectors: selectors.split(',').map((s) => s.trim()) } : true,
       }),
       ...(autoTrack === 'false' && { autoTrackClicks: false }),
-      // eslint-disable-next-line no-console
     }).catch((e) => console.error('LuciaSDK auto-init failed:', e));
   };
 
