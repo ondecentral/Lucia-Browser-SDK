@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+
+## [0.9.2](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.1...v0.9.2) (2025-12-25)
+
+### Bug Fixes
+
+* return promise instead of throwing ([1932e7e](https://github.com/ondecentral/Lucia-Browser-SDK/commit/1932e7e511aefa376b933d56868980d955b1eb39))
+* update init ([323f18b](https://github.com/ondecentral/Lucia-Browser-SDK/commit/323f18b74a3ee649d240e91d5793702e8ebedd3b))
+
+### Miscellaneous
+
+* update deps ([cee474c](https://github.com/ondecentral/Lucia-Browser-SDK/commit/cee474c42c338e6e060992ba15140f6f80193ccb))
+* update deps, clean up vulnerabilities ([e5bd23e](https://github.com/ondecentral/Lucia-Browser-SDK/commit/e5bd23efddc4144c7dd6e2ee8f3a308e138acff3))
+* update dev deps to latest ([a5190db](https://github.com/ondecentral/Lucia-Browser-SDK/commit/a5190db7f154b2fb43d72cad4b307edb8b4766c7))
+
+### Code Refactoring
+
+* remove crypto-js dependency in favor of browser-native crypto digest ([45d538d](https://github.com/ondecentral/Lucia-Browser-SDK/commit/45d538ddf76ba28016f782fcf89fda300c7c77b4))
+* update types ([6c97bee](https://github.com/ondecentral/Lucia-Browser-SDK/commit/6c97bee753675dec0273648b3c4e7a3d8531d971))
+
 ## [0.9.1](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.0...v0.9.1) (2025-12-07)
 
 ### Bug Fixes
