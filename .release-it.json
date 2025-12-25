@@ -35,7 +35,7 @@
       },
       "infile": "CHANGELOG.md",
       "header": "# Changelog\n\nAll notable changes to this project will be documented in this file.\n",
-      "strictSemver": true
+      "strictSemVer": true
     }
   },
   "hooks": {
