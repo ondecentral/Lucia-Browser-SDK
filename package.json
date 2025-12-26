@@ -23,7 +23,7 @@
     "package:publish": "yarn package:build && npm publish --access public",
     "tsc": "tsc --pretty --noEmit",
     "prepare": "yarn package:build",
-    "setup": "husky init",
+    "postinstall": "husky || true",
     "validate": "npm-run-all --parallel lint tsc",
     "commitlint": "commitlint",
     "lint": "eslint .",
