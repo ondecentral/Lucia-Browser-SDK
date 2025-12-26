@@ -22,4 +22,6 @@ module.exports = {
   transform: {
     '^.+\\.ts$': 'ts-jest',
   },
+  // uuid v13+ is ESM-only, needs to be transformed
+  transformIgnorePatterns: ['/node_modules/(?!(uuid)/)'],
 };
