@@ -52,7 +52,9 @@ jobs:
 
     - name: Publish Regular
       if: steps.check_version.outputs.is_alpha == 'false'
-      run: yarn package:publish --access public
+      run: |
+        yarn package:build
+        npm publish --access public
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
