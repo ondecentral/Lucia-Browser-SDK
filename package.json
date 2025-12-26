@@ -69,7 +69,7 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
-    "uuid": "^11.1.0"
+    "uuid": "^13.0.0"
   },
   "resolutions": {
     "conventional-changelog-conventionalcommits": "^9.1.0"
