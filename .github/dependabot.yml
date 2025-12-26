@@ -1,0 +1,54 @@
+version: 2
+updates:
+  # NPM dependencies (root only)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "UTC"
+    commit-message:
+      prefix: "chore(deps)"
+    labels:
+      - "dependencies"
+    open-pull-requests-limit: 5
+    rebase-strategy: "auto"
+    groups:
+      eslint:
+        patterns:
+          - "eslint*"
+          - "@typescript-eslint/*"
+          - "typescript-eslint"
+      typescript:
+        patterns:
+          - "typescript"
+          - "ts-*"
+          - "@types/*"
+      rollup:
+        patterns:
+          - "rollup*"
+          - "@rollup/*"
+      testing:
+        patterns:
+          - "jest*"
+          - "@testing-library/*"
+      release:
+        patterns:
+          - "release-it*"
+          - "@release-it/*"
+          - "conventional-*"
+          - "commitlint*"
+          - "@commitlint/*"
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      timezone: "UTC"
+    commit-message:
+      prefix: "chore(ci)"
+    labels:
+      - "dependencies"
+      - "github-actions"
