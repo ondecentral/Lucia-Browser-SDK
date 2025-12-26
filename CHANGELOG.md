@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.4](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.3...v0.9.4) (2025-12-26)
+
+### Miscellaneous
+
+- configure Dependabot with grouped updates ([e387143](https://github.com/ondecentral/Lucia-Browser-SDK/commit/e387143913c2b6b3bf7dcbd8b3527b61a03bff98))
+
 ## [0.9.3](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.2...v0.9.3) (2025-12-26)
 
 ### Miscellaneous
