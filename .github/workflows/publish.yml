@@ -46,17 +46,13 @@ jobs:
 
     - name: Publish Alpha
       if: steps.check_version.outputs.is_alpha == 'true'
-      run: npm publish --tag alpha --access public
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      run: npm publish --tag alpha --access public --provenance
 
     - name: Publish Regular
       if: steps.check_version.outputs.is_alpha == 'false'
       run: |
         yarn package:build
-        npm publish --access public
-      env:
-        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        npm publish --access public --provenance
 
     - name: Configure AWS Credentials
       if: steps.check_version.outputs.is_alpha == 'false'

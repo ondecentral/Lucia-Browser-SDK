@@ -3,6 +3,10 @@
   "version": "0.9.3",
   "license": "CC-BY-NC-4.0",
   "description": "Lucia JavaScript Library",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ondecentral/Lucia-Browser-SDK.git"
+  },
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.es.js",
