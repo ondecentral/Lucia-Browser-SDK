@@ -228,27 +228,31 @@ describe('Solana Utilities', () => {
     });
 
     it('should handle errors gracefully', async () => {
-      // Instead of redefining the property, we'll use a mock implementation
-      // that throws when accessed
-      const mockError = new Error('Something went wrong');
+      // Save original solana
+      const originalSolana = window.solana;
 
-      // Use a spy that throws when the code tries to access window.solana
-      jest.spyOn(global, 'window', 'get').mockImplementation(() => {
-        const windowMock: any = {};
-        Object.defineProperty(windowMock, 'solana', {
-          get: () => {
-            throw mockError;
+      // Mock window.solana to throw when publicKey is accessed
+      Object.defineProperty(window, 'solana', {
+        value: {
+          isPhantom: true,
+          get publicKey() {
+            throw new Error('Something went wrong');
           },
-        });
-        return windowMock;
+        },
+        writable: true,
+        configurable: true,
       });
 
       const result = await getConnectedSolanaWallet();
 
       expect(result).toBeNull();
 
-      // Restore the original window object
-      jest.spyOn(global, 'window', 'get').mockRestore();
+      // Restore original
+      Object.defineProperty(window, 'solana', {
+        value: originalSolana,
+        writable: true,
+        configurable: true,
+      });
     });
   });
 

@@ -151,14 +151,10 @@ describe('LuciaSDK Integration User Flow', () => {
 
 describe('LuciaSDK UTM/Analytics Integration', () => {
   beforeEach(() => {
-    // Set up window.location with UTM parameters
-    Object.defineProperty(window, 'location', {
-      value: {
-        href: 'https://example.com/?utm_source=google&utm_medium=cpc&utm_campaign=spring&utm_term=shoes&utm_content=ad1',
-        search: '?utm_source=google&utm_medium=cpc&utm_campaign=spring&utm_term=shoes&utm_content=ad1',
-      },
-      writable: true,
-    });
+    // Set up window.location with UTM parameters using history API (works with jsdom)
+    setTestUrl(
+      'https://example.com/?utm_source=google&utm_medium=cpc&utm_campaign=spring&utm_term=shoes&utm_content=ad1',
+    );
   });
 
   it('should include UTM parameters in the analytics payload', async () => {

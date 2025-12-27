@@ -17,6 +17,9 @@ module.exports = {
   roots: ['./src'],
   setupFilesAfterEnv: ['./jest.setup.ts'],
   testEnvironment: 'jsdom',
+  testEnvironmentOptions: {
+    url: 'https://example.com/',
+  },
   testMatch: ['**/*.(test|spec).ts'],
   testPathIgnorePatterns: ['node_modules/'],
   transform: {

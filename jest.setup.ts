@@ -1,23 +1,13 @@
 import '@testing-library/jest-dom';
 
-// Make window.location mockable in tests (required for jsdom 22+)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-delete (window as any).location;
-Object.defineProperty(window, 'location', {
-  value: {
-    href: 'https://example.com/',
-    search: '',
-    hostname: 'example.com',
-    pathname: '/',
-    protocol: 'https:',
-    origin: 'https://example.com',
-    assign: jest.fn(),
-    replace: jest.fn(),
-    reload: jest.fn(),
-  },
-  writable: true,
-  configurable: true,
-});
+// Helper to mock location URL in tests using history API (works with jsdom)
+declare global {
+  var setTestUrl: (url: string) => void;
+}
+
+global.setTestUrl = (url: string) => {
+  window.history.replaceState({}, '', url);
+};
 
 // Mock TextEncoder (required for crypto.subtle.digest)
 Object.defineProperty(global, 'TextEncoder', {
@@ -115,4 +105,5 @@ Object.defineProperty(window, 'solana', {
     on: jest.fn(),
   },
   writable: true,
+  configurable: true,
 });
