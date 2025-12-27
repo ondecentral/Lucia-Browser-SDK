@@ -20,7 +20,7 @@ module.exports = {
   testMatch: ['**/*.(test|spec).ts'],
   testPathIgnorePatterns: ['node_modules/'],
   transform: {
-    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.(ts|js)$': 'ts-jest',
   },
   // uuid v13+ is ESM-only, needs to be transformed
   transformIgnorePatterns: ['/node_modules/(?!(uuid)/)'],
