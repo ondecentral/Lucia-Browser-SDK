@@ -1,5 +1,24 @@
 import '@testing-library/jest-dom';
 
+// Make window.location mockable in tests (required for jsdom 22+)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+delete (window as any).location;
+Object.defineProperty(window, 'location', {
+  value: {
+    href: 'https://example.com/',
+    search: '',
+    hostname: 'example.com',
+    pathname: '/',
+    protocol: 'https:',
+    origin: 'https://example.com',
+    assign: jest.fn(),
+    replace: jest.fn(),
+    reload: jest.fn(),
+  },
+  writable: true,
+  configurable: true,
+});
+
 // Mock TextEncoder (required for crypto.subtle.digest)
 Object.defineProperty(global, 'TextEncoder', {
   value: class MockTextEncoder {
