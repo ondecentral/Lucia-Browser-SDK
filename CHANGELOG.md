@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.5](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.4...v0.9.5) (2025-12-27)
+
+### Bug Fixes
+
+- configure Jest to transform uuid ESM module ([db5c364](https://github.com/ondecentral/Lucia-Browser-SDK/commit/db5c36438bbd3d28093b53c623a07d47abbee742))
+- make window.location mockable for jsdom 22+ ([12403ab](https://github.com/ondecentral/Lucia-Browser-SDK/commit/12403abfa12a596343ee84c7c0a873afd6372062))
+- transform JS files for uuid ESM compatibility ([e5b9ff3](https://github.com/ondecentral/Lucia-Browser-SDK/commit/e5b9ff3630f78aa9f8aeb7dc43736cfb263c8e6a))
+- update Jest config and tests for Node 22 and uuid v13 ([a3cbc3a](https://github.com/ondecentral/Lucia-Browser-SDK/commit/a3cbc3aaf02474fd37027411f33a3871a4daa4ac))
+
+### Miscellaneous
+
+- **ci:** bump actions/checkout from 4 to 6 ([#30](https://github.com/ondecentral/Lucia-Browser-SDK/issues/30)) ([a254183](https://github.com/ondecentral/Lucia-Browser-SDK/commit/a254183e2c4424ea887f0eef4bb1b7507de1930b))
+- **ci:** bump actions/setup-node from 4 to 6 ([#29](https://github.com/ondecentral/Lucia-Browser-SDK/issues/29)) ([647c910](https://github.com/ondecentral/Lucia-Browser-SDK/commit/647c910999980d8e43e2f56fa3edd5d4576fb19c))
+- **ci:** bump aws-actions/configure-aws-credentials from 4 to 5 ([#31](https://github.com/ondecentral/Lucia-Browser-SDK/issues/31)) ([bbc5e2d](https://github.com/ondecentral/Lucia-Browser-SDK/commit/bbc5e2d9afab04d6c8988eb7373ffebfe0b993d3))
+- **deps:** bump release-it from 19.2.1 to 19.2.2 in the release group ([#33](https://github.com/ondecentral/Lucia-Browser-SDK/issues/33)) ([ba8b7f6](https://github.com/ondecentral/Lucia-Browser-SDK/commit/ba8b7f606608484218facf64a5431b5bf899594e))
+- **deps:** bump the testing group with 2 updates ([#32](https://github.com/ondecentral/Lucia-Browser-SDK/issues/32)) ([1d7b7b0](https://github.com/ondecentral/Lucia-Browser-SDK/commit/1d7b7b0d3a5d2065d878864144ffd3c40aba2781))
+- **deps:** bump uuid from 11.1.0 to 13.0.0 ([#34](https://github.com/ondecentral/Lucia-Browser-SDK/issues/34)) ([931a309](https://github.com/ondecentral/Lucia-Browser-SDK/commit/931a3091ee42020337f15b434729f20b69ad1414))
+
 ## [0.9.4](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.3...v0.9.4) (2025-12-26)
 
 ### Miscellaneous
