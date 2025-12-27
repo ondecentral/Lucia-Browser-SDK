@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.6](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.5...v0.9.6) (2025-12-27)
+
+### Continuous Integration
+
+- upgrade to Node 24 for npm Trusted Publishing ([08e916c](https://github.com/ondecentral/Lucia-Browser-SDK/commit/08e916c60d1d79ea2c716407d658bfcd6351c615))
+
 ## [0.9.5](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.4...v0.9.5) (2025-12-27)
 
 ### Bug Fixes
