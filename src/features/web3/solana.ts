@@ -1,6 +1,8 @@
-// Type definitions for the Solana wallet objects
-import Logger from '../infrastructure/logger';
-import Store from '../infrastructure/store';
+/**
+ * Type definitions for the Solana wallet objects
+ */
+
+import { Logger, Store } from '../../infrastructure';
 
 const logger = new Logger(Store.store);
 

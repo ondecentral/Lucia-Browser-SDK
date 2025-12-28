@@ -1,14 +1,8 @@
 import BaseClass from '../base';
 import { ClickTracker, ClickEventData, AutoTrackClicksConfig } from '../features/auto-tracking';
-import {
-  getSessionData,
-  getLidData,
-  getUser,
-  storeSessionID,
-  updateSessionFromServer,
-} from '../infrastructure/session';
+import { getBrowserData, getUtmParams, getWalletData } from '../features/fingerprinting';
+import { getSessionData, getLidData, getUser, storeSessionID, updateSessionFromServer } from '../infrastructure';
 import { ClickEventMetadata } from '../types';
-import { getBrowserData, getUtmParams, getWalletData } from '../utils/data';
 
 class LuciaSDK extends BaseClass {
   private clickTracker: ClickTracker | null = null;

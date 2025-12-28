@@ -14,7 +14,7 @@ export {
   getApplePayAvailable,
   getContrastPreference,
   getColorGamut,
-} from './utils/data';
+} from './features/fingerprinting';
 
 let sdk: Promise<LuciaSDKClass> | null = null;
 

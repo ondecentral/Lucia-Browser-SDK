@@ -1,7 +1,7 @@
-import { getConnectedSolanaWallet, getSolanaWalletName } from '../../utils/solana';
+import { getConnectedSolanaWallet, getSolanaWalletName } from '../../../features/web3/solana';
 
 // Mock the Logger
-jest.mock('../../infrastructure/logger', () =>
+jest.mock('../../../infrastructure/logger', () =>
   jest.fn().mockImplementation(() => ({
     log: jest.fn(),
   })),

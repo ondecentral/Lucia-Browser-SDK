@@ -1,2 +1,3 @@
 // Auto-tracking feature exports
-export { ClickTracker, AutoTrackClicksConfig, ClickEventData } from './click-tracker';
+export { ClickTracker } from './click-tracker';
+export type { AutoTrackClicksConfig, ClickEventData } from './click-tracker';

@@ -1,7 +1,6 @@
-import { getConnectedWalletAddress, getWalletName, getExtendedProviderInfo } from './evm';
-import { getConnectedSolanaWallet, getSolanaWalletName } from './solana';
-
-import { BrowserData, WalletData } from '../types';
+import { BrowserData, WalletData } from '../../types';
+import { getConnectedWalletAddress, getWalletName, getExtendedProviderInfo } from '../web3';
+import { getConnectedSolanaWallet, getSolanaWalletName } from '../web3';
 
 /**
  * Collects static browser and hardware data that's unlikely to change during a session.

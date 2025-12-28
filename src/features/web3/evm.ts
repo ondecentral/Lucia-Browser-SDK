@@ -1,8 +1,7 @@
 /**
  * Ethereum wallet utilities for Lucia Browser SDK
  */
-import Logger from '../infrastructure/logger';
-import Store from '../infrastructure/store';
+import { Logger, Store } from '../../infrastructure';
 
 const logger = new Logger(Store.store);
 
