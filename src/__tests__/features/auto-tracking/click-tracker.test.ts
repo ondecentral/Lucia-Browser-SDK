@@ -33,6 +33,7 @@ describe('ClickTracker', () => {
     };
 
     clickTracker = new ClickTracker(mockConfig, { enabled: true }, trackingCallback, mockLogger);
+    clickTracker.enable(); // Must enable after construction (registry pattern)
   });
 
   afterEach(() => {
@@ -251,6 +252,7 @@ describe('ClickTracker', () => {
         (data) => trackedEvents.push(data),
         mockLogger,
       );
+      customTracker.enable();
 
       const button = document.createElement('button');
       button.className = 'no-track';
@@ -279,6 +281,7 @@ describe('ClickTracker', () => {
         (data) => trackedEvents.push(data),
         mockLogger,
       );
+      customTracker.enable();
 
       const div = document.createElement('div');
       div.className = 'custom-button';
@@ -305,6 +308,7 @@ describe('ClickTracker', () => {
         (data) => trackedEvents.push(data),
         mockLogger,
       );
+      customTracker.enable();
 
       const button = document.createElement('button');
       button.setAttribute('data-lucia-track', 'test');

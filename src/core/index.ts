@@ -1,12 +1,13 @@
 import BaseClass from '../base';
-import { ClickTracker, ClickEventData, AutoTrackClicksConfig } from '../features/auto-tracking';
+import { autoTrackerRegistry, clickTrackerRegistration, ClickEventData } from '../features/auto-tracking';
 import { getBrowserData, getUtmParams, getWalletData } from '../features/fingerprinting';
 import { getSessionData, getLidData, getUser, storeSessionID, updateSessionFromServer } from '../infrastructure';
 import { ClickEventMetadata } from '../types';
 
-class LuciaSDK extends BaseClass {
-  private clickTracker: ClickTracker | null = null;
+// Register trackers at module load time
+autoTrackerRegistry.register(clickTrackerRegistration);
 
+class LuciaSDK extends BaseClass {
   authenticate() {
     this.httpClient.post('/api/key/auth', {});
   }
@@ -59,59 +60,29 @@ class LuciaSDK extends BaseClass {
       }
     }
 
-    // Initialize auto-tracking if configured
-    this.initAutoTracking();
-  }
-
-  /**
-   * Initialize automated click tracking if enabled
-   */
-  private initAutoTracking(): void {
-    // Destroy existing tracker if any
-    if (this.clickTracker) {
-      this.clickTracker.destroy();
-      this.clickTracker = null;
-    }
-
-    const autoTrackConfig = this.store.config?.autoTrackClicks;
-
-    if (!autoTrackConfig) {
-      return;
-    }
-
-    // Normalize config to object format
-    let config: AutoTrackClicksConfig;
-    if (typeof autoTrackConfig === 'boolean') {
-      config = { enabled: autoTrackConfig };
-    } else {
-      config = autoTrackConfig;
-    }
-
-    // Only initialize if enabled
-    if (config.enabled !== false) {
-      this.clickTracker = new ClickTracker(
-        this.store.config!,
-        config,
-        this.handleAutoTrackedClick.bind(this),
-        this.logger,
-      );
-
-      this.logger.log('log', 'Auto-tracking initialized', config);
-    }
+    // Initialize all configured auto-trackers via registry
+    autoTrackerRegistry.initAll(
+      this.store.config!,
+      {
+        clicks: this.handleAutoTrackedClick.bind(this),
+      },
+      this.logger,
+    );
   }
 
   /**
    * Handle automatically tracked click events
    */
-  private handleAutoTrackedClick(data: ClickEventData): void {
+  private handleAutoTrackedClick(data: unknown): void {
+    const clickData = data as ClickEventData;
     const metadata: ClickEventMetadata = {
-      elementType: data.elementType,
-      text: data.text,
-      href: data.href,
-      meta: data.meta,
+      elementType: clickData.elementType,
+      text: clickData.text,
+      href: clickData.href,
+      meta: clickData.meta,
     };
 
-    this.buttonClick(data.button, metadata);
+    this.buttonClick(clickData.button, metadata);
   }
 
   /**
@@ -290,13 +261,10 @@ class LuciaSDK extends BaseClass {
   }
 
   /**
-   * Clean up SDK resources (mainly for testing)
+   * Clean up SDK resources
    */
   destroy() {
-    if (this.clickTracker) {
-      this.clickTracker.destroy();
-      this.clickTracker = null;
-    }
+    autoTrackerRegistry.destroyAll();
   }
 }
 

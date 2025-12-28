@@ -1,4 +1,5 @@
 import LuciaSDKClass from './core';
+import { autoTrackerRegistry } from './features/auto-tracking';
 import { Config, SDK } from './types';
 import { SDK_VERSION } from './version';
 
@@ -36,6 +37,8 @@ export const __resetInstance = () => {
   if (typeof window !== 'undefined') {
     delete window.__luciaInitPromise;
   }
+  // Reset the auto-tracker registry to clear any active trackers
+  autoTrackerRegistry.reset();
 };
 
 const LuciaSDK: SDK = {
