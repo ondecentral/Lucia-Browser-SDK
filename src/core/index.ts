@@ -2,7 +2,14 @@ import BaseClass from '../base';
 import { autoTrackerRegistry, clickTrackerRegistration, ClickEventData } from '../features/auto-tracking';
 import { getBrowserData, getUtmParams, getWalletData } from '../features/fingerprinting';
 import { getSessionData, getLidData, getUser, storeSessionID, updateSessionFromServer } from '../infrastructure';
-import { ClickEventMetadata } from '../types';
+import {
+  ClickEventMetadata,
+  UserInfoPayload,
+  PageViewPayload,
+  ConversionPayload,
+  ClickPayload,
+  WalletPayload,
+} from '../types';
 
 // Register trackers at module load time
 autoTrackerRegistry.register(clickTrackerRegistration);
@@ -98,18 +105,14 @@ class LuciaSDK extends BaseClass {
       localStorage.setItem('luc_uid', userId);
     }
 
-    const payload: any = {
+    const payload: UserInfoPayload = {
       user: {
         name: userId,
         userInfo,
       },
       session,
+      ...(lid && { lid }),
     };
-
-    // Only include lid if it has a value
-    if (lid) {
-      payload.lid = lid;
-    }
 
     await this.httpClient.post('/api/sdk/user', payload);
   }
@@ -122,18 +125,14 @@ class LuciaSDK extends BaseClass {
     const lid = getLidData();
     const session = getSessionData();
 
-    const payload: any = {
+    const payload: PageViewPayload = {
       page,
       user: {
         name: getUser(),
       },
       session,
+      ...(lid && { lid }),
     };
-
-    // Only include lid if it has a value
-    if (lid) {
-      payload.lid = lid;
-    }
 
     await this.httpClient.post('/api/sdk/page', payload);
   }
@@ -148,7 +147,7 @@ class LuciaSDK extends BaseClass {
     const lid = getLidData();
     const session = getSessionData();
 
-    const payload: any = {
+    const payload: ConversionPayload = {
       tag: eventTag,
       amount,
       event: eventDetails,
@@ -156,12 +155,8 @@ class LuciaSDK extends BaseClass {
         name: getUser(),
       },
       session,
+      ...(lid && { lid }),
     };
-
-    // Only include lid if it has a value
-    if (lid) {
-      payload.lid = lid;
-    }
 
     await this.httpClient.post('/api/sdk/conversion', payload);
   }
@@ -175,27 +170,21 @@ class LuciaSDK extends BaseClass {
     const lid = getLidData();
     const session = getSessionData();
 
-    const payload: any = {
+    const payload: ClickPayload = {
       button,
       user: {
         name: getUser(),
       },
       session,
+      ...(lid && { lid }),
+      ...(metadata && {
+        ...(metadata.elementType && { elementType: metadata.elementType }),
+        ...(metadata.text && { text: metadata.text }),
+        ...(metadata.href !== undefined && { href: metadata.href }),
+        ...(metadata.meta && { meta: metadata.meta }),
+        timestamp: Date.now(),
+      }),
     };
-
-    // Only include lid if it has a value
-    if (lid) {
-      payload.lid = lid;
-    }
-
-    // Add metadata if provided (from auto-tracking or manual calls)
-    if (metadata) {
-      if (metadata.elementType) payload.elementType = metadata.elementType;
-      if (metadata.text) payload.text = metadata.text;
-      if (metadata.href !== undefined) payload.href = metadata.href;
-      if (metadata.meta) payload.meta = metadata.meta;
-      payload.timestamp = Date.now();
-    }
 
     await this.httpClient.post('/api/sdk/click', payload);
   }
@@ -210,7 +199,7 @@ class LuciaSDK extends BaseClass {
     const lid = getLidData();
     const session = getSessionData();
 
-    const payload: any = {
+    const payload: WalletPayload = {
       walletAddress,
       chainId,
       walletName,
@@ -218,12 +207,8 @@ class LuciaSDK extends BaseClass {
         name: getUser(),
       },
       session,
+      ...(lid && { lid }),
     };
-
-    // Only include lid if it has a value
-    if (lid) {
-      payload.lid = lid;
-    }
 
     await this.httpClient.post('/api/sdk/wallet', payload);
   }

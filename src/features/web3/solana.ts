@@ -12,7 +12,7 @@ interface SolanaProvider {
   publicKey: {
     toString: () => string;
   };
-  connect: (options?: { onlyIfTrusted?: boolean }) => Promise<any>;
+  connect: (options?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey?: { toString: () => string } }>;
 }
 
 interface SolflareProvider {

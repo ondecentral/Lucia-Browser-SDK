@@ -10,8 +10,6 @@ import Logger from '../../infrastructure/logger';
 import { Config } from '../../types';
 import { defaultPrivacyGuard, PrivacyGuard } from '../../utils/privacy';
 
-
-
 export interface AutoTrackClicksConfig {
   enabled?: boolean;
   selectors?: string[];

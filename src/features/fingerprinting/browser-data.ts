@@ -17,8 +17,8 @@ export async function getBrowserData(): Promise<BrowserData> {
 
   const device = {
     cores: safeAccess(() => navigator.hardwareConcurrency),
-    memory: safeAccess(() => (navigator as any).deviceMemory),
-    cpuClass: safeAccess(() => (navigator as any).cpuClass),
+    memory: safeAccess(() => (navigator as Navigator & { deviceMemory?: number }).deviceMemory),
+    cpuClass: safeAccess(() => (navigator as Navigator & { cpuClass?: string }).cpuClass),
     touch: isTouchEnabled(),
     devicePixelRatio: safeAccess(() => window.devicePixelRatio),
   };
@@ -37,7 +37,7 @@ export async function getBrowserData(): Promise<BrowserData> {
 
   const browser = {
     language: safeAccess(() => navigator.language),
-    encoding: safeAccess(() => (TextDecoder as any).encoding),
+    encoding: safeAccess(() => (TextDecoder as typeof TextDecoder & { encoding?: string }).encoding),
     timezone: safeAccess(() => -new Date().getTimezoneOffset() / 60),
     pluginsLength: safeAccess(() => navigator.plugins.length),
     pluginNames: safeAccess(() => Array.from(navigator.plugins, (p) => p.name)),
@@ -46,16 +46,21 @@ export async function getBrowserData(): Promise<BrowserData> {
     colorGamut: getColorGamut(),
     contrastPreference: getContrastPreference(),
   };
+  type ExtendedPermissions = Permissions & {
+    webglVersion?: PermissionStatus;
+    RENDERER?: PermissionStatus;
+    geolocation?: PermissionStatus;
+  };
   const permissions = {
-    navPer: safeAccess(() => (navigator.permissions as any).webglVersion),
-    renderedPer: safeAccess(() => (navigator.permissions as any).RENDERER),
-    geoPer: safeAccess(() => (navigator.permissions as any).geolocation),
+    navPer: safeAccess(() => (navigator.permissions as ExtendedPermissions).webglVersion),
+    renderedPer: safeAccess(() => (navigator.permissions as ExtendedPermissions).RENDERER),
+    geoPer: safeAccess(() => (navigator.permissions as ExtendedPermissions).geolocation),
   };
 
   const storage = {
     localStorage: safeAccess(() => !!window.localStorage),
     indexedDB: safeAccess(() => !!window.indexedDB),
-    openDB: safeAccess(() => (window as any).openDatabase),
+    openDB: safeAccess(() => (window as Window & { openDatabase?: unknown }).openDatabase),
   };
 
   const staticData: BrowserData = {
@@ -200,7 +205,9 @@ export async function getCanvasFingerprint(): Promise<string | undefined> {
   try {
     const canvas = document.createElement('canvas');
     // Ask for a 2D context we'll read frequently (safe to ignore if unsupported)
-    const ctx = canvas.getContext('2d', { willReadFrequently: true } as any) as CanvasRenderingContext2D | null;
+    const ctx = canvas.getContext('2d', {
+      willReadFrequently: true,
+    } as CanvasRenderingContext2DSettings) as CanvasRenderingContext2D | null;
     if (!ctx) return undefined;
 
     // Fixed canvas size in CSS pixels (no DPR scaling)

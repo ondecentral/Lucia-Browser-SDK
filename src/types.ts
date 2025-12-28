@@ -88,14 +88,14 @@ export interface BrowserData {
     contrastPreference?: string;
   };
   permissions: {
-    navPer?: any;
-    renderedPer?: any;
-    geoPer?: any;
+    navPer?: PermissionStatus;
+    renderedPer?: PermissionStatus;
+    geoPer?: PermissionStatus;
   };
   storage: {
     localStorage?: boolean;
     indexedDB?: boolean;
-    openDB?: any;
+    openDB?: unknown;
   };
 }
 
@@ -103,9 +103,107 @@ export interface BrowserData {
  * Wallet data object returned by getWalletData()
  */
 export interface WalletData {
-  providerInfo?: any;
+  providerInfo?: Partial<ProviderInfo> | null;
   walletAddress?: string | null;
   solanaAddress?: string | null;
   walletName?: string | null;
   solWalletName?: string | null;
+}
+
+/**
+ * Ethereum provider information
+ */
+export interface ProviderInfo {
+  isMetaMask: boolean;
+  isCoinbaseWallet: boolean;
+  isWalletConnect: boolean;
+  isTrust: boolean;
+  isImToken: boolean;
+  isBraveWallet: boolean;
+  isTokenPocket: boolean;
+  isStatus: boolean;
+  isTally: boolean;
+  isAlphaWallet: boolean;
+  isOpera: boolean;
+  isCoin98: boolean;
+  isMathWallet: boolean;
+  isOneInch: boolean;
+  isRainbow: boolean;
+  isBinanceChainWallet: boolean;
+  isFrame: boolean;
+  userAgent: string;
+  chainId?: string;
+  networkVersion?: string;
+  name: string;
+  isPossiblyGenericInjectedProvider?: boolean;
+}
+
+/**
+ * Session data stored in sessionStorage
+ */
+export interface SessionData {
+  id: string;
+  hash?: string;
+  timestamp: number;
+}
+
+/**
+ * User info in API payloads
+ */
+export interface UserPayload {
+  name: string | null;
+  userInfo?: object;
+}
+
+/**
+ * Base API payload structure
+ */
+export interface BaseApiPayload {
+  user: UserPayload;
+  session: SessionData | null;
+  lid?: string;
+}
+
+/**
+ * User info API payload
+ */
+export interface UserInfoPayload extends BaseApiPayload {
+  user: UserPayload & { userInfo: object };
+}
+
+/**
+ * Page view API payload
+ */
+export interface PageViewPayload extends BaseApiPayload {
+  page: string;
+}
+
+/**
+ * Conversion API payload
+ */
+export interface ConversionPayload extends BaseApiPayload {
+  tag: string;
+  amount: number;
+  event: object;
+}
+
+/**
+ * Click API payload
+ */
+export interface ClickPayload extends BaseApiPayload {
+  button: string;
+  elementType?: string;
+  text?: string;
+  href?: string | null;
+  meta?: Record<string, string>;
+  timestamp?: number;
+}
+
+/**
+ * Wallet API payload
+ */
+export interface WalletPayload extends BaseApiPayload {
+  walletAddress: string;
+  chainId: number | string;
+  walletName?: 'Phantom' | 'Metamask';
 }

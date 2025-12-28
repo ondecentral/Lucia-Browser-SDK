@@ -8,8 +8,6 @@ import { IAutoTracker } from './types';
 import Logger from '../../infrastructure/logger';
 import { Config } from '../../types';
 
-
-
 /**
  * Abstract base class for all auto-trackers
  * Implements common enable/disable/destroy lifecycle

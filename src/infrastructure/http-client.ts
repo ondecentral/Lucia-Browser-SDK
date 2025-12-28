@@ -9,7 +9,7 @@ interface QueueItem<T> {
   data: unknown;
   fireAndForget: boolean;
   resolve: (value: T | null) => void;
-  reject: (reason?: any) => void;
+  reject: (reason?: unknown) => void;
   isInit: boolean;
 }
 
@@ -20,7 +20,7 @@ class HttpClient {
 
   logger: Logger;
 
-  private requestQueue: QueueItem<any>[] = [];
+  private requestQueue: QueueItem<unknown>[] = [];
 
   private isProcessingQueue = false;
 
@@ -77,7 +77,14 @@ class HttpClient {
     // If it's not an init request and init hasn't been completed yet, queue it
     if (!isInit && !this.initComplete) {
       return new Promise<T | null>((resolve, reject) => {
-        this.requestQueue.push({ url, data, fireAndForget, resolve, reject, isInit });
+        this.requestQueue.push({
+          url,
+          data,
+          fireAndForget,
+          resolve: resolve as (value: unknown) => void,
+          reject,
+          isInit,
+        });
         this.processQueue();
       });
     }
