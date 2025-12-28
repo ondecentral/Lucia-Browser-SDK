@@ -1,5 +1,5 @@
 import LuciaSDK from '../../core';
-import * as sessionUtils from '../../utils/session';
+import * as sessionUtils from '../../infrastructure/session';
 
 // Helper to mock fetch and capture requests
 let fetchMock: jest.Mock;

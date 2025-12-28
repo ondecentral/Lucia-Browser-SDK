@@ -3,10 +3,9 @@
  * Provides zero-config click tracking with element-level control
  */
 
-import Logger from './logger';
-import { defaultPrivacyGuard, PrivacyGuard } from './privacy';
-
-import { Config } from '../types';
+import Logger from '../../infrastructure/logger';
+import { Config } from '../../types';
+import { defaultPrivacyGuard, PrivacyGuard } from '../../utils/privacy';
 
 export interface AutoTrackClicksConfig {
   enabled?: boolean;

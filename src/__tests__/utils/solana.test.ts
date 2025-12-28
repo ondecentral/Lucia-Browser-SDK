@@ -1,7 +1,7 @@
 import { getConnectedSolanaWallet, getSolanaWalletName } from '../../utils/solana';
 
 // Mock the Logger
-jest.mock('../../utils/logger', () =>
+jest.mock('../../infrastructure/logger', () =>
   jest.fn().mockImplementation(() => ({
     log: jest.fn(),
   })),

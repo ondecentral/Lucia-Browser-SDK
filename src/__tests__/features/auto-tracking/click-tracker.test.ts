@@ -2,10 +2,10 @@
  * @jest-environment jsdom
  */
 
-import { Config } from '../../types';
-import { ClickTracker, ClickEventData } from '../../utils/click-tracker';
-import Logger from '../../utils/logger';
-import Store from '../../utils/store';
+import { ClickTracker, ClickEventData } from '../../../features/auto-tracking/click-tracker';
+import Logger from '../../../infrastructure/logger';
+import Store from '../../../infrastructure/store';
+import { Config } from '../../../types';
 
 describe('ClickTracker', () => {
   let clickTracker: ClickTracker;

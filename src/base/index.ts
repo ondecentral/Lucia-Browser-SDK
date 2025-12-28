@@ -1,7 +1,5 @@
+import { HttpClient, Logger, Store } from '../infrastructure';
 import { Config } from '../types';
-import HttpClient from '../utils/http-client';
-import Logger from '../utils/logger';
-import Store from '../utils/store';
 
 class BaseClass {
   store: typeof Store.store;

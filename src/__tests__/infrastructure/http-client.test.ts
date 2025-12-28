@@ -1,6 +1,6 @@
 import { SERVER_URL, TEST_SERVER_URL } from '../../constants';
-import HttpClient from '../../utils/http-client';
-import Store from '../../utils/store';
+import HttpClient from '../../infrastructure/http-client';
+import Store from '../../infrastructure/store';
 import { SDK_VERSION } from '../../version';
 
 describe('HttpClient', () => {

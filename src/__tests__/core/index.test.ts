@@ -1,6 +1,6 @@
 import LuciaSDK from '../../core';
+import * as sessionUtils from '../../infrastructure/session';
 import * as dataUtils from '../../utils/data';
-import * as sessionUtils from '../../utils/session';
 
 describe('LuciaSDK', () => {
   let sdk: LuciaSDK;

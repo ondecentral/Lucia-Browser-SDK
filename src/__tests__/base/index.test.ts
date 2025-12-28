@@ -1,10 +1,10 @@
 import BaseClass from '../../base';
-import HttpClient from '../../utils/http-client';
-import Logger from '../../utils/logger';
-import Store from '../../utils/store';
+import HttpClient from '../../infrastructure/http-client';
+import Logger from '../../infrastructure/logger';
+import Store from '../../infrastructure/store';
 
 // Mock the dependencies
-jest.mock('../../utils/logger');
+jest.mock('../../infrastructure/logger');
 
 describe('BaseClass', () => {
   let baseInstance: BaseClass;
