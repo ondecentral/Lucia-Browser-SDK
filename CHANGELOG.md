@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.9](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.8...v0.9.9) (2025-12-29)
+
+### Code Refactoring
+
+- add registry for auto-tracking feature ([fe65cb9](https://github.com/ondecentral/Lucia-Browser-SDK/commit/fe65cb93fb70ae0c1386f98aab8854eae226cd9e))
+- enable strict any checking for production code ([cbe9c45](https://github.com/ondecentral/Lucia-Browser-SDK/commit/cbe9c451b6564a0e9a4ed10fcc0c4a699c081085))
+- separate features, infrastructure, and utils folders ([84ebf99](https://github.com/ondecentral/Lucia-Browser-SDK/commit/84ebf9931f832cb0b4a6c33b84e6235470f2fc4a))
+- sort data and web3 utils in to features ([a5cecbc](https://github.com/ondecentral/Lucia-Browser-SDK/commit/a5cecbce45c4ac1a2e6e6e7e837594d2b4a38af4))
+
 ## [0.9.8](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.7...v0.9.8) (2025-12-29)
 
 ### Miscellaneous
