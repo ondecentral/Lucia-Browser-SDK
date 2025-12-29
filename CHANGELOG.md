@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.7](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.6...v0.9.7) (2025-12-29)
+
+### Miscellaneous
+
+- **deps:** bump eslint-plugin-jest in the eslint group ([1ef0173](https://github.com/ondecentral/Lucia-Browser-SDK/commit/1ef01731a26a5a5b0c50b01218ea20af1ef12b1e))
+
 ## [0.9.6](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.5...v0.9.6) (2025-12-27)
 
 ### Continuous Integration
