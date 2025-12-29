@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.8](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.7...v0.9.8) (2025-12-29)
+
+### Miscellaneous
+
+- **deps:** bump @types/uuid in the typescript group ([f12141e](https://github.com/ondecentral/Lucia-Browser-SDK/commit/f12141e10ae149ba079549947b2499aee98341e0))
+
 ## [0.9.7](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.6...v0.9.7) (2025-12-29)
 
 ### Miscellaneous
