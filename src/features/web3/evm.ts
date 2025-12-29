@@ -1,8 +1,7 @@
 /**
  * Ethereum wallet utilities for Lucia Browser SDK
  */
-import Logger from './logger';
-import Store from './store';
+import { Logger, Store } from '../../infrastructure';
 
 const logger = new Logger(Store.store);
 
@@ -36,8 +35,8 @@ export async function getEthereumAddress(): Promise<string | null> {
     }
 
     return null;
-  } catch (error: any) {
-    if (error.code === 4001) {
+  } catch (error: unknown) {
+    if (error instanceof Error && 'code' in error && (error as { code: number }).code === 4001) {
       // User rejected the request
       logger.log('error', 'Connection request rejected by user.');
     } else {
@@ -212,7 +211,10 @@ export async function getExtendedProviderInfo(): Promise<ProviderInfo | null> {
       provider.isFrame = true;
     }
 
-    if (typeof window.ethereum.request === 'function' && typeof (window.ethereum as any)._metamask === 'undefined') {
+    if (
+      typeof window.ethereum.request === 'function' &&
+      typeof (window.ethereum as { _metamask?: unknown })._metamask === 'undefined'
+    ) {
       provider.isPossiblyGenericInjectedProvider = true;
     }
   }

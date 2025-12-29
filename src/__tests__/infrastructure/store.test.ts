@@ -1,4 +1,4 @@
-import Store from '../../utils/store';
+import Store from '../../infrastructure/store';
 
 describe('Store', () => {
   beforeEach(() => {

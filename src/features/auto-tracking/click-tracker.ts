@@ -3,10 +3,12 @@
  * Provides zero-config click tracking with element-level control
  */
 
-import Logger from './logger';
-import { defaultPrivacyGuard, PrivacyGuard } from './privacy';
+import { BaseAutoTracker } from './base';
+import { TrackerRegistration } from './types';
 
-import { Config } from '../types';
+import Logger from '../../infrastructure/logger';
+import { Config } from '../../types';
+import { defaultPrivacyGuard, PrivacyGuard } from '../../utils/privacy';
 
 export interface AutoTrackClicksConfig {
   enabled?: boolean;
@@ -41,21 +43,13 @@ const DEFAULT_DEBOUNCE_MS = 500;
 /**
  * ClickTracker handles automated click event tracking
  */
-export class ClickTracker {
-  private config: AutoTrackClicksConfig;
-
-  private sdkConfig: Config;
-
-  private logger: Logger;
+export class ClickTracker extends BaseAutoTracker<AutoTrackClicksConfig, ClickEventData> {
+  readonly name = 'clicks';
+  readonly configKey = 'autoTrackClicks';
 
   private privacyGuard: PrivacyGuard;
-
   private debounceTimers: Map<Element, number> = new Map();
-
-  private trackingCallback: (data: ClickEventData) => void;
-
   private listenerAttached = false;
-
   private boundHandleClick: ((event: MouseEvent) => void) | null = null;
 
   constructor(
@@ -64,25 +58,22 @@ export class ClickTracker {
     trackingCallback: (data: ClickEventData) => void,
     logger: Logger,
   ) {
-    this.sdkConfig = sdkConfig;
-    this.config = {
+    // Normalize config before passing to base
+    const normalizedConfig: AutoTrackClicksConfig = {
       enabled: autoTrackConfig.enabled ?? true,
       selectors: autoTrackConfig.selectors ?? DEFAULT_SELECTORS,
       ignore: autoTrackConfig.ignore ?? DEFAULT_IGNORE,
     };
-    this.trackingCallback = trackingCallback;
-    this.logger = logger;
-    this.privacyGuard = defaultPrivacyGuard;
 
-    if (this.config.enabled) {
-      this.attachListener();
-    }
+    super(sdkConfig, normalizedConfig, trackingCallback, logger);
+    this.privacyGuard = defaultPrivacyGuard;
+    // Note: Don't auto-enable here - the registry will call enable() after construction
   }
 
   /**
    * Attach the delegated click event listener
    */
-  private attachListener(): void {
+  protected attachListeners(): void {
     if (this.listenerAttached) {
       return;
     }
@@ -103,11 +94,23 @@ export class ClickTracker {
   }
 
   /**
+   * Detach the delegated click event listener
+   */
+  protected detachListeners(): void {
+    if (this.listenerAttached && this.boundHandleClick && typeof document !== 'undefined') {
+      document.removeEventListener('click', this.boundHandleClick);
+      this.listenerAttached = false;
+    }
+    this.debounceTimers.clear();
+    this.boundHandleClick = null;
+  }
+
+  /**
    * Handle click events via delegation
    */
   private handleClick(event: MouseEvent): void {
     // Check if tracking is enabled
-    if (!this.config.enabled) {
+    if (!this.enabled) {
       return;
     }
 
@@ -140,7 +143,7 @@ export class ClickTracker {
     const trackingData = this.extractTrackingData(trackableElement);
     if (trackingData) {
       this.logger.log('log', 'ClickTracker: Tracking click', trackingData);
-      this.trackingCallback(trackingData);
+      this.callback(trackingData);
     }
   }
 
@@ -458,40 +461,30 @@ export class ClickTracker {
 
     return Object.keys(meta).length > 0 ? meta : null;
   }
-
-  /**
-   * Enable tracking
-   */
-  enable(): void {
-    if (!this.config.enabled) {
-      this.config.enabled = true;
-      this.attachListener();
-      this.logger.log('log', 'ClickTracker: Enabled');
-    }
-  }
-
-  /**
-   * Disable tracking
-   */
-  disable(): void {
-    this.config.enabled = false;
-    this.logger.log('log', 'ClickTracker: Disabled');
-    // Note: We don't remove the listener to avoid re-attachment complexity
-    // The handleClick method will check config.enabled
-  }
-
-  /**
-   * Cleanup resources
-   */
-  destroy(): void {
-    // Remove event listener if attached
-    if (this.listenerAttached && this.boundHandleClick && typeof document !== 'undefined') {
-      document.removeEventListener('click', this.boundHandleClick);
-      this.listenerAttached = false;
-    }
-
-    this.debounceTimers.clear();
-    this.boundHandleClick = null;
-    this.logger.log('log', 'ClickTracker: Destroyed');
-  }
 }
+
+/**
+ * Normalize click tracker config from boolean | object | undefined
+ */
+function normalizeClickTrackerConfig(raw: boolean | AutoTrackClicksConfig | undefined): AutoTrackClicksConfig | null {
+  if (raw === undefined || raw === false) {
+    return null;
+  }
+  if (raw === true) {
+    return { enabled: true };
+  }
+  if (raw.enabled === false) {
+    return null;
+  }
+  return raw;
+}
+
+/**
+ * Registration object for the click tracker
+ */
+export const clickTrackerRegistration: TrackerRegistration<AutoTrackClicksConfig, ClickEventData> = {
+  name: 'clicks',
+  configKey: 'autoTrackClicks',
+  factory: (sdkConfig, config, callback, logger) => new ClickTracker(sdkConfig, config, callback, logger),
+  normalizeConfig: normalizeClickTrackerConfig,
+};

@@ -1,6 +1,8 @@
-// Type definitions for the Solana wallet objects
-import Logger from './logger';
-import Store from './store';
+/**
+ * Type definitions for the Solana wallet objects
+ */
+
+import { Logger, Store } from '../../infrastructure';
 
 const logger = new Logger(Store.store);
 
@@ -10,7 +12,7 @@ interface SolanaProvider {
   publicKey: {
     toString: () => string;
   };
-  connect: (options?: { onlyIfTrusted?: boolean }) => Promise<any>;
+  connect: (options?: { onlyIfTrusted?: boolean }) => Promise<{ publicKey?: { toString: () => string } }>;
 }
 
 interface SolflareProvider {

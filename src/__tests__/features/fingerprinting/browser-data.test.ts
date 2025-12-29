@@ -1,4 +1,3 @@
-import * as dataModule from '../../utils/data';
 import {
   getUtmParams,
   filterObject,
@@ -11,10 +10,11 @@ import {
   getBrowserData,
   getWalletData,
   clearBrowserDataCache,
-} from '../../utils/data';
-import * as evmUtils from '../../utils/evm';
-import { ProviderInfo } from '../../utils/evm';
-import * as solanaUtils from '../../utils/solana';
+} from '../../../features/fingerprinting';
+import * as dataModule from '../../../features/fingerprinting/browser-data';
+import { ProviderInfo } from '../../../features/web3';
+import * as evmUtils from '../../../features/web3/evm';
+import * as solanaUtils from '../../../features/web3/solana';
 
 // Define interfaces for type safety in tests
 interface BrowserData {

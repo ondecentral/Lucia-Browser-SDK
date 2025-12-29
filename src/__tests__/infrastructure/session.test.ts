@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 
-import Logger from '../../utils/logger';
+import Logger from '../../infrastructure/logger';
 import {
   isSessionValid,
   getSessionData,
@@ -9,7 +9,7 @@ import {
   updateSessionFromServer,
   generateSessionID,
   getUser,
-} from '../../utils/session';
+} from '../../infrastructure/session';
 
 // Mock the uuid module
 jest.mock('uuid', () => ({
@@ -17,7 +17,7 @@ jest.mock('uuid', () => ({
 }));
 
 // Mock the Logger class
-jest.mock('../../utils/logger');
+jest.mock('../../infrastructure/logger');
 
 describe('Session Manager', () => {
   // Mock Date.now() for stable tests

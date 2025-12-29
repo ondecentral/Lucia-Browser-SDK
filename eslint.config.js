@@ -103,7 +103,7 @@ export default tseslint.config(
       ],
       '@typescript-eslint/no-use-before-define': 'off',
       '@typescript-eslint/no-require-imports': 'off',
-      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/ban-ts-comment': 'off',
       '@typescript-eslint/no-unnecessary-type-constraint': 'off',
       camelcase: 'off',
@@ -174,6 +174,7 @@ export default tseslint.config(
     rules: {
       ...jest.configs.recommended.rules,
       'import/no-extraneous-dependencies': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 );

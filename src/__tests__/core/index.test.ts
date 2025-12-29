@@ -1,13 +1,14 @@
 import LuciaSDK from '../../core';
-import * as dataUtils from '../../utils/data';
-import * as sessionUtils from '../../utils/session';
+import * as dataUtils from '../../features/fingerprinting';
+import * as sessionUtils from '../../infrastructure/session';
+import { BrowserData, WalletData } from '../../types';
 
 describe('LuciaSDK', () => {
   let sdk: LuciaSDK;
   let httpClientPostSpy: jest.SpyInstance;
 
   // Common mock implementations with proper types
-  const mockBrowserData = {
+  const mockBrowserData: BrowserData = {
     device: {
       cores: 8,
       memory: 16,
@@ -38,9 +39,9 @@ describe('LuciaSDK', () => {
       contrastPreference: 'None',
     },
     permissions: {
-      navPer: null,
-      renderedPer: null,
-      geoPer: null,
+      navPer: undefined,
+      renderedPer: undefined,
+      geoPer: undefined,
     },
     storage: {
       localStorage: true,
@@ -49,7 +50,7 @@ describe('LuciaSDK', () => {
     },
   };
 
-  const mockWalletData = {
+  const mockWalletData: WalletData = {
     walletAddress: '0xmock123',
     solanaAddress: 'mock456',
     providerInfo: { chainId: '0x1', isMetaMask: true },

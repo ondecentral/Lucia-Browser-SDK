@@ -8,10 +8,10 @@ import {
   isMetaMask,
   getWalletName,
   getExtendedProviderInfo,
-} from '../../utils/evm';
+} from '../../../features/web3/evm';
 
 // Mock the Logger
-jest.mock('../../utils/logger', () =>
+jest.mock('../../../infrastructure/logger', () =>
   jest.fn().mockImplementation(() => ({
     log: jest.fn(),
   })),
