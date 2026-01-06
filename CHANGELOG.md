@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.10](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.9...v0.9.10) (2026-01-06)
+
+### Miscellaneous
+
+- **deps:** bump the eslint group with 4 updates ([cb96cca](https://github.com/ondecentral/Lucia-Browser-SDK/commit/cb96cca933a266a6cb33f0717d187dccb8f8d100))
+- **deps:** bump the release group with 2 updates ([eea61d9](https://github.com/ondecentral/Lucia-Browser-SDK/commit/eea61d945a55a9df36a96b3dcb64412c217f1b89))
+
 ## [0.9.9](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.8...v0.9.9) (2025-12-29)
 
 ### Code Refactoring
