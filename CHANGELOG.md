@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.11](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.10...v0.9.11) (2026-01-12)
+
+### Miscellaneous
+
+- **deps:** bump rollup from 4.54.0 to 4.55.1 in the rollup group ([43d2743](https://github.com/ondecentral/Lucia-Browser-SDK/commit/43d27433b7d1eb0d038c0f047ca1a9d7fe3fc16e))
+- **deps:** bump the eslint group with 3 updates ([a02e4bb](https://github.com/ondecentral/Lucia-Browser-SDK/commit/a02e4bb343973ca7240a57da9c88a25c1ec080f7))
+- **deps:** bump the release group with 3 updates ([b2bc280](https://github.com/ondecentral/Lucia-Browser-SDK/commit/b2bc2801655fc5c3d1d2de36bcd90c506d4b6bfc))
+
 ## [0.9.10](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.9...v0.9.10) (2026-01-06)
 
 ### Miscellaneous
