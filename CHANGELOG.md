@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.9.12](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.11...v0.9.12) (2026-01-19)
+
+### Miscellaneous
+
+- **deps:** bump prettier from 3.7.4 to 3.8.0 ([bd56f71](https://github.com/ondecentral/Lucia-Browser-SDK/commit/bd56f71c3140ba5de20e0e66a82e494a0bf0edbf))
+- **deps:** bump the eslint group with 3 updates ([f146dcf](https://github.com/ondecentral/Lucia-Browser-SDK/commit/f146dcf2536e3215e90b6952e1a5e588c5e9a464))
+
 ## [0.9.11](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.10...v0.9.11) (2026-01-12)
 
 ### Miscellaneous
