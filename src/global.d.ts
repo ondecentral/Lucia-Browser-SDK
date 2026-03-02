@@ -35,6 +35,21 @@ interface GlowProvider {
 }
 
 declare global {
+  /** EIP-1193 provider interface (subset used by EIP-6963 discovery) */
+  interface EIP1193Provider {
+    request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+    on?: (event: string, callback: (...args: unknown[]) => void) => void;
+    removeListener?: (event: string, callback: (...args: unknown[]) => void) => void;
+  }
+
+  interface WindowEventMap {
+    'eip6963:announceProvider': CustomEvent<{
+      info: { uuid: string; name: string; icon: string; rdns: string };
+      provider: EIP1193Provider;
+    }>;
+    'eip6963:requestProvider': Event;
+  }
+
   interface Window {
     __luciaInitPromise?: Promise<LuciaSDKClass>;
     LuciaSDK?: SDK;

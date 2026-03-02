@@ -1,6 +1,14 @@
 import BaseClass from '../base';
 import { autoTrackerRegistry, clickTrackerRegistration, ClickEventData } from '../features/auto-tracking';
 import { getBrowserData, getUtmParams } from '../features/fingerprinting';
+import {
+  startEIP6963Discovery,
+  getEIP6963ConnectedWallets,
+  getEIP6963Providers,
+  resolveEIP6963ProviderByAddress,
+  onEIP6963Announce,
+} from '../features/web3/eip6963';
+import type { EIP6963ProviderDetail } from '../features/web3/eip6963';
 import { detectEvmProvider } from '../features/web3/evm';
 import { detectSolanaProvider } from '../features/web3/solana';
 import { getSessionData, getLidData, getUser, storeSessionID, updateSessionFromServer } from '../infrastructure';
@@ -36,6 +44,14 @@ class LuciaSDK extends BaseClass {
     let session = getSessionData();
     if (!session) {
       session = storeSessionID();
+    }
+
+    // Start EIP-6963 discovery early so wallets can announce during network time.
+    // Best-effort — some CSP policies could block custom event dispatch.
+    try {
+      startEIP6963Discovery();
+    } catch {
+      /* non-fatal */
     }
 
     const data = await getBrowserData();
@@ -107,10 +123,27 @@ class LuciaSDK extends BaseClass {
    * Auto-detect already-connected wallets and send them to the backend.
    * Runs after init so lid and session hash are available.
    * Each chain is independent — one failing must not block the other.
+   *
+   * EIP-6963 is the PRIMARY path for EVM wallets. The legacy
+   * window.ethereum.selectedAddress check is the FALLBACK for wallets
+   * that don't support EIP-6963.
    */
   private async autoDetectWallets(): Promise<void> {
-    // EVM — check window.ethereum.selectedAddress (already connected, no prompt)
-    if (window.ethereum?.selectedAddress) {
+    let eip6963Found = false;
+
+    // EVM — EIP-6963 primary path
+    try {
+      const wallets = await getEIP6963ConnectedWallets();
+      for (const w of wallets) {
+        eip6963Found = true;
+        await this.sendWalletInfo(w.address, { provider: w.providerName });
+      }
+    } catch {
+      // EIP-6963 detection failed — fall through to legacy
+    }
+
+    // EVM — legacy fallback (only if EIP-6963 found nothing)
+    if (!eip6963Found && window.ethereum?.selectedAddress) {
       try {
         const provider = detectEvmProvider();
         await this.sendWalletInfo(window.ethereum.selectedAddress, { provider: provider ?? undefined });
@@ -119,7 +152,7 @@ class LuciaSDK extends BaseClass {
       }
     }
 
-    // Solana — check window.solana for already-connected wallet
+    // Solana — check window.solana for already-connected wallet (unchanged)
     if (window.solana?.isConnected && window.solana?.publicKey) {
       try {
         const provider = detectSolanaProvider();
@@ -128,21 +161,37 @@ class LuciaSDK extends BaseClass {
         // Solana auto-detection failed — non-fatal
       }
     }
+
+    // Attach per-provider accountsChanged listeners for EIP-6963 providers
+    this.setupEIP6963AccountListeners();
   }
 
   /**
    * Set up event listeners for wallet connection changes.
-   * EVM: accountsChanged fires when user connects, disconnects, or switches.
+   * EVM: per-provider accountsChanged via EIP-6963 (preferred), or
+   *      window.ethereum accountsChanged as fallback.
    * Solana: connect fires when wallet connects.
    */
   private setupWalletListeners(): void {
-    // EVM: accountsChanged
+    // EIP-6963: listen for late-arriving providers
+    const cleanupAnnounce = onEIP6963Announce((detail) => {
+      this.handleLateEIP6963Provider(detail);
+    });
+    this.walletListenerCleanups.push(cleanupAnnounce);
+
+    // EVM: legacy accountsChanged on window.ethereum
+    // Try EIP-6963 resolution first for correct attribution, fall back to flag detection
     if (window.ethereum?.on) {
       const handler = (accounts: unknown) => {
         const accts = accounts as string[];
         if (accts[0]) {
-          const provider = detectEvmProvider();
-          this.sendWalletInfo(accts[0], { provider: provider ?? undefined }).catch(() => {});
+          const addr = accts[0];
+          resolveEIP6963ProviderByAddress(addr)
+            .catch(() => null)
+            .then((eip6963Name) => {
+              const provider = eip6963Name ?? detectEvmProvider();
+              this.sendWalletInfo(addr, { provider: provider ?? undefined }).catch(() => {});
+            });
         }
       };
       window.ethereum.on('accountsChanged', handler);
@@ -151,7 +200,7 @@ class LuciaSDK extends BaseClass {
       });
     }
 
-    // Solana: connect
+    // Solana: connect (unchanged)
     if (window.solana?.on) {
       const handler = () => {
         if (window.solana?.publicKey) {
@@ -164,6 +213,68 @@ class LuciaSDK extends BaseClass {
         window.solana?.removeListener?.('connect', handler);
       });
     }
+  }
+
+  /**
+   * Attach accountsChanged listeners to each EIP-6963 provider that
+   * returned accounts. The provider name is known from the EIP-6963 info,
+   * so attribution is guaranteed correct.
+   */
+  private setupEIP6963AccountListeners(): void {
+    const allProviders = getEIP6963Providers();
+    for (const [, detail] of allProviders) {
+      this.attachEIP6963AccountsChanged(detail);
+    }
+  }
+
+  /**
+   * Handle a late-arriving EIP-6963 provider: check for connected accounts
+   * and attach accountsChanged.
+   */
+  private handleLateEIP6963Provider(detail: EIP6963ProviderDetail): void {
+    const { info, provider } = detail;
+    // Check for already-connected accounts
+    if (provider.request) {
+      provider
+        .request({ method: 'eth_accounts' })
+        .then((accounts: unknown) => {
+          const addrs = accounts as string[];
+          if (Array.isArray(addrs)) {
+            for (const addr of addrs) {
+              if (typeof addr === 'string' && addr.length > 0) {
+                this.sendWalletInfo(addr, { provider: info.name }).catch(() => {});
+              }
+            }
+          }
+        })
+        .catch(() => {});
+    }
+    // Attach accountsChanged
+    this.attachEIP6963AccountsChanged(detail);
+  }
+
+  /**
+   * Attach an accountsChanged listener to a single EIP-6963 provider.
+   */
+  private attachEIP6963AccountsChanged(detail: EIP6963ProviderDetail): void {
+    const { info, provider } = detail;
+    if (!provider.on) return;
+
+    const handler = (accounts: unknown) => {
+      const accts = accounts as string[];
+      if (Array.isArray(accts)) {
+        for (const addr of accts) {
+          if (typeof addr === 'string' && addr.length > 0) {
+            this.sendWalletInfo(addr, { provider: info.name }).catch(() => {});
+          }
+        }
+      }
+    };
+
+    provider.on('accountsChanged', handler);
+    this.walletListenerCleanups.push(() => {
+      provider.removeListener?.('accountsChanged', handler);
+    });
   }
 
   /**
