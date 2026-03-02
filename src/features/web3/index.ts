@@ -1,14 +1,4 @@
-export {
-  checkIfEthereumProviderExists,
-  getEthereumAddress,
-  formatEthereumAddress,
-  setupEthereumAccountListeners,
-  getEthereumChainId,
-  getConnectedWalletAddress,
-  isMetaMask,
-  getWalletName,
-  getExtendedProviderInfo,
-} from './evm';
-export type { ProviderInfo } from './evm';
-
-export { getConnectedSolanaWallet, getSolanaWalletName } from './solana';
+export { detectEvmProvider } from './evm';
+export { detectSolanaProvider } from './solana';
+export { EVM_PROVIDERS, SOLANA_PROVIDERS } from './provider-registry';
+export type { ProviderEntry } from './provider-registry';
