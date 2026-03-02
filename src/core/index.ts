@@ -1,9 +1,12 @@
 import BaseClass from '../base';
 import { autoTrackerRegistry, clickTrackerRegistration, ClickEventData } from '../features/auto-tracking';
-import { getBrowserData, getUtmParams, getWalletData } from '../features/fingerprinting';
+import { getBrowserData, getUtmParams } from '../features/fingerprinting';
+import { detectEvmProvider } from '../features/web3/evm';
+import { detectSolanaProvider } from '../features/web3/solana';
 import { getSessionData, getLidData, getUser, storeSessionID, updateSessionFromServer } from '../infrastructure';
 import {
   ClickEventMetadata,
+  WalletInfoOptions,
   UserInfoPayload,
   PageViewPayload,
   ConversionPayload,
@@ -15,6 +18,12 @@ import {
 autoTrackerRegistry.register(clickTrackerRegistration);
 
 class LuciaSDK extends BaseClass {
+  /** Addresses already sent this session — avoids redundant POSTs */
+  private sentWallets = new Set<string>();
+
+  /** Stored listener references for cleanup */
+  private walletListenerCleanups: Array<() => void> = [];
+
   authenticate() {
     this.httpClient.post('/api/key/auth', {});
   }
@@ -32,7 +41,6 @@ class LuciaSDK extends BaseClass {
     const data = await getBrowserData();
     const url = new URL(window.location.href);
     const redirectHash = url.searchParams.get('lucia');
-    const walletData = await getWalletData();
 
     // Prepare session payload - only include hash if it exists (from backend)
     const sessionPayload: { id: string; hash?: string } = { id: session.id };
@@ -47,7 +55,6 @@ class LuciaSDK extends BaseClass {
           name: getUser(),
         },
         data,
-        walletData,
         session: sessionPayload,
         redirectHash,
         utm: getUtmParams(),
@@ -56,7 +63,6 @@ class LuciaSDK extends BaseClass {
     );
     if (result) {
       // Store the lid from server response - only if it's a valid string
-      // Prevents storing "undefined" as a string when result.lid is undefined
       if (result.lid) {
         localStorage.setItem('lid', result.lid);
       }
@@ -75,6 +81,11 @@ class LuciaSDK extends BaseClass {
       },
       this.logger,
     );
+
+    // Wallet detection runs AFTER init response (lid + session hash are available)
+    // Auto-detect is best-effort — failures must not break init
+    await this.autoDetectWallets();
+    this.setupWalletListeners();
   }
 
   /**
@@ -90,6 +101,69 @@ class LuciaSDK extends BaseClass {
     };
 
     this.buttonClick(clickData.button, metadata);
+  }
+
+  /**
+   * Auto-detect already-connected wallets and send them to the backend.
+   * Runs after init so lid and session hash are available.
+   * Each chain is independent — one failing must not block the other.
+   */
+  private async autoDetectWallets(): Promise<void> {
+    // EVM — check window.ethereum.selectedAddress (already connected, no prompt)
+    if (window.ethereum?.selectedAddress) {
+      try {
+        const provider = detectEvmProvider();
+        await this.sendWalletInfo(window.ethereum.selectedAddress, { provider: provider ?? undefined });
+      } catch {
+        // EVM auto-detection failed — non-fatal, continue to Solana
+      }
+    }
+
+    // Solana — check window.solana for already-connected wallet
+    if (window.solana?.isConnected && window.solana?.publicKey) {
+      try {
+        const provider = detectSolanaProvider();
+        await this.sendWalletInfo(window.solana.publicKey.toString(), { provider: provider ?? undefined });
+      } catch {
+        // Solana auto-detection failed — non-fatal
+      }
+    }
+  }
+
+  /**
+   * Set up event listeners for wallet connection changes.
+   * EVM: accountsChanged fires when user connects, disconnects, or switches.
+   * Solana: connect fires when wallet connects.
+   */
+  private setupWalletListeners(): void {
+    // EVM: accountsChanged
+    if (window.ethereum?.on) {
+      const handler = (accounts: unknown) => {
+        const accts = accounts as string[];
+        if (accts[0]) {
+          const provider = detectEvmProvider();
+          this.sendWalletInfo(accts[0], { provider: provider ?? undefined }).catch(() => {});
+        }
+      };
+      window.ethereum.on('accountsChanged', handler);
+      this.walletListenerCleanups.push(() => {
+        window.ethereum?.removeListener?.('accountsChanged', handler);
+      });
+    }
+
+    // Solana: connect
+    if (window.solana?.on) {
+      const handler = () => {
+        if (window.solana?.publicKey) {
+          const provider = detectSolanaProvider();
+          this.sendWalletInfo(window.solana.publicKey.toString(), { provider: provider ?? undefined }).catch(() => {});
+        }
+      };
+      window.solana.on('connect', handler);
+      this.walletListenerCleanups.push(() => {
+        window.solana?.removeListener?.('connect', handler);
+      });
+    }
   }
 
   /**
@@ -190,19 +264,49 @@ class LuciaSDK extends BaseClass {
   }
 
   /**
-   * Sends wallet information to the server
-   * @param walletAddress The wallet address of the user
-   * @param chainId The chain ID of the wallet
-   * @param walletName
+   * Sends wallet information to the server. Thin pipe — no validation or classification.
+   *
+   * Supports both new and old calling patterns:
+   *   New: sendWalletInfo(address, { provider, connectorType, chainId })
+   *   Old: sendWalletInfo(address, chainId, walletName)
+   *
+   * @param walletAddress The wallet address
+   * @param optionsOrChainId Options object or legacy chainId
+   * @param walletName Legacy wallet name (mapped to provider)
    */
-  async sendWalletInfo(walletAddress: string, chainId: number | string, walletName?: 'Phantom' | 'Metamask') {
+  async sendWalletInfo(
+    walletAddress: string,
+    optionsOrChainId?: WalletInfoOptions | number | string,
+    walletName?: string,
+  ) {
+    if (!walletAddress || typeof walletAddress !== 'string') return;
+
+    // Session-scoped dedup — skip if already sent this address
+    if (this.sentWallets.has(walletAddress)) return;
+    // Add optimistically to prevent rapid double-fire; remove on failure so retry is possible
+    this.sentWallets.add(walletAddress);
+
+    // Normalize: support both new options object and old (chainId, walletName) signature
+    let options: WalletInfoOptions = {};
+    if (optionsOrChainId && typeof optionsOrChainId === 'object') {
+      options = optionsOrChainId;
+    } else if (optionsOrChainId !== undefined) {
+      options = {
+        chainId: typeof optionsOrChainId === 'number' ? optionsOrChainId : undefined,
+        provider: walletName,
+      };
+    }
+
     const lid = getLidData();
     const session = getSessionData();
 
     const payload: WalletPayload = {
       walletAddress,
-      chainId,
-      walletName,
+      provider: options.provider ?? null,
+      connectorType: options.connectorType ?? null,
+      ...(options.chainId != null && { chainId: options.chainId }),
+      // Backward compat: send walletName if provider came from old-style walletName arg
+      ...(walletName && { walletName }),
       user: {
         name: getUser(),
       },
@@ -210,7 +314,13 @@ class LuciaSDK extends BaseClass {
       ...(lid && { lid }),
     };
 
-    await this.httpClient.post('/api/sdk/wallet', payload);
+    try {
+      await this.httpClient.post('/api/sdk/wallet', payload);
+    } catch (err) {
+      // POST failed — remove from dedup set so the next attempt can retry
+      this.sentWallets.delete(walletAddress);
+      throw err;
+    }
   }
 
   /**
@@ -250,6 +360,10 @@ class LuciaSDK extends BaseClass {
    */
   destroy() {
     autoTrackerRegistry.destroyAll();
+    // Clean up wallet event listeners
+    this.walletListenerCleanups.forEach((cleanup) => cleanup());
+    this.walletListenerCleanups = [];
+    this.sentWallets.clear();
   }
 }
 

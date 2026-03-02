@@ -72,6 +72,12 @@ beforeEach(() => {
   // Mock session utils - getSessionData and storeSessionID
   jest.spyOn(sessionUtils, 'getSessionData').mockReturnValue(mockSession);
   jest.spyOn(sessionUtils, 'storeSessionID').mockReturnValue(mockSession);
+
+  // Clear wallet providers to prevent auto-detect during init
+  (window as any).ethereum = undefined;
+  delete (window as any).solana;
+  delete (window as any).phantom;
+  delete (window as any).solflare;
 });
 
 afterEach(() => {
@@ -104,8 +110,8 @@ describe('LuciaSDK Integration User Flow', () => {
       expect.objectContaining({ method: 'POST' }),
     );
 
-    // 4. Check the order and payloads of fetch calls
-    expect(fetchCalls.length).toBeGreaterThanOrEqual(3);
+    // 4. Check the order and payloads of fetch calls (no wallet auto-detect since ethereum is cleared)
+    expect(fetchCalls.length).toBe(3);
     expect(fetchCalls[0].url).toContain('/api/sdk/init');
     expect(fetchCalls[1].url).toContain('/api/sdk/page');
     expect(fetchCalls[2].url).toContain('/api/sdk/user');
@@ -200,74 +206,85 @@ describe('LuciaSDK UTM/Analytics Integration', () => {
 });
 
 describe('LuciaSDK Wallet Connection Integration', () => {
-  beforeEach(() => {
-    // Reset fetch and localStorage mocks (already done in global beforeEach)
+  afterEach(() => {
+    delete (window as any).ethereum;
+    delete (window as any).phantom;
+    delete (window as any).solana;
   });
 
-  it('should connect Ethereum wallet (MetaMask) and send wallet info', async () => {
-    // Mock MetaMask provider
+  it('should auto-detect Ethereum wallet (MetaMask) during init', async () => {
     const mockAddress = '0x1234567890abcdef1234567890abcdef12345678';
-    const mockChainId = 1;
-    const mockWalletName = 'Metamask';
     (window as any).ethereum = {
       isMetaMask: true,
       isConnected: () => true,
       selectedAddress: mockAddress,
-      request: jest.fn().mockImplementation(({ method }: { method: string }) => {
-        if (method === 'eth_requestAccounts') return Promise.resolve([mockAddress]);
-        if (method === 'eth_chainId') return Promise.resolve('0x1');
-        return Promise.resolve();
-      }),
     };
 
     const sdk = new LuciaSDK({ apiKey: 'integration-test-key' });
     await sdk.init();
-    await sdk.sendWalletInfo(mockAddress, mockChainId, mockWalletName);
 
-    // Find the wallet info call
+    // Find the wallet info call (auto-detected during init)
     const walletCall = fetchCalls.find((call) => call.url.includes('/api/sdk/wallet'));
     expect(walletCall).toBeDefined();
     const walletPayload = JSON.parse(walletCall.options.body);
     expect(walletPayload.walletAddress).toBe(mockAddress);
-    expect(walletPayload.chainId).toBe(mockChainId);
-    expect(walletPayload.walletName).toBe(mockWalletName);
+    expect(walletPayload.provider).toBe('MetaMask');
 
     // Verify session structure
     expect(walletPayload.session).toHaveProperty('id');
     expect(walletPayload.session).toHaveProperty('timestamp');
-    // Hash is optional - only present if returned from backend
-    // No serverSessionId - removed from structure
+
+    sdk.destroy();
   });
 
-  it('should connect Solana wallet (Phantom) and send wallet info', async () => {
-    // Mock Phantom provider
-    const mockSolanaAddress = 'phantom-address-789';
-    (window as any).phantom = {
-      solana: {
-        isConnected: true,
-        publicKey: { toString: () => mockSolanaAddress },
-        connect: jest.fn(),
-      },
-    };
-
+  it('should send wallet info with new options object', async () => {
+    // No ethereum provider set — auto-detect won't fire
     const sdk = new LuciaSDK({ apiKey: 'integration-test-key' });
     await sdk.init();
-    // Simulate the SDK or your app calling the Solana wallet info method
-    // (Assume you have a method like sendSolanaWalletInfo, or you can call sendWalletInfo with Solana data)
-    await sdk.sendWalletInfo(mockSolanaAddress, 'solana', 'Phantom');
 
-    // Find the wallet info call
-    const walletCall = fetchCalls.find((call) => call.url.includes('/api/sdk/wallet'));
-    expect(walletCall).toBeDefined();
-    const walletPayload = JSON.parse(walletCall.options.body);
-    expect(walletPayload.walletAddress).toBe(mockSolanaAddress);
-    expect(walletPayload.chainId).toBe('solana');
-    expect(walletPayload.walletName).toBe('Phantom');
+    const mockAddress = '0xabcdef1234567890abcdef1234567890abcdef12';
+    await sdk.sendWalletInfo(mockAddress, { provider: 'MetaMask', connectorType: 'injected', chainId: 1 });
 
-    // Verify session structure
-    expect(walletPayload.session).toHaveProperty('id');
-    expect(walletPayload.session).toHaveProperty('timestamp');
-    // Hash is optional - only present if returned from backend
-    // No serverSessionId - removed from structure
+    const walletCalls = fetchCalls.filter((call) => call.url.includes('/api/sdk/wallet'));
+    expect(walletCalls).toHaveLength(1);
+    const walletPayload = JSON.parse(walletCalls[0].options.body);
+    expect(walletPayload.walletAddress).toBe(mockAddress);
+    expect(walletPayload.provider).toBe('MetaMask');
+    expect(walletPayload.connectorType).toBe('injected');
+    expect(walletPayload.chainId).toBe(1);
+
+    sdk.destroy();
+  });
+
+  it('should send wallet info with legacy (chainId, walletName) signature', async () => {
+    const sdk = new LuciaSDK({ apiKey: 'integration-test-key' });
+    await sdk.init();
+
+    const mockAddress = '0xabcdef1234567890abcdef1234567890abcdef12';
+    await sdk.sendWalletInfo(mockAddress, 1, 'Metamask');
+
+    const walletCalls = fetchCalls.filter((call) => call.url.includes('/api/sdk/wallet'));
+    expect(walletCalls).toHaveLength(1);
+    const walletPayload = JSON.parse(walletCalls[0].options.body);
+    expect(walletPayload.walletAddress).toBe(mockAddress);
+    expect(walletPayload.provider).toBe('Metamask');
+    expect(walletPayload.walletName).toBe('Metamask');
+    expect(walletPayload.chainId).toBe(1);
+
+    sdk.destroy();
+  });
+
+  it('should deduplicate wallet addresses within a session', async () => {
+    const sdk = new LuciaSDK({ apiKey: 'integration-test-key' });
+    await sdk.init();
+
+    const mockAddress = '0xabcdef1234567890abcdef1234567890abcdef12';
+    await sdk.sendWalletInfo(mockAddress, { provider: 'MetaMask' });
+    await sdk.sendWalletInfo(mockAddress, { provider: 'MetaMask' });
+
+    const walletCalls = fetchCalls.filter((call) => call.url.includes('/api/sdk/wallet'));
+    expect(walletCalls).toHaveLength(1);
+
+    sdk.destroy();
   });
 });
