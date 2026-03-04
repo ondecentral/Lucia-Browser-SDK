@@ -1,7 +1,7 @@
 import LuciaSDK from '../../core';
 import * as dataUtils from '../../features/fingerprinting';
 import * as sessionUtils from '../../infrastructure/session';
-import { BrowserData, WalletData } from '../../types';
+import { BrowserData } from '../../types';
 
 describe('LuciaSDK', () => {
   let sdk: LuciaSDK;
@@ -50,14 +50,6 @@ describe('LuciaSDK', () => {
     },
   };
 
-  const mockWalletData: WalletData = {
-    walletAddress: '0xmock123',
-    solanaAddress: 'mock456',
-    providerInfo: { chainId: '0x1', isMetaMask: true },
-    walletName: 'MockWallet',
-    solWalletName: 'MockSolWallet',
-  };
-
   const mockUser = 'test-user';
   const mockSession = {
     id: 'client123',
@@ -75,7 +67,6 @@ describe('LuciaSDK', () => {
     // Setup spies on the utility functions instead of full mocks
     jest.spyOn(dataUtils, 'getUtmParams').mockReturnValue(mockUtm);
     jest.spyOn(dataUtils, 'getBrowserData').mockResolvedValue(mockBrowserData);
-    jest.spyOn(dataUtils, 'getWalletData').mockResolvedValue(mockWalletData);
     jest.spyOn(sessionUtils, 'getLidData').mockReturnValue(mockLid);
     jest.spyOn(sessionUtils, 'getSessionData').mockReturnValue(mockSession);
     jest.spyOn(sessionUtils, 'storeSessionID').mockReturnValue(mockSession);
@@ -96,26 +87,25 @@ describe('LuciaSDK', () => {
       writable: true,
     });
 
-    // Mock window.ethereum for MetaMask tests
-    Object.defineProperty(window, 'ethereum', {
-      value: undefined,
-      writable: true,
-    });
+    // Ensure no wallet providers are available during init (avoid auto-detect)
+    Object.defineProperty(window, 'ethereum', { value: undefined, writable: true });
+    delete (window as any).solana;
+    delete (window as any).phantom;
   });
 
   afterEach(() => {
+    sdk.destroy();
     jest.clearAllMocks();
     jest.restoreAllMocks();
   });
 
   describe('init', () => {
-    it('should make a POST request to initialize the SDK with no hash (first time)', async () => {
+    it('should make a POST request without walletData in the payload', async () => {
       const serverSession = {
         hash: '99442d0d97d565dde60f2d3b196309622b55a3c5220bd89ed37eb1ee6bdeca4d',
         id: '7CC64140-7F41-4F66-B31C-9219FCBE20C1',
       };
 
-      // Mock the response to include session data
       httpClientPostSpy.mockResolvedValueOnce({ lid: 'new-lid', session: serverSession });
 
       await sdk.init();
@@ -123,12 +113,9 @@ describe('LuciaSDK', () => {
       expect(httpClientPostSpy).toHaveBeenCalledWith(
         '/api/sdk/init',
         {
-          user: {
-            name: mockUser,
-          },
+          user: { name: mockUser },
           data: mockBrowserData,
-          walletData: mockWalletData,
-          session: { id: mockSession.id }, // No hash on first call
+          session: { id: mockSession.id },
           redirectHash: null,
           utm: mockUtm,
         },
@@ -137,7 +124,6 @@ describe('LuciaSDK', () => {
     });
 
     it('should include hash in POST request if session has hash from backend', async () => {
-      // Mock session with hash from backend
       jest.spyOn(sessionUtils, 'getSessionData').mockReturnValueOnce(mockSessionWithHash);
 
       const serverSession = {
@@ -152,12 +138,9 @@ describe('LuciaSDK', () => {
       expect(httpClientPostSpy).toHaveBeenCalledWith(
         '/api/sdk/init',
         {
-          user: {
-            name: mockUser,
-          },
+          user: { name: mockUser },
           data: mockBrowserData,
-          walletData: mockWalletData,
-          session: { id: mockSessionWithHash.id, hash: mockSessionWithHash.hash }, // Hash included on subsequent calls
+          session: { id: mockSessionWithHash.id, hash: mockSessionWithHash.hash },
           redirectHash: null,
           utm: mockUtm,
         },
@@ -167,7 +150,6 @@ describe('LuciaSDK', () => {
 
     it('should store lid in localStorage if response data is received', async () => {
       await sdk.init();
-
       expect(window.localStorage.setItem).toHaveBeenCalledWith('lid', 'new-lid');
     });
 
@@ -177,37 +159,28 @@ describe('LuciaSDK', () => {
         id: '7CC64140-7F41-4F66-B31C-9219FCBE20C1',
       };
 
-      // Mock the response to include session data
       httpClientPostSpy.mockResolvedValueOnce({ lid: 'new-lid', session: serverSession });
 
-      // Spy on updateSessionFromServer
       const updateSessionSpy = jest.spyOn(sessionUtils, 'updateSessionFromServer');
 
       await sdk.init();
 
-      // Verify updateSessionFromServer was called with server session
       expect(updateSessionSpy).toHaveBeenCalledWith(serverSession);
     });
 
     it('should create a new session if none exists', async () => {
-      // Mock getSessionData to return null for this test
       jest.spyOn(sessionUtils, 'getSessionData').mockReturnValueOnce(null);
 
       await sdk.init();
 
-      // Verify storeSessionID was called
       expect(sessionUtils.storeSessionID).toHaveBeenCalled();
 
-      // Verify the POST request was made with the new session (no hash)
       expect(httpClientPostSpy).toHaveBeenCalledWith(
         '/api/sdk/init',
         {
-          user: {
-            name: mockUser,
-          },
+          user: { name: mockUser },
           data: mockBrowserData,
-          walletData: mockWalletData,
-          session: { id: mockSession.id }, // No hash for new sessions
+          session: { id: mockSession.id },
           redirectHash: null,
           utm: mockUtm,
         },
@@ -216,18 +189,51 @@ describe('LuciaSDK', () => {
     });
 
     it('should handle init response without session data gracefully', async () => {
-      // Mock response without session field
       httpClientPostSpy.mockResolvedValueOnce({ lid: 'new-lid' });
 
       const updateSessionSpy = jest.spyOn(sessionUtils, 'updateSessionFromServer');
 
       await sdk.init();
 
-      // Verify updateSessionFromServer was not called when session is missing
       expect(updateSessionSpy).not.toHaveBeenCalled();
-
-      // But lid should still be stored
       expect(window.localStorage.setItem).toHaveBeenCalledWith('lid', 'new-lid');
+    });
+
+    it('should auto-detect EVM wallet if connected', async () => {
+      Object.defineProperty(window, 'ethereum', {
+        value: { selectedAddress: '0xabc123', isMetaMask: true },
+        writable: true,
+      });
+
+      await sdk.init();
+
+      // Should have called /api/sdk/wallet with the detected address
+      expect(httpClientPostSpy).toHaveBeenCalledWith(
+        '/api/sdk/wallet',
+        expect.objectContaining({
+          walletAddress: '0xabc123',
+          provider: 'MetaMask',
+        }),
+      );
+    });
+
+    it('should auto-detect Solana wallet if connected', async () => {
+      (window as any).solana = {
+        isConnected: true,
+        isPhantom: true,
+        publicKey: { toString: () => 'So1anaAddr3ss123' },
+      };
+      (window as any).phantom = { solana: {} };
+
+      await sdk.init();
+
+      expect(httpClientPostSpy).toHaveBeenCalledWith(
+        '/api/sdk/wallet',
+        expect.objectContaining({
+          walletAddress: 'So1anaAddr3ss123',
+          provider: 'Phantom',
+        }),
+      );
     });
   });
 
@@ -239,10 +245,7 @@ describe('LuciaSDK', () => {
       await sdk.userInfo(userId, userInfo);
 
       expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/user', {
-        user: {
-          name: userId,
-          userInfo,
-        },
+        user: { name: userId, userInfo },
         lid: mockLid,
         session: mockSession,
       });
@@ -251,15 +254,11 @@ describe('LuciaSDK', () => {
 
   describe('pageView', () => {
     it('should make a POST request with page view information', async () => {
-      const page = '/home';
-
-      await sdk.pageView(page);
+      await sdk.pageView('/home');
 
       expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/page', {
-        page,
-        user: {
-          name: mockUser,
-        },
+        page: '/home',
+        user: { name: mockUser },
         lid: mockLid,
         session: mockSession,
       });
@@ -268,19 +267,13 @@ describe('LuciaSDK', () => {
 
   describe('trackConversion', () => {
     it('should make a POST request with conversion information', async () => {
-      const eventTag = 'purchase';
-      const amount = 99.99;
-      const eventDetails = { product: 'Premium Plan' };
-
-      await sdk.trackConversion(eventTag, amount, eventDetails);
+      await sdk.trackConversion('purchase', 99.99, { product: 'Premium Plan' });
 
       expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/conversion', {
-        tag: eventTag,
-        amount,
-        event: eventDetails,
-        user: {
-          name: mockUser,
-        },
+        tag: 'purchase',
+        amount: 99.99,
+        event: { product: 'Premium Plan' },
+        user: { name: mockUser },
         lid: mockLid,
         session: mockSession,
       });
@@ -289,15 +282,11 @@ describe('LuciaSDK', () => {
 
   describe('buttonClick', () => {
     it('should make a POST request with button click information', async () => {
-      const button = 'signup-button';
-
-      await sdk.buttonClick(button);
+      await sdk.buttonClick('signup-button');
 
       expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/click', {
-        button,
-        user: {
-          name: mockUser,
-        },
+        button: 'signup-button',
+        user: { name: mockUser },
         lid: mockLid,
         session: mockSession,
       });
@@ -305,20 +294,117 @@ describe('LuciaSDK', () => {
   });
 
   describe('sendWalletInfo', () => {
-    it('should make a POST request with wallet information', async () => {
-      const walletAddress = '0x1234567890abcdef';
-      const chainId = 1;
-      const walletName = 'Metamask';
-
-      await sdk.sendWalletInfo(walletAddress, chainId, walletName);
+    it('should send wallet info with new options object', async () => {
+      await sdk.sendWalletInfo('0x1234', { provider: 'MetaMask', connectorType: 'injected' });
 
       expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/wallet', {
-        walletAddress,
-        chainId,
-        walletName,
-        user: {
-          name: mockUser,
-        },
+        walletAddress: '0x1234',
+        provider: 'MetaMask',
+        providerRdns: null,
+        connectorType: 'injected',
+        user: { name: mockUser },
+        lid: mockLid,
+        session: mockSession,
+      });
+    });
+
+    it('should send wallet info with legacy (chainId, walletName) signature', async () => {
+      await sdk.sendWalletInfo('0x1234', 1, 'Metamask');
+
+      expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/wallet', {
+        walletAddress: '0x1234',
+        provider: 'Metamask',
+        providerRdns: null,
+        connectorType: null,
+        chainId: 1,
+        walletName: 'Metamask',
+        user: { name: mockUser },
+        lid: mockLid,
+        session: mockSession,
+      });
+    });
+
+    it('should skip non-numeric chainId in legacy mode', async () => {
+      await sdk.sendWalletInfo('0x1234', 'solana', 'Phantom');
+
+      expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/wallet', {
+        walletAddress: '0x1234',
+        provider: 'Phantom',
+        providerRdns: null,
+        connectorType: null,
+        walletName: 'Phantom',
+        user: { name: mockUser },
+        lid: mockLid,
+        session: mockSession,
+      });
+    });
+
+    it('should deduplicate wallet addresses within a session', async () => {
+      await sdk.sendWalletInfo('0xabc', { provider: 'MetaMask' });
+      await sdk.sendWalletInfo('0xabc', { provider: 'MetaMask' });
+
+      // Should only have been called once for /api/sdk/wallet
+      const walletCalls = httpClientPostSpy.mock.calls.filter((call: any[]) => call[0] === '/api/sdk/wallet');
+      expect(walletCalls).toHaveLength(1);
+    });
+
+    it('should allow retry after POST failure', async () => {
+      httpClientPostSpy.mockRejectedValueOnce(new Error('Network error'));
+
+      // First attempt — fails
+      await expect(sdk.sendWalletInfo('0xfail', { provider: 'MetaMask' })).rejects.toThrow('Network error');
+
+      // Reset mock to succeed
+      httpClientPostSpy.mockResolvedValueOnce({ success: true });
+
+      // Second attempt — should NOT be blocked by dedup since the first failed
+      await sdk.sendWalletInfo('0xfail', { provider: 'MetaMask' });
+
+      const walletCalls = httpClientPostSpy.mock.calls.filter((call: any[]) => call[0] === '/api/sdk/wallet');
+      expect(walletCalls).toHaveLength(2);
+    });
+
+    it('should allow different addresses', async () => {
+      await sdk.sendWalletInfo('0xabc', { provider: 'MetaMask' });
+      await sdk.sendWalletInfo('0xdef', { provider: 'MetaMask' });
+
+      const walletCalls = httpClientPostSpy.mock.calls.filter((call: any[]) => call[0] === '/api/sdk/wallet');
+      expect(walletCalls).toHaveLength(2);
+    });
+
+    it('should skip empty or non-string addresses', async () => {
+      await sdk.sendWalletInfo('', { provider: 'MetaMask' });
+      await sdk.sendWalletInfo(null as any);
+      await sdk.sendWalletInfo(undefined as any);
+
+      const walletCalls = httpClientPostSpy.mock.calls.filter((call: any[]) => call[0] === '/api/sdk/wallet');
+      expect(walletCalls).toHaveLength(0);
+    });
+
+    it('should send with null provider/connectorType/providerRdns when not provided', async () => {
+      await sdk.sendWalletInfo('0x1234');
+
+      expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/wallet', {
+        walletAddress: '0x1234',
+        provider: null,
+        providerRdns: null,
+        connectorType: null,
+        user: { name: mockUser },
+        lid: mockLid,
+        session: mockSession,
+      });
+    });
+
+    it('should include optional chainId when provided', async () => {
+      await sdk.sendWalletInfo('0x1234', { provider: 'MetaMask', chainId: 137 });
+
+      expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/wallet', {
+        walletAddress: '0x1234',
+        provider: 'MetaMask',
+        providerRdns: null,
+        connectorType: null,
+        chainId: 137,
+        user: { name: mockUser },
         lid: mockLid,
         session: mockSession,
       });
@@ -327,44 +413,39 @@ describe('LuciaSDK', () => {
 
   describe('checkMetaMaskConnection', () => {
     it('should return false when ethereum is not available', () => {
-      // ethereum is undefined by default in beforeEach
       expect(sdk.checkMetaMaskConnection()).toBeFalsy();
     });
 
     it('should return false when ethereum is available but not connected', () => {
       Object.defineProperty(window, 'ethereum', {
-        value: {
-          isConnected: () => false,
-          selectedAddress: null,
-        },
+        value: { isConnected: () => false, selectedAddress: null },
         writable: true,
       });
-
-      expect(sdk.checkMetaMaskConnection()).toBeFalsy();
-    });
-
-    it('should return false when ethereum is connected but no address is selected', () => {
-      Object.defineProperty(window, 'ethereum', {
-        value: {
-          isConnected: () => true,
-          selectedAddress: null,
-        },
-        writable: true,
-      });
-
       expect(sdk.checkMetaMaskConnection()).toBeFalsy();
     });
 
     it('should return true when ethereum is connected and an address is selected', () => {
       Object.defineProperty(window, 'ethereum', {
-        value: {
-          isConnected: () => true,
-          selectedAddress: '0x1234567890abcdef',
-        },
+        value: { isConnected: () => true, selectedAddress: '0x1234' },
         writable: true,
       });
-
       expect(sdk.checkMetaMaskConnection()).toBeTruthy();
+    });
+  });
+
+  describe('destroy', () => {
+    it('should clear sentWallets set allowing re-sending', async () => {
+      await sdk.sendWalletInfo('0xabc', { provider: 'MetaMask' });
+      sdk.destroy();
+
+      // Re-create sdk to get fresh state after destroy
+      sdk = new LuciaSDK({ apiKey: 'test-key' });
+      httpClientPostSpy = jest.spyOn(sdk.httpClient, 'post').mockResolvedValue({ success: true });
+
+      await sdk.sendWalletInfo('0xabc', { provider: 'MetaMask' });
+
+      const walletCalls = httpClientPostSpy.mock.calls.filter((call: any[]) => call[0] === '/api/sdk/wallet');
+      expect(walletCalls).toHaveLength(1);
     });
   });
 });

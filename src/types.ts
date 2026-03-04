@@ -30,6 +30,16 @@ export interface ClickEventMetadata {
   meta?: Record<string, string>;
 }
 
+/**
+ * Options for sendWalletInfo (new interface)
+ */
+export interface WalletInfoOptions {
+  provider?: string;
+  providerRdns?: string;
+  connectorType?: string;
+  chainId?: number;
+}
+
 export interface SDK {
   init: (config: Config) => Promise<LuciaSDKInstance>;
   userInfo: (user: string, userInfo: object) => Promise<void>;
@@ -38,8 +48,8 @@ export interface SDK {
   buttonClick: (button: string, metadata?: ClickEventMetadata) => Promise<void>;
   sendWalletInfo: (
     walletAddress: string,
-    chainId: number | string,
-    walletName?: 'Metamask' | 'Phantom',
+    optionsOrChainId?: WalletInfoOptions | number | string,
+    walletName?: string,
   ) => Promise<void>;
   trackUserAcquisition: (userId: string, acquisitionData?: object) => Promise<void>;
   checkMetaMaskConnection: () => boolean;
@@ -97,45 +107,6 @@ export interface BrowserData {
     indexedDB?: boolean;
     openDB?: unknown;
   };
-}
-
-/**
- * Wallet data object returned by getWalletData()
- */
-export interface WalletData {
-  providerInfo?: Partial<ProviderInfo> | null;
-  walletAddress?: string | null;
-  solanaAddress?: string | null;
-  walletName?: string | null;
-  solWalletName?: string | null;
-}
-
-/**
- * Ethereum provider information
- */
-export interface ProviderInfo {
-  isMetaMask: boolean;
-  isCoinbaseWallet: boolean;
-  isWalletConnect: boolean;
-  isTrust: boolean;
-  isImToken: boolean;
-  isBraveWallet: boolean;
-  isTokenPocket: boolean;
-  isStatus: boolean;
-  isTally: boolean;
-  isAlphaWallet: boolean;
-  isOpera: boolean;
-  isCoin98: boolean;
-  isMathWallet: boolean;
-  isOneInch: boolean;
-  isRainbow: boolean;
-  isBinanceChainWallet: boolean;
-  isFrame: boolean;
-  userAgent: string;
-  chainId?: string;
-  networkVersion?: string;
-  name: string;
-  isPossiblyGenericInjectedProvider?: boolean;
 }
 
 /**
@@ -204,6 +175,9 @@ export interface ClickPayload extends BaseApiPayload {
  */
 export interface WalletPayload extends BaseApiPayload {
   walletAddress: string;
-  chainId: number | string;
-  walletName?: 'Phantom' | 'Metamask';
+  provider?: string | null;
+  providerRdns?: string | null;
+  connectorType?: string | null;
+  chainId?: number;
+  walletName?: string;
 }

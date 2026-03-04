@@ -8,13 +8,9 @@ import {
   getCanvasFingerprint,
   isTouchEnabled,
   getBrowserData,
-  getWalletData,
   clearBrowserDataCache,
 } from '../../../features/fingerprinting';
 import * as dataModule from '../../../features/fingerprinting/browser-data';
-import { ProviderInfo } from '../../../features/web3';
-import * as evmUtils from '../../../features/web3/evm';
-import * as solanaUtils from '../../../features/web3/solana';
 
 // Define interfaces for type safety in tests
 interface BrowserData {
@@ -23,14 +19,6 @@ interface BrowserData {
   browser: any;
   permissions: any;
   storage: any;
-}
-
-interface WalletData {
-  walletAddress: string | null;
-  solanaAddress: string | null;
-  providerInfo: ProviderInfo | null;
-  walletName: string | null;
-  solWalletName: string | null;
 }
 
 declare global {
@@ -451,94 +439,6 @@ describe('Data Utilities', () => {
         // Restore original safeAccess implementation
         safeAccessSpy.mockRestore();
       }
-    });
-  });
-
-  describe('getWalletData', () => {
-    beforeEach(() => {
-      // Mock wallet-related functions
-      jest.spyOn(evmUtils, 'getConnectedWalletAddress').mockResolvedValue('0x123');
-      jest.spyOn(evmUtils, 'getWalletName').mockResolvedValue('MetaMask');
-      jest.spyOn(evmUtils, 'getExtendedProviderInfo').mockResolvedValue({
-        chainId: '0x1',
-        name: 'Ethereum',
-        isMetaMask: true,
-        isCoinbaseWallet: false,
-        isWalletConnect: false,
-        isTrust: false,
-        // Add other required properties from ProviderInfo
-      } as ProviderInfo);
-      jest.spyOn(solanaUtils, 'getConnectedSolanaWallet').mockResolvedValue('abc123');
-      jest.spyOn(solanaUtils, 'getSolanaWalletName').mockResolvedValue('Phantom');
-    });
-
-    it('should collect wallet information correctly', async () => {
-      const walletData = (await getWalletData()) as WalletData;
-
-      expect(walletData).toHaveProperty('walletAddress', '0x123');
-      expect(walletData).toHaveProperty('solanaAddress', 'abc123');
-      expect(walletData).toHaveProperty('providerInfo');
-      expect(walletData).toHaveProperty('walletName', 'MetaMask');
-      expect(walletData).toHaveProperty('solWalletName', 'Phantom');
-    });
-
-    it('handles null provider info with valid addresses', async () => {
-      jest.spyOn(evmUtils, 'getExtendedProviderInfo').mockResolvedValue(null);
-
-      const walletData = (await getWalletData()) as WalletData;
-
-      expect(walletData.walletAddress).toBe('0x123');
-      expect(walletData.providerInfo).toBeNull();
-      expect(walletData.walletName).toBe('MetaMask');
-    });
-
-    it('handles all wallet data returning null', async () => {
-      jest.spyOn(evmUtils, 'getConnectedWalletAddress').mockResolvedValue(null);
-      jest.spyOn(evmUtils, 'getWalletName').mockResolvedValue(null);
-      jest.spyOn(evmUtils, 'getExtendedProviderInfo').mockResolvedValue(null);
-      jest.spyOn(solanaUtils, 'getConnectedSolanaWallet').mockResolvedValue(null);
-      jest.spyOn(solanaUtils, 'getSolanaWalletName').mockResolvedValue(null);
-
-      const walletData = (await getWalletData()) as WalletData;
-
-      expect(walletData.walletAddress).toBeNull();
-      expect(walletData.solanaAddress).toBeNull();
-      expect(walletData.providerInfo).toBeNull();
-      expect(walletData.walletName).toBeNull();
-      expect(walletData.solWalletName).toBeNull();
-    });
-
-    it('should filter the provider info object', async () => {
-      jest.spyOn(evmUtils, 'getExtendedProviderInfo').mockResolvedValue({
-        chainId: '0x1',
-        name: 'Ethereum',
-        isMetaMask: true,
-        isCoinbaseWallet: false, // falsy value
-        isWalletConnect: '', // falsy value
-        isTrust: null, // falsy value
-        networkVersion: '1',
-        selectedAddress: '0x123',
-      } as unknown as ProviderInfo);
-
-      const walletData = (await getWalletData()) as WalletData;
-
-      // Verify that only truthy values were kept
-      expect(walletData.providerInfo).toEqual({
-        chainId: '0x1',
-        name: 'Ethereum',
-        isMetaMask: true,
-        networkVersion: '1',
-        selectedAddress: '0x123',
-      });
-    });
-
-    it('should handle provider info with empty object', async () => {
-      jest.spyOn(evmUtils, 'getExtendedProviderInfo').mockResolvedValue({} as ProviderInfo);
-
-      const walletData = (await getWalletData()) as WalletData;
-
-      // Empty object should result in empty filtered object
-      expect(walletData.providerInfo).toEqual({});
     });
   });
 

@@ -1,6 +1,4 @@
-import { BrowserData, WalletData } from '../../types';
-import { getConnectedWalletAddress, getWalletName, getExtendedProviderInfo } from '../web3';
-import { getConnectedSolanaWallet, getSolanaWalletName } from '../web3';
+import { BrowserData } from '../../types';
 
 /**
  * Collects static browser and hardware data that's unlikely to change during a session.
@@ -81,30 +79,6 @@ export async function getBrowserData(): Promise<BrowserData> {
  */
 export function clearBrowserDataCache(): void {
   browserDataCache = null;
-}
-
-/**
- * Collects dynamic wallet information that may change during a session.
- * This data should be fetched each time it's needed for up-to-date values.
- *
- * @returns {Promise<WalletData>} Dynamic wallet data including addresses and provider information.
- */
-export async function getWalletData(): Promise<WalletData> {
-  const [solAddress, ethAddress, walletName, solWalletName, providerInfo] = await Promise.all([
-    getConnectedSolanaWallet(),
-    getConnectedWalletAddress(),
-    getWalletName(),
-    getSolanaWalletName(),
-    getExtendedProviderInfo(),
-  ]);
-
-  return {
-    walletAddress: ethAddress,
-    solanaAddress: solAddress,
-    providerInfo: providerInfo && filterObject(providerInfo),
-    walletName,
-    solWalletName,
-  };
 }
 
 /**

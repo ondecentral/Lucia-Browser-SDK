@@ -6,7 +6,6 @@ import { SDK_VERSION } from './version';
 // Re-export utility functions for public API
 export {
   getBrowserData,
-  getWalletData,
   getUtmParams,
   safeAccess,
   filterObject,
@@ -16,6 +15,9 @@ export {
   getContrastPreference,
   getColorGamut,
 } from './features/fingerprinting';
+
+// Re-export web3 provider detection for public API
+export { detectEvmProvider, detectSolanaProvider } from './features/web3';
 
 let sdk: Promise<LuciaSDKClass> | null = null;
 
@@ -71,7 +73,7 @@ const LuciaSDK: SDK = {
   pageView: async (page) => (await getSdk()).pageView(page),
   trackConversion: async (tag, amount, details) => (await getSdk()).trackConversion(tag, amount, details),
   buttonClick: async (button, meta) => (await getSdk()).buttonClick(button, meta),
-  sendWalletInfo: async (addr, chain, name) => (await getSdk()).sendWalletInfo(addr, chain, name),
+  sendWalletInfo: async (addr, optionsOrChainId, name) => (await getSdk()).sendWalletInfo(addr, optionsOrChainId, name),
   trackUserAcquisition: async (userId, data = {}) => (await getSdk()).trackUserAcquisition(userId, data),
   checkMetaMaskConnection: () => !!(window.ethereum?.isConnected?.() && window.ethereum?.selectedAddress),
   VERSION: SDK_VERSION,

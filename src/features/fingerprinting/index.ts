@@ -1,7 +1,6 @@
 export {
   getBrowserData,
   clearBrowserDataCache,
-  getWalletData,
   getUtmParams,
   safeAccess,
   filterObject,
