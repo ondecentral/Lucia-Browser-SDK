@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.13...v0.10.0) (2026-03-04)
+
+### Features
+
+- add providerRdns to wallet pipeline and fix EVM dedup ([ebab0b6](https://github.com/ondecentral/Lucia-Browser-SDK/commit/ebab0b60b7da8087ff3a3ef5a54c5c80ddc59531))
+- centralized wallet provider registry with new wallet support ([c809ab8](https://github.com/ondecentral/Lucia-Browser-SDK/commit/c809ab8246fe39c5218faeff39115b0695a28ef5))
+- eip-6963 multi injected provider discovery ([24de27c](https://github.com/ondecentral/Lucia-Browser-SDK/commit/24de27cc07257632bd6ab67740c5b5a7461d766b))
+- thin wallet pipe with auto-detect and event listeners ([35cbfff](https://github.com/ondecentral/Lucia-Browser-SDK/commit/35cbfff290aa370faef53b3f6302fede08100489))
+
+### Miscellaneous
+
+- **ci:** bump aws-actions/configure-aws-credentials from 5 to 6 ([64e114a](https://github.com/ondecentral/Lucia-Browser-SDK/commit/64e114ab4f4e936efbf35fec215a6f6d891db03f))
+- **deps:** bump rollup from 4.56.0 to 4.57.1 in the rollup group ([406cfbb](https://github.com/ondecentral/Lucia-Browser-SDK/commit/406cfbb611be9b53a81bba2d66f42cdc3eb4f629))
+- **deps:** bump the release group across 1 directory with 3 updates ([9918154](https://github.com/ondecentral/Lucia-Browser-SDK/commit/99181546ece2775d6c58ec4ec115e8810cb86e95))
+
+### Code Refactoring
+
+- address PR review feedback ([b859530](https://github.com/ondecentral/Lucia-Browser-SDK/commit/b8595303a9c0ce562c1231a58b736b59dfb4aa68))
+
 ## [0.9.13](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.12...v0.9.13) (2026-01-26)
 
 ### Miscellaneous
