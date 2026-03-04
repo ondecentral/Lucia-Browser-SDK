@@ -3,6 +3,7 @@ import { autoTrackerRegistry, clickTrackerRegistration, ClickEventData } from '.
 import { getBrowserData, getUtmParams } from '../features/fingerprinting';
 import {
   startEIP6963Discovery,
+  stopEIP6963Discovery,
   getEIP6963ConnectedWallets,
   getEIP6963Providers,
   onEIP6963Announce,
@@ -128,21 +129,20 @@ class LuciaSDK extends BaseClass {
    * that don't support EIP-6963.
    */
   private async autoDetectWallets(): Promise<void> {
-    let eip6963Found = false;
-
     // EVM — EIP-6963 primary path
     try {
       const wallets = await getEIP6963ConnectedWallets();
       for (const w of wallets) {
-        eip6963Found = true;
         await this.sendWalletInfo(w.address, { provider: w.providerName, providerRdns: w.providerRdns });
       }
     } catch {
       // EIP-6963 detection failed — fall through to legacy
     }
 
-    // EVM — legacy fallback (only if EIP-6963 found nothing)
-    if (!eip6963Found && window.ethereum?.selectedAddress) {
+    // EVM — legacy fallback only when no EIP-6963 providers exist at all.
+    // If providers exist but returned no accounts (wallet locked), we still
+    // skip legacy — selectedAddress could be stale from a previous session.
+    if (getEIP6963Providers().size === 0 && window.ethereum?.selectedAddress) {
       try {
         const provider = detectEvmProvider();
         await this.sendWalletInfo(window.ethereum.selectedAddress, { provider: provider ?? undefined });
@@ -479,6 +479,7 @@ class LuciaSDK extends BaseClass {
     this.walletListenerCleanups.forEach((cleanup) => cleanup());
     this.walletListenerCleanups = [];
     this.sentWallets.clear();
+    stopEIP6963Discovery();
   }
 }
 

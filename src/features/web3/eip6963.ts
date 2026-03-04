@@ -70,6 +70,20 @@ export function startEIP6963Discovery(): void {
 }
 
 /**
+ * Stop listening for EIP-6963 announcements and clear state.
+ * Called from LuciaSDK.destroy() to properly clean up.
+ */
+export function stopEIP6963Discovery(): void {
+  if (!discoveryStarted) return;
+  if (announceHandler) {
+    window.removeEventListener('eip6963:announceProvider', announceHandler);
+    announceHandler = null;
+  }
+  providers.clear();
+  discoveryStarted = false;
+}
+
+/**
  * Snapshot of all discovered providers.
  */
 export function getEIP6963Providers(): Map<string, EIP6963ProviderDetail> {
