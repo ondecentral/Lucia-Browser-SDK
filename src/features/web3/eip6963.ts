@@ -30,6 +30,7 @@ export interface EIP6963AnnounceEvent extends CustomEvent {
 export interface EIP6963ConnectedWallet {
   address: string;
   providerName: string;
+  providerRdns: string;
   provider: EIP1193Provider;
 }
 
@@ -97,6 +98,7 @@ export async function getEIP6963ConnectedWallets(): Promise<EIP6963ConnectedWall
           .map((address) => ({
             address,
             providerName: info.name,
+            providerRdns: info.rdns,
             provider,
           }));
       });
@@ -127,7 +129,7 @@ export async function getEIP6963ConnectedWallets(): Promise<EIP6963ConnectedWall
  * attribution even when the event fires on the global rather than the
  * individual provider object.
  */
-export async function resolveEIP6963ProviderByAddress(address: string): Promise<string | null> {
+export async function resolveEIP6963ProviderByAddress(address: string): Promise<{ name: string; rdns: string } | null> {
   const TIMEOUT_MS = 1_000;
   const entries = Array.from(providers.values());
   if (entries.length === 0) return null;
@@ -140,7 +142,7 @@ export async function resolveEIP6963ProviderByAddress(address: string): Promise<
         const addrs = accounts as string[];
         if (!Array.isArray(addrs)) return null;
         const match = addrs.some((a) => typeof a === 'string' && a.toLowerCase() === lowerAddress);
-        return match ? info.name : null;
+        return match ? { name: info.name, rdns: info.rdns } : null;
       });
 
       const timeoutPromise = new Promise<null>((resolve) => setTimeout(() => resolve(null), TIMEOUT_MS));

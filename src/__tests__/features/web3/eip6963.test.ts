@@ -133,7 +133,7 @@ describe('EIP-6963 Discovery', () => {
       expect(wallets).toEqual([]);
     });
 
-    it('should return connected addresses with correct provider names', async () => {
+    it('should return connected addresses with correct provider names and rdns', async () => {
       startEIP6963Discovery();
 
       announceProvider(mockProviderDetail('io.metamask', 'MetaMask', ['0xabc']).detail);
@@ -143,8 +143,8 @@ describe('EIP-6963 Discovery', () => {
       expect(wallets).toHaveLength(2);
       expect(wallets).toEqual(
         expect.arrayContaining([
-          expect.objectContaining({ address: '0xabc', providerName: 'MetaMask' }),
-          expect.objectContaining({ address: '0xdef', providerName: 'Rabby' }),
+          expect.objectContaining({ address: '0xabc', providerName: 'MetaMask', providerRdns: 'io.metamask' }),
+          expect.objectContaining({ address: '0xdef', providerName: 'Rabby', providerRdns: 'io.rabby' }),
         ]),
       );
     });
@@ -357,13 +357,13 @@ describe('EIP-6963 Discovery', () => {
   });
 
   describe('resolveEIP6963ProviderByAddress', () => {
-    it('should return the provider name that holds the address', async () => {
+    it('should return the provider name and rdns that holds the address', async () => {
       startEIP6963Discovery();
 
       announceProvider(mockProviderDetail('io.metamask', 'MetaMask', ['0xabc']).detail);
       announceProvider(mockProviderDetail('io.rabby', 'Rabby Wallet', ['0xdef']).detail);
 
-      expect(await resolveEIP6963ProviderByAddress('0xdef')).toBe('Rabby Wallet');
+      expect(await resolveEIP6963ProviderByAddress('0xdef')).toEqual({ name: 'Rabby Wallet', rdns: 'io.rabby' });
     });
 
     it('should match case-insensitively', async () => {
@@ -371,8 +371,8 @@ describe('EIP-6963 Discovery', () => {
 
       announceProvider(mockProviderDetail('io.rabby', 'Rabby Wallet', ['0xAbCdEf']).detail);
 
-      expect(await resolveEIP6963ProviderByAddress('0xabcdef')).toBe('Rabby Wallet');
-      expect(await resolveEIP6963ProviderByAddress('0xABCDEF')).toBe('Rabby Wallet');
+      expect(await resolveEIP6963ProviderByAddress('0xabcdef')).toEqual({ name: 'Rabby Wallet', rdns: 'io.rabby' });
+      expect(await resolveEIP6963ProviderByAddress('0xABCDEF')).toEqual({ name: 'Rabby Wallet', rdns: 'io.rabby' });
     });
 
     it('should return null when no provider holds the address', async () => {
@@ -394,7 +394,7 @@ describe('EIP-6963 Discovery', () => {
       announceProvider(mockProviderDetail('io.rabby', 'Rabby Wallet', ['0xdef']).detail);
 
       // Should still find Rabby despite Broken erroring
-      expect(await resolveEIP6963ProviderByAddress('0xdef')).toBe('Rabby Wallet');
+      expect(await resolveEIP6963ProviderByAddress('0xdef')).toEqual({ name: 'Rabby Wallet', rdns: 'io.rabby' });
     });
 
     it('should timeout slow providers (1s) and return null', async () => {

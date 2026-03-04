@@ -35,6 +35,7 @@ export interface ClickEventMetadata {
  */
 export interface WalletInfoOptions {
   provider?: string;
+  providerRdns?: string;
   connectorType?: string;
   chainId?: number;
 }
@@ -175,6 +176,7 @@ export interface ClickPayload extends BaseApiPayload {
 export interface WalletPayload extends BaseApiPayload {
   walletAddress: string;
   provider?: string | null;
+  providerRdns?: string | null;
   connectorType?: string | null;
   chainId?: number;
   walletName?: string;

@@ -5,7 +5,6 @@ import {
   startEIP6963Discovery,
   getEIP6963ConnectedWallets,
   getEIP6963Providers,
-  resolveEIP6963ProviderByAddress,
   onEIP6963Announce,
 } from '../features/web3/eip6963';
 import type { EIP6963ProviderDetail } from '../features/web3/eip6963';
@@ -136,7 +135,7 @@ class LuciaSDK extends BaseClass {
       const wallets = await getEIP6963ConnectedWallets();
       for (const w of wallets) {
         eip6963Found = true;
-        await this.sendWalletInfo(w.address, { provider: w.providerName });
+        await this.sendWalletInfo(w.address, { provider: w.providerName, providerRdns: w.providerRdns });
       }
     } catch {
       // EIP-6963 detection failed — fall through to legacy
@@ -179,19 +178,18 @@ class LuciaSDK extends BaseClass {
     });
     this.walletListenerCleanups.push(cleanupAnnounce);
 
-    // EVM: legacy accountsChanged on window.ethereum
-    // Try EIP-6963 resolution first for correct attribution, fall back to flag detection
-    if (window.ethereum?.on) {
+    // EVM: legacy accountsChanged on window.ethereum — only needed when NO
+    // EIP-6963 providers exist. When EIP-6963 providers are present, the
+    // per-provider listeners (attachEIP6963AccountsChanged) already cover
+    // accountsChanged with correct attribution. The legacy listener would
+    // just fire redundantly on the same global that EIP-6963 already wraps.
+    if (window.ethereum?.on && getEIP6963Providers().size === 0) {
       const handler = (accounts: unknown) => {
         const accts = accounts as string[];
         if (accts[0]) {
           const addr = accts[0];
-          resolveEIP6963ProviderByAddress(addr)
-            .catch(() => null)
-            .then((eip6963Name) => {
-              const provider = eip6963Name ?? detectEvmProvider();
-              this.sendWalletInfo(addr, { provider: provider ?? undefined }).catch(() => {});
-            });
+          const provider = detectEvmProvider();
+          this.sendWalletInfo(addr, { provider: provider ?? undefined }).catch(() => {});
         }
       };
       window.ethereum.on('accountsChanged', handler);
@@ -242,7 +240,7 @@ class LuciaSDK extends BaseClass {
           if (Array.isArray(addrs)) {
             for (const addr of addrs) {
               if (typeof addr === 'string' && addr.length > 0) {
-                this.sendWalletInfo(addr, { provider: info.name }).catch(() => {});
+                this.sendWalletInfo(addr, { provider: info.name, providerRdns: info.rdns }).catch(() => {});
               }
             }
           }
@@ -265,7 +263,7 @@ class LuciaSDK extends BaseClass {
       if (Array.isArray(accts)) {
         for (const addr of accts) {
           if (typeof addr === 'string' && addr.length > 0) {
-            this.sendWalletInfo(addr, { provider: info.name }).catch(() => {});
+            this.sendWalletInfo(addr, { provider: info.name, providerRdns: info.rdns }).catch(() => {});
           }
         }
       }
@@ -392,10 +390,15 @@ class LuciaSDK extends BaseClass {
   ) {
     if (!walletAddress || typeof walletAddress !== 'string') return;
 
+    // Normalize for dedup: EVM addresses are case-insensitive, but wallets return
+    // mixed-case (checksummed) or lowercase depending on the code path.
+    // Solana addresses are base58 (case-sensitive) — leave as-is.
+    const dedupKey = walletAddress.startsWith('0x') ? walletAddress.toLowerCase() : walletAddress;
+
     // Session-scoped dedup — skip if already sent this address
-    if (this.sentWallets.has(walletAddress)) return;
+    if (this.sentWallets.has(dedupKey)) return;
     // Add optimistically to prevent rapid double-fire; remove on failure so retry is possible
-    this.sentWallets.add(walletAddress);
+    this.sentWallets.add(dedupKey);
 
     // Normalize: support both new options object and old (chainId, walletName) signature
     let options: WalletInfoOptions = {};
@@ -414,6 +417,7 @@ class LuciaSDK extends BaseClass {
     const payload: WalletPayload = {
       walletAddress,
       provider: options.provider ?? null,
+      providerRdns: options.providerRdns ?? null,
       connectorType: options.connectorType ?? null,
       ...(options.chainId != null && { chainId: options.chainId }),
       // Backward compat: send walletName if provider came from old-style walletName arg
@@ -429,7 +433,7 @@ class LuciaSDK extends BaseClass {
       await this.httpClient.post('/api/sdk/wallet', payload);
     } catch (err) {
       // POST failed — remove from dedup set so the next attempt can retry
-      this.sentWallets.delete(walletAddress);
+      this.sentWallets.delete(dedupKey);
       throw err;
     }
   }

@@ -300,6 +300,7 @@ describe('LuciaSDK', () => {
       expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/wallet', {
         walletAddress: '0x1234',
         provider: 'MetaMask',
+        providerRdns: null,
         connectorType: 'injected',
         user: { name: mockUser },
         lid: mockLid,
@@ -313,6 +314,7 @@ describe('LuciaSDK', () => {
       expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/wallet', {
         walletAddress: '0x1234',
         provider: 'Metamask',
+        providerRdns: null,
         connectorType: null,
         chainId: 1,
         walletName: 'Metamask',
@@ -328,6 +330,7 @@ describe('LuciaSDK', () => {
       expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/wallet', {
         walletAddress: '0x1234',
         provider: 'Phantom',
+        providerRdns: null,
         connectorType: null,
         walletName: 'Phantom',
         user: { name: mockUser },
@@ -378,12 +381,13 @@ describe('LuciaSDK', () => {
       expect(walletCalls).toHaveLength(0);
     });
 
-    it('should send with null provider/connectorType when not provided', async () => {
+    it('should send with null provider/connectorType/providerRdns when not provided', async () => {
       await sdk.sendWalletInfo('0x1234');
 
       expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/wallet', {
         walletAddress: '0x1234',
         provider: null,
+        providerRdns: null,
         connectorType: null,
         user: { name: mockUser },
         lid: mockLid,
@@ -397,6 +401,7 @@ describe('LuciaSDK', () => {
       expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/wallet', {
         walletAddress: '0x1234',
         provider: 'MetaMask',
+        providerRdns: null,
         connectorType: null,
         chainId: 137,
         user: { name: mockUser },
