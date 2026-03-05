@@ -64,6 +64,8 @@ class LuciaSDK extends BaseClass {
       sessionPayload.hash = session.hash;
     }
 
+    const lid = getLidData();
+
     const result = await this.httpClient.post<{ lid: string; session: { hash: string; id: string } }>(
       '/api/sdk/init',
       {
@@ -74,6 +76,7 @@ class LuciaSDK extends BaseClass {
         session: sessionPayload,
         redirectHash,
         utm: getUtmParams(),
+        ...(lid && { lid }),
       },
       false,
     );
