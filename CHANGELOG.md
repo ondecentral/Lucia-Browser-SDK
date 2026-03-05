@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.1](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.0...v0.10.1) (2026-03-05)
+
+### Miscellaneous
+
+- **deps:** add missing package for eslint v10 ([406bea8](https://github.com/ondecentral/Lucia-Browser-SDK/commit/406bea8361fa9517290c9d7a54304a62d031b13b))
+- **deps:** bump basic-ftp from 5.0.5 to 5.2.0 ([5a7d56c](https://github.com/ondecentral/Lucia-Browser-SDK/commit/5a7d56c7979729d8878442eae554c6f75b44027e))
+- **deps:** bump lint-staged from 16.2.7 to 16.3.1 ([5f9f25e](https://github.com/ondecentral/Lucia-Browser-SDK/commit/5f9f25e7abd9db6d7a682da1505cc37f3852ce6b))
+- **deps:** bump rollup from 4.57.1 to 4.59.0 in the rollup group ([104ad45](https://github.com/ondecentral/Lucia-Browser-SDK/commit/104ad45809360abdbdfebee1694d5ce0d412b3d7))
+- **deps:** bump the eslint group across 1 directory with 7 updates ([15ce92b](https://github.com/ondecentral/Lucia-Browser-SDK/commit/15ce92b566467b31385255a68b5cc190f819d62f))
+- **deps:** bump the release group with 2 updates ([a64a5bd](https://github.com/ondecentral/Lucia-Browser-SDK/commit/a64a5bd6bbffc68ae01708f5531ac0754109430c))
+- **deps:** bump the rollup group across 1 directory with 3 updates ([4218c31](https://github.com/ondecentral/Lucia-Browser-SDK/commit/4218c313a460623584d1731ad28ce25f48ba2c68))
+
 ## [0.10.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.9.13...v0.10.0) (2026-03-04)
 
 ### Features
