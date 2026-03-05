@@ -118,6 +118,27 @@ describe('LuciaSDK', () => {
           session: { id: mockSession.id },
           redirectHash: null,
           utm: mockUtm,
+          lid: mockLid,
+        },
+        false,
+      );
+    });
+
+    it('should not include lid in init request on first visit (no lid in localStorage)', async () => {
+      jest.spyOn(sessionUtils, 'getLidData').mockReturnValueOnce(null);
+
+      await sdk.init();
+
+      expect(httpClientPostSpy).toHaveBeenCalledWith(
+        '/api/sdk/init',
+        {
+          user: {
+            name: mockUser,
+          },
+          data: mockBrowserData,
+          session: { id: mockSession.id },
+          redirectHash: null,
+          utm: mockUtm,
         },
         false,
       );
@@ -143,6 +164,7 @@ describe('LuciaSDK', () => {
           session: { id: mockSessionWithHash.id, hash: mockSessionWithHash.hash },
           redirectHash: null,
           utm: mockUtm,
+          lid: mockLid,
         },
         false,
       );
@@ -183,7 +205,23 @@ describe('LuciaSDK', () => {
           session: { id: mockSession.id },
           redirectHash: null,
           utm: mockUtm,
+          lid: mockLid,
         },
+        false,
+      );
+    });
+
+    it('should send existing lid on subsequent visits', async () => {
+      const existingLid = 'existing-lid-from-previous-visit';
+      jest.spyOn(sessionUtils, 'getLidData').mockReturnValueOnce(existingLid);
+
+      await sdk.init();
+
+      expect(httpClientPostSpy).toHaveBeenCalledWith(
+        '/api/sdk/init',
+        expect.objectContaining({
+          lid: existingLid,
+        }),
         false,
       );
     });
