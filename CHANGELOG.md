@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.2](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.1...v0.10.2) (2026-03-05)
+
+### Bug Fixes
+
+- send lid to backend when available ([3d109bd](https://github.com/ondecentral/Lucia-Browser-SDK/commit/3d109bd6a3e6ceb8bf45a6ad7639cf3f7569f07e))
+
 ## [0.10.1](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.0...v0.10.1) (2026-03-05)
 
 ### Miscellaneous
