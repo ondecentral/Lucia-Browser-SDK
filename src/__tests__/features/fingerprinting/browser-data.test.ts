@@ -273,36 +273,30 @@ describe('Data Utilities', () => {
       // Mock ApplePay
       window.ApplePaySession = { canMakePayments: jest.fn(() => true) };
 
-      // Create mock ImageData with realistic RGBA data
-      const mockImageData = {
-        data: new Uint8ClampedArray(200 * 120 * 4).fill(255), // width * height * 4 (RGBA)
-        width: 200,
-        height: 120,
+      const mockGradient = {
+        addColorStop: jest.fn(),
       };
 
       const mockContext = {
         fillStyle: '',
+        globalCompositeOperation: '',
+        strokeStyle: '',
+        lineWidth: 0,
+        font: '',
         beginPath: jest.fn(),
-        rect: jest.fn(),
         fill: jest.fn(),
         stroke: jest.fn(),
-        closePath: jest.fn(),
         arc: jest.fn(),
-        textBaseline: '',
-        font: '',
-        rotate: jest.fn(),
         fillText: jest.fn(),
-        shadowBlur: 0,
-        shadowColor: '',
         fillRect: jest.fn(),
-        getImageData: jest.fn().mockReturnValue(mockImageData),
+        moveTo: jest.fn(),
+        bezierCurveTo: jest.fn(),
+        createLinearGradient: jest.fn().mockReturnValue(mockGradient),
       };
 
       const mockCanvas = {
-        id: '',
         width: 0,
         height: 0,
-        style: {},
         getContext: jest.fn().mockReturnValue(mockContext),
         toDataURL: jest.fn().mockReturnValue('data:image/png;base64,fakehash'),
       };

@@ -169,8 +169,9 @@ let browserDataCache: BrowserData | null = null;
 
 /**
  * Generates a unique hash based on canvas rendering characteristics.
- * Creates a canvas with specific shapes and colors, then generates a SHA-256 hash
- * of the canvas data. This serves as a fingerprinting mechanism for the browser.
+ * Uses text rendering, gradients, blending, and curves to maximise
+ * per-device variance in the resulting pixel data, then hashes the
+ * full canvas image with SHA-256.
  *
  * @returns {Promise<string | undefined>} A SHA-256 hexadecimal hash string representing the canvas fingerprint,
  *                              or undefined if canvas is not supported or operation fails
@@ -178,53 +179,52 @@ let browserDataCache: BrowserData | null = null;
 export async function getCanvasFingerprint(): Promise<string | undefined> {
   try {
     const canvas = document.createElement('canvas');
-    // Ask for a 2D context we'll read frequently (safe to ignore if unsupported)
+    const width = 280;
+    const height = 60;
+    canvas.width = width;
+    canvas.height = height;
+
     const ctx = canvas.getContext('2d', {
       willReadFrequently: true,
     } as CanvasRenderingContext2DSettings) as CanvasRenderingContext2D | null;
     if (!ctx) return undefined;
 
-    // Fixed canvas size in CSS pixels (no DPR scaling)
-    const width = 200;
-    const height = 120;
-    canvas.width = width;
-    canvas.height = height;
-    canvas.style.width = `${width}px`;
-    canvas.style.height = `${height}px`;
-
-    // 1) Opaque background to avoid alpha/premultiplication surprises
-    ctx.fillStyle = '#ffffff';
+    // 1) Linear gradient — colour interpolation differs by GPU
+    const gradient = ctx.createLinearGradient(0, 0, width, 0);
+    gradient.addColorStop(0, '#ff0000');
+    gradient.addColorStop(0.5, '#00ff00');
+    gradient.addColorStop(1, '#0000ff');
+    ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, width, height);
 
-    // 2) Deterministic, integer-aligned, filled shapes (no strokes/shadows/text)
-    ctx.fillStyle = '#ff00ff'; // magenta
-    ctx.fillRect(10, 10, 100, 100); // fully covered interior pixels
+    // 2) Text with common font — sub-pixel rendering & hinting vary by OS/GPU
+    ctx.font = '14px Arial, sans-serif';
+    ctx.fillStyle = 'rgba(100, 200, 50, 0.8)';
+    ctx.fillText('Cwm fjord bank glyphs vext quiz!', 2, 20);
 
-    ctx.fillStyle = '#00ffff'; // cyan
+    // 3) Emoji — rendered by OS-specific emoji font (Apple vs Google vs MS)
+    ctx.font = '18px serif';
+    ctx.fillText('\u{1F3F4}\u{200D}\u{2620}\u{FE0F}\u{1F355}\u{1F3B5}', 2, 45);
+
+    // 4) Composited, anti-aliased circle — blending amplifies GPU differences
+    ctx.globalCompositeOperation = 'multiply';
+    ctx.fillStyle = 'rgba(255, 100, 0, 0.6)';
     ctx.beginPath();
-    ctx.arc(150, 50, 40, 0, Math.PI * 2, true);
+    ctx.arc(200, 30, 25, 0, Math.PI * 2);
     ctx.fill();
 
-    // 3) Read raw pixels and sample only interior points (far from edges)
-    const { data } = ctx.getImageData(0, 0, width, height);
-    const pts: Array<[number, number]> = [
-      [20, 20],
-      [60, 60],
-      [100, 100], // inside rectangle
-      [150, 50],
-      [150, 60],
-      [140, 50], // inside circle
-      [5, 5], // background
-    ];
-    const acc = pts
-      .map(([x, y]) => {
-        const i = (y * width + x) * 4;
-        return `${data[i]},${data[i + 1]},${data[i + 2]},${data[i + 3]};`;
-      })
-      .join('');
+    // 5) Thin bezier stroke — sub-pixel anti-aliasing varies across renderers
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.strokeStyle = 'rgba(50, 50, 255, 0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(100, 5);
+    ctx.bezierCurveTo(130, 55, 170, 5, 200, 55);
+    ctx.stroke();
 
-    // 4) Hash the sampled RGBA bytes using SHA-256
-    return sha256(acc);
+    // Hash the full image (captures every rendering difference)
+    const dataUrl = canvas.toDataURL('image/png');
+    return sha256(dataUrl);
   } catch {
     return undefined;
   }
