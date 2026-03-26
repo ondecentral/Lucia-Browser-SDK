@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.4](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.3...v0.10.4) (2026-03-26)
+
+### Bug Fixes
+
+- update unique hash generation ([fef45a2](https://github.com/ondecentral/Lucia-Browser-SDK/commit/fef45a208269423bf0255ee2685ae3d5dc4e0257))
+
 ## [0.10.3](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.2...v0.10.3) (2026-03-26)
 
 ### Miscellaneous
