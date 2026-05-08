@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.5](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.4...v0.10.5) (2026-05-08)
+
+### Bug Fixes
+
+- **deps:** update tsconfig for ts v6 ([246b459](https://github.com/ondecentral/Lucia-Browser-SDK/commit/246b459c89719e5bcb3b67b0363d33c52e86b26d))
+
+### Miscellaneous
+
+- **deps:** bump basic-ftp from 5.2.0 to 5.2.2 ([5d82edc](https://github.com/ondecentral/Lucia-Browser-SDK/commit/5d82edcef668639db11219d603578f60f698a9f3))
+- **deps:** bump defu from 6.1.4 to 6.1.6 ([fd96e73](https://github.com/ondecentral/Lucia-Browser-SDK/commit/fd96e73d8a35b4d8338b07e3df55efd5f13fd77b))
+- **deps:** bump handlebars from 4.7.8 to 4.7.9 ([4fc587b](https://github.com/ondecentral/Lucia-Browser-SDK/commit/4fc587bc29b1da56a8c7367a66a4427d1f3fd8ca))
+- **deps:** bump ip-address from 10.1.0 to 10.2.0 ([3856fb5](https://github.com/ondecentral/Lucia-Browser-SDK/commit/3856fb5613f68328621a5138608a2d5c1aa0b402))
+- **deps:** bump lodash from 4.17.23 to 4.18.1 ([8b47f19](https://github.com/ondecentral/Lucia-Browser-SDK/commit/8b47f1903cb44df0eef62120598480fecea3080d))
+- **deps:** bump serialize-javascript from 7.0.4 to 7.0.5 ([28d6bbf](https://github.com/ondecentral/Lucia-Browser-SDK/commit/28d6bbf0b2a8ff9adc713a2a654472a3bd64ad8d))
+- **deps:** bump the eslint group across 1 directory with 7 updates ([662d250](https://github.com/ondecentral/Lucia-Browser-SDK/commit/662d25075a504ff2c0157f8a943b68f3ae0131b6))
+- **deps:** bump the rollup group with 2 updates ([65b17c1](https://github.com/ondecentral/Lucia-Browser-SDK/commit/65b17c12dfb1100b86d6d96c6d1a628c45f31055))
+- **deps:** bump the typescript group across 1 directory with 2 updates ([5c17daa](https://github.com/ondecentral/Lucia-Browser-SDK/commit/5c17daa366ca3046f8188f0c30820fb0b289e559))
+- **deps:** bump uuid from 13.0.0 to 14.0.0 ([c118336](https://github.com/ondecentral/Lucia-Browser-SDK/commit/c118336e001829f97097d2fb834736fb4eff0ddc))
+
 ## [0.10.4](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.3...v0.10.4) (2026-03-26)
 
 ### Bug Fixes
