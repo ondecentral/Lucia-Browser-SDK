@@ -15,6 +15,11 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
 
+    # setup-node v7 no longer exports NODE_AUTH_TOKEN, but still writes an
+    # .npmrc referencing it; yarn v1 aborts on the unresolved variable.
+    env:
+      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v7
