@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.6](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.5...v0.10.6) (2026-08-03)
+
+### Bug Fixes
+
+- **test:** add @testing-library/dom peer required by jest-dom v7 ([11d857b](https://github.com/ondecentral/Lucia-Browser-SDK/commit/11d857be7def3e2ebab9def2e51d59874998f971))
+
+### Miscellaneous
+
+- **ci:** bump actions/checkout from 6 to 7 ([d607dc2](https://github.com/ondecentral/Lucia-Browser-SDK/commit/d607dc2db489b3e255bf67a68a3f4551f608a27e))
+- **ci:** bump actions/setup-node from 6 to 7 ([41f62d1](https://github.com/ondecentral/Lucia-Browser-SDK/commit/41f62d142ce27a821ad716acc7ae6540b492b00b))
+- **deps:** bump @babel/core from 7.28.5 to 7.29.7 ([7a6469d](https://github.com/ondecentral/Lucia-Browser-SDK/commit/7a6469dc986673ec92be4ad765566b0dd5593e59))
+- **deps:** bump fast-uri from 3.1.0 to 3.1.4 ([1cddd9e](https://github.com/ondecentral/Lucia-Browser-SDK/commit/1cddd9e6e11044581cb5260b7ad5037f57fe68fc))
+- **deps:** bump shell-quote from 1.8.3 to 1.10.0 ([c0f396b](https://github.com/ondecentral/Lucia-Browser-SDK/commit/c0f396bacda9cd221f31af75191afdd1f858e667))
+- **deps:** bump the eslint group across 1 directory with 6 updates ([40570ac](https://github.com/ondecentral/Lucia-Browser-SDK/commit/40570acc9039aedebf893f8c9367e99cc4a2d2ea))
+- **deps:** bump the release group with 4 updates ([59ff27f](https://github.com/ondecentral/Lucia-Browser-SDK/commit/59ff27ffbb84c3fa21fe5d42858e81baf32beb94))
+- **deps:** bump the rollup group across 1 directory with 2 updates ([753868e](https://github.com/ondecentral/Lucia-Browser-SDK/commit/753868e7d812087d0dd48e33cfc31aa482fe3248))
+- **deps:** bump the testing group across 1 directory with 3 updates ([59152d3](https://github.com/ondecentral/Lucia-Browser-SDK/commit/59152d346d7093beffa28eced9ee0838824b707e))
+- point SDK at api.luciaprotocol.com and https staging host ([75779f7](https://github.com/ondecentral/Lucia-Browser-SDK/commit/75779f756af4f49d7998c08fce2c317f1a882bd1))
+
 ## [0.10.5](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.4...v0.10.5) (2026-05-08)
 
 ### Bug Fixes
