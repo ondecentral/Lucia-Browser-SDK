@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.7](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.6...v0.10.7) (2026-08-03)
+
+### Bug Fixes
+
+- **ci:** define NODE_AUTH_TOKEN for setup-node v7 npmrc ([240e65c](https://github.com/ondecentral/Lucia-Browser-SDK/commit/240e65cca5480c3ac2e54a6cd56a26928902f157))
+
 ## [0.10.6](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.5...v0.10.6) (2026-08-03)
 
 ### Bug Fixes
