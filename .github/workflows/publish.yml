@@ -17,8 +17,11 @@ jobs:
 
     # setup-node v7 no longer exports NODE_AUTH_TOKEN, but still writes an
     # .npmrc referencing it; yarn v1 aborts on the unresolved variable.
+    # Registry auth comes from OIDC trusted publishing, so no real token is
+    # needed here — and a real one would be readable by dependency lifecycle
+    # scripts during install.
     env:
-      NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      NODE_AUTH_TOKEN: unused-oidc-trusted-publishing
 
     steps:
     - name: Checkout code
