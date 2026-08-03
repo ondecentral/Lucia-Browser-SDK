@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.8](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.7...v0.10.8) (2026-08-03)
+
+### Bug Fixes
+
+- **ci:** use placeholder NODE_AUTH_TOKEN instead of publish secret ([50ab69b](https://github.com/ondecentral/Lucia-Browser-SDK/commit/50ab69bfc984f0c69c58d879d9946a95205f817e))
+
 ## [0.10.7](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.6...v0.10.7) (2026-08-03)
 
 ### Bug Fixes
