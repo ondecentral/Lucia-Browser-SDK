@@ -2,6 +2,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.10](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.9...v0.10.10) (2026-08-31)
+
+### Bug Fixes
+
+- **web3:** guard wallet global reads against extension proxy traps ([c362323](https://github.com/ondecentral/Lucia-Browser-SDK/commit/c36232325c0feec56e66bcb2da8896b65c6f3114))
+
+### Miscellaneous
+
+- **deps:** consolidate dependapot updates ([5caf69a](https://github.com/ondecentral/Lucia-Browser-SDK/commit/5caf69ab3d08da1d4fac8d373adb64f3db0b120a))
+
+### Tests
+
+- make window.ethereum mock configurable so tests can delete it ([442790c](https://github.com/ondecentral/Lucia-Browser-SDK/commit/442790c53b489e0830422c9c16a21f3c1865bab6))
+
 ## [0.10.9](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.8...v0.10.9) (2026-08-31)
 
 ### Bug Fixes
