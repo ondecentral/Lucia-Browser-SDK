@@ -93,6 +93,7 @@ Object.defineProperty(window, 'ethereum', {
     isMetaMask: true,
   },
   writable: true,
+  configurable: true,
 });
 
 // Mock window.solana for Phantom wallet tests
