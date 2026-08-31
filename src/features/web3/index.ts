@@ -1,4 +1,5 @@
 export { detectEvmProvider } from './evm';
+export { safeWalletRead } from './safe';
 export { detectSolanaProvider } from './solana';
 export { EVM_PROVIDERS, SOLANA_PROVIDERS } from './provider-registry';
 export type { ProviderEntry } from './provider-registry';

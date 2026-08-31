@@ -10,6 +10,7 @@ import {
 } from '../features/web3/eip6963';
 import type { EIP6963ProviderDetail } from '../features/web3/eip6963';
 import { detectEvmProvider } from '../features/web3/evm';
+import { safeWalletRead } from '../features/web3/safe';
 import { detectSolanaProvider } from '../features/web3/solana';
 import { getSessionData, getLidData, getUser, storeSessionID, updateSessionFromServer } from '../infrastructure';
 import {
@@ -145,23 +146,27 @@ class LuciaSDK extends BaseClass {
     // EVM — legacy fallback only when no EIP-6963 providers exist at all.
     // If providers exist but returned no accounts (wallet locked), we still
     // skip legacy — selectedAddress could be stale from a previous session.
-    if (getEIP6963Providers().size === 0 && window.ethereum?.selectedAddress) {
+    if (getEIP6963Providers().size === 0) {
       try {
-        const provider = detectEvmProvider();
-        await this.sendWalletInfo(window.ethereum.selectedAddress, { provider: provider ?? undefined });
+        const selectedAddress = safeWalletRead(() => window.ethereum?.selectedAddress);
+        if (selectedAddress) {
+          const provider = detectEvmProvider();
+          await this.sendWalletInfo(selectedAddress, { provider: provider ?? undefined });
+        }
       } catch {
         // EVM auto-detection failed — non-fatal, continue to Solana
       }
     }
 
     // Solana — check window.solana for already-connected wallet (unchanged)
-    if (window.solana?.isConnected && window.solana?.publicKey) {
-      try {
+    try {
+      const publicKey = safeWalletRead(() => (window.solana?.isConnected ? window.solana?.publicKey : undefined));
+      if (publicKey) {
         const provider = detectSolanaProvider();
-        await this.sendWalletInfo(window.solana.publicKey.toString(), { provider: provider ?? undefined });
-      } catch {
-        // Solana auto-detection failed — non-fatal
+        await this.sendWalletInfo(publicKey.toString(), { provider: provider ?? undefined });
       }
+    } catch {
+      // Solana auto-detection failed — non-fatal
     }
 
     // Attach per-provider accountsChanged listeners for EIP-6963 providers
@@ -186,7 +191,7 @@ class LuciaSDK extends BaseClass {
     // per-provider listeners (attachEIP6963AccountsChanged) already cover
     // accountsChanged with correct attribution. The legacy listener would
     // just fire redundantly on the same global that EIP-6963 already wraps.
-    if (window.ethereum?.on && getEIP6963Providers().size === 0) {
+    if (getEIP6963Providers().size === 0 && safeWalletRead(() => window.ethereum?.on)) {
       const handler = (accounts: unknown) => {
         const accts = accounts as string[];
         if (accts[0]) {
@@ -195,23 +200,24 @@ class LuciaSDK extends BaseClass {
           this.sendWalletInfo(addr, { provider: provider ?? undefined }).catch(() => {});
         }
       };
-      window.ethereum.on('accountsChanged', handler);
+      safeWalletRead(() => window.ethereum?.on?.('accountsChanged', handler));
       this.walletListenerCleanups.push(() => {
-        window.ethereum?.removeListener?.('accountsChanged', handler);
+        safeWalletRead(() => window.ethereum?.removeListener?.('accountsChanged', handler));
       });
     }
 
     // Solana: connect (unchanged)
-    if (window.solana?.on) {
+    if (safeWalletRead(() => window.solana?.on)) {
       const handler = () => {
-        if (window.solana?.publicKey) {
+        const publicKey = safeWalletRead(() => window.solana?.publicKey);
+        if (publicKey) {
           const provider = detectSolanaProvider();
-          this.sendWalletInfo(window.solana.publicKey.toString(), { provider: provider ?? undefined }).catch(() => {});
+          this.sendWalletInfo(publicKey.toString(), { provider: provider ?? undefined }).catch(() => {});
         }
       };
-      window.solana.on('connect', handler);
+      safeWalletRead(() => window.solana?.on?.('connect', handler));
       this.walletListenerCleanups.push(() => {
-        window.solana?.removeListener?.('connect', handler);
+        safeWalletRead(() => window.solana?.removeListener?.('connect', handler));
       });
     }
   }
@@ -235,9 +241,9 @@ class LuciaSDK extends BaseClass {
   private handleLateEIP6963Provider(detail: EIP6963ProviderDetail): void {
     const { info, provider } = detail;
     // Check for already-connected accounts
-    if (provider.request) {
-      provider
-        .request({ method: 'eth_accounts' })
+    const accountsRequest = safeWalletRead(() => provider.request?.({ method: 'eth_accounts' }));
+    if (accountsRequest) {
+      accountsRequest
         .then((accounts: unknown) => {
           const addrs = accounts as string[];
           if (Array.isArray(addrs)) {
@@ -259,7 +265,7 @@ class LuciaSDK extends BaseClass {
    */
   private attachEIP6963AccountsChanged(detail: EIP6963ProviderDetail): void {
     const { info, provider } = detail;
-    if (!provider.on) return;
+    if (!safeWalletRead(() => provider.on)) return;
 
     const handler = (accounts: unknown) => {
       const accts = accounts as string[];
@@ -272,9 +278,9 @@ class LuciaSDK extends BaseClass {
       }
     };
 
-    provider.on('accountsChanged', handler);
+    safeWalletRead(() => provider.on?.('accountsChanged', handler));
     this.walletListenerCleanups.push(() => {
-      provider.removeListener?.('accountsChanged', handler);
+      safeWalletRead(() => provider.removeListener?.('accountsChanged', handler));
     });
   }
 
@@ -470,7 +476,7 @@ class LuciaSDK extends BaseClass {
    * @returns true if MetaMask is connected, false otherwise
    */
   checkMetaMaskConnection(): boolean {
-    return !!(window.ethereum?.isConnected?.() && window.ethereum?.selectedAddress);
+    return !!safeWalletRead(() => window.ethereum?.isConnected?.() && window.ethereum?.selectedAddress);
   }
 
   /**
