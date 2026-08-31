@@ -72,8 +72,5 @@
   },
   "dependencies": {
     "uuid": "^14.0.0"
-  },
-  "resolutions": {
-    "conventional-changelog-conventionalcommits": "^9.1.0"
   }
 }
