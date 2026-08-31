@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.9](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.8...v0.10.9) (2026-08-31)
+
+### Bug Fixes
+
+- **deps:** drop stale conventional-changelog-conventionalcommits resolution ([1819cc3](https://github.com/ondecentral/Lucia-Browser-SDK/commit/1819cc348b5744acd38db8e9e382b37ac80d2f38))
+- **deps:** pin typescript to 6.x, build toolchain needs the JS compiler API ([a6cef8d](https://github.com/ondecentral/Lucia-Browser-SDK/commit/a6cef8d5e280ed2d19c6e71e32d7ead6f3b18e79))
+
+### Miscellaneous
+
+- **deps:** bump eslint, release and rollup groups plus fast-uri and ip-address ([63abe73](https://github.com/ondecentral/Lucia-Browser-SDK/commit/63abe730165cab5eadcceff0613ec7ce9ffb0a5a))
+- **deps:** bump lint-staged from 16.4.0 to 17.2.0 ([45ba5e0](https://github.com/ondecentral/Lucia-Browser-SDK/commit/45ba5e0a6e830a8ced3841a879913c41eb8b0428))
+- **deps:** bump prettier from 3.8.1 to 3.9.6 ([b048253](https://github.com/ondecentral/Lucia-Browser-SDK/commit/b048253dc302601e03c2a8daf60b84507140586a))
+- **deps:** bump rollup from 4.61.0 to 4.62.3 in the rollup group ([f7a9d86](https://github.com/ondecentral/Lucia-Browser-SDK/commit/f7a9d86e94acb8be9ed88576a51c1ac805ec8e97))
+- **deps:** bump the release group with 4 updates ([664fe42](https://github.com/ondecentral/Lucia-Browser-SDK/commit/664fe42cd2c144ff6c80661bc18af9819e3ebeca))
+- **deps:** bump the typescript group with 2 updates ([1ee6820](https://github.com/ondecentral/Lucia-Browser-SDK/commit/1ee6820a3e9ea4c13136790555dacaea0634b2ac))
+- **deps:** bump ws from 8.18.3 to 8.21.1 ([84d9ffb](https://github.com/ondecentral/Lucia-Browser-SDK/commit/84d9ffb18edeaffa9e55f1120ae1b6375a93e613))
+
 ## [0.10.8](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.7...v0.10.8) (2026-08-03)
 
 ### Bug Fixes
