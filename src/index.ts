@@ -1,5 +1,6 @@
 import LuciaSDKClass from './core';
 import { autoTrackerRegistry } from './features/auto-tracking';
+import { safeWalletRead } from './features/web3/safe';
 import { Config, SDK } from './types';
 import { SDK_VERSION } from './version';
 
@@ -75,7 +76,8 @@ const LuciaSDK: SDK = {
   buttonClick: async (button, meta) => (await getSdk()).buttonClick(button, meta),
   sendWalletInfo: async (addr, optionsOrChainId, name) => (await getSdk()).sendWalletInfo(addr, optionsOrChainId, name),
   trackUserAcquisition: async (userId, data = {}) => (await getSdk()).trackUserAcquisition(userId, data),
-  checkMetaMaskConnection: () => !!(window.ethereum?.isConnected?.() && window.ethereum?.selectedAddress),
+  checkMetaMaskConnection: () =>
+    !!safeWalletRead(() => window.ethereum?.isConnected?.() && window.ethereum?.selectedAddress),
   VERSION: SDK_VERSION,
 };
 
