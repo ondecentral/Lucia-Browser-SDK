@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.11](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.10...v0.10.11) (2026-09-03)
+
+### Miscellaneous
+
+- **deps:** bump @humanfs/node from 0.16.7 to 0.16.8 ([ce093c2](https://github.com/ondecentral/Lucia-Browser-SDK/commit/ce093c2e5404f61e2b59953ec24f1ff12ed39498))
+- **deps:** bump fast-uri from 3.1.5 to 3.1.7 ([28d3224](https://github.com/ondecentral/Lucia-Browser-SDK/commit/28d322447dd3f873c9c958b0225b9ca07311dd2c))
+
 ## [0.10.10](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.9...v0.10.10) (2026-08-31)
 
 ### Bug Fixes
