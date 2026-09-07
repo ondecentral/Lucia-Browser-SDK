@@ -35,44 +35,59 @@ jobs:
         node-version: '24.x'
         registry-url: 'https://registry.npmjs.org'
 
-    - name: Install dependencies
-      run: yarn install --frozen-lockfile
-
-    - name: Build
-      run: yarn build
-
-    - name: Check if alpha version
+    - name: Check version
       id: check_version
       run: |
         VERSION=$(node -p "require('./package.json').version")
-        if [[ $VERSION == *"-alpha."* ]]; then
-          echo "is_alpha=true" >> $GITHUB_OUTPUT
-        else
-          echo "is_alpha=false" >> $GITHUB_OUTPUT
-        fi
+        NAME=$(node -p "require('./package.json').name")
         echo "Current version: $VERSION"
 
+        if [[ $VERSION == *"-alpha."* ]]; then
+          echo "is_alpha=true" >> "$GITHUB_OUTPUT"
+        else
+          echo "is_alpha=false" >> "$GITHUB_OUTPUT"
+        fi
+
+        # Only feat/fix/perf/revert bump the version, so a Release run with
+        # nothing releasable succeeds without publishing a new one — and this
+        # workflow fires on that success all the same. Skip instead of
+        # reuploading a version the registry already has.
+        if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+          echo "$NAME@$VERSION is already published, nothing to do"
+          echo "should_publish=false" >> "$GITHUB_OUTPUT"
+        else
+          echo "should_publish=true" >> "$GITHUB_OUTPUT"
+        fi
+
+    - name: Install dependencies
+      if: steps.check_version.outputs.should_publish == 'true'
+      run: yarn install --frozen-lockfile
+
+    - name: Build
+      if: steps.check_version.outputs.should_publish == 'true'
+      run: yarn build
+
     - name: Publish Alpha
-      if: steps.check_version.outputs.is_alpha == 'true'
+      if: steps.check_version.outputs.should_publish == 'true' && steps.check_version.outputs.is_alpha == 'true'
       run: npm publish --tag alpha --access public --provenance
 
     - name: Publish Regular
-      if: steps.check_version.outputs.is_alpha == 'false'
+      if: steps.check_version.outputs.should_publish == 'true' && steps.check_version.outputs.is_alpha == 'false'
       run: |
         yarn package:build
         npm publish --access public --provenance
 
     - name: Configure AWS Credentials
-      if: steps.check_version.outputs.is_alpha == 'false'
+      if: steps.check_version.outputs.should_publish == 'true' && steps.check_version.outputs.is_alpha == 'false'
       uses: aws-actions/configure-aws-credentials@v6
       with:
         role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
         aws-region: us-east-1
 
     - name: Upload to S3
-      if: steps.check_version.outputs.is_alpha == 'false'
+      if: steps.check_version.outputs.should_publish == 'true' && steps.check_version.outputs.is_alpha == 'false'
       run: aws s3 cp dist/umd s3://${{ secrets.AWS_S3_BUCKET }} --recursive --follow-symlinks
 
     - name: Invalidate CloudFront
-      if: steps.check_version.outputs.is_alpha == 'false'
+      if: steps.check_version.outputs.should_publish == 'true' && steps.check_version.outputs.is_alpha == 'false'
       run: aws cloudfront create-invalidation --distribution-id ${{ secrets.DISTRIBUTION }} --paths "/*"
