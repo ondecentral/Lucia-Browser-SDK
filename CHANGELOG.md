@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.10.12](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.11...v0.10.12) (2026-09-08)
+
+### Bug Fixes
+
+- **ci:** set cache-control on CDN uploads so browsers can cache the SDK ([3b3106c](https://github.com/ondecentral/Lucia-Browser-SDK/commit/3b3106c4dfe40f79628858b4c1d19ec86125ad0e))
+
+### Miscellaneous
+
+- **deps:** bump rollup from 4.63.0 to 4.63.1 in the rollup group ([018eb39](https://github.com/ondecentral/Lucia-Browser-SDK/commit/018eb39d6c9501d0f30d08b7f4f744f3a9752597))
+- **deps:** bump the eslint group with 5 updates ([5318130](https://github.com/ondecentral/Lucia-Browser-SDK/commit/531813001de048134b8049a8803fa45304a40895))
+- **deps:** bump the testing group with 2 updates ([a39d2dd](https://github.com/ondecentral/Lucia-Browser-SDK/commit/a39d2dd390bffeefa9c39a2dc39a285add7a100c))
+
+### Continuous Integration
+
+- stop chore, docs, test and ci commits from bumping the version ([a3480e0](https://github.com/ondecentral/Lucia-Browser-SDK/commit/a3480e0571d358b6c10635090a3aa9e5b634a44e))
+- validate lint, types, tests and build on pull requests ([fad00f4](https://github.com/ondecentral/Lucia-Browser-SDK/commit/fad00f490b66329da6a8f5dc98daac2337af00db))
+
 ## [0.10.11](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.10...v0.10.11) (2026-09-03)
 
 ### Miscellaneous
