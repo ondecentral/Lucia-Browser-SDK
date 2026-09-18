@@ -691,6 +691,36 @@ describe('Data Utilities', () => {
       expect(data.browser.canvasNoisy).toBe(false);
       expect(data.browser.uniqueHash).toMatch(/^[0-9a-f]{64}$/);
     });
+
+    it('flags Brave, whose noise is constant within a session', async () => {
+      mockCanvasWith(jest.fn().mockReturnValue('data:a'));
+      Object.defineProperty(navigator, 'brave', { value: { isBrave: async () => true }, configurable: true });
+
+      try {
+        const data = await getBrowserData();
+
+        expect(data.browser.canvasNoisy).toBe(true);
+        expect(data.browser.uniqueHash).toMatch(/^[0-9a-f]{64}$/);
+      } finally {
+        delete (navigator as Navigator & { brave?: unknown }).brave;
+      }
+    });
+
+    it('treats a failing Brave probe as not Brave', async () => {
+      mockCanvasWith(jest.fn().mockReturnValue('data:a'));
+      Object.defineProperty(navigator, 'brave', {
+        value: { isBrave: async () => Promise.reject(new Error('blocked')) },
+        configurable: true,
+      });
+
+      try {
+        const data = await getBrowserData();
+
+        expect(data.browser.canvasNoisy).toBe(false);
+      } finally {
+        delete (navigator as Navigator & { brave?: unknown }).brave;
+      }
+    });
   });
 
   describe('getWebGLInfo', () => {
