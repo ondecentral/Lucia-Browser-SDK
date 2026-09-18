@@ -7,6 +7,7 @@ import {
   getColorGamut,
   getCanvasFingerprint,
   isTouchEnabled,
+  getWebGLInfo,
   getBrowserData,
   clearBrowserDataCache,
 } from '../../../features/fingerprinting';
@@ -17,7 +18,7 @@ interface BrowserData {
   device: any;
   screen: any;
   browser: any;
-  permissions: any;
+  webgl?: any;
   storage: any;
 }
 
@@ -74,7 +75,7 @@ describe('Data Utilities', () => {
       expect(data).toHaveProperty('device');
       expect(data).toHaveProperty('screen');
       expect(data).toHaveProperty('browser');
-      expect(data).toHaveProperty('permissions');
+      expect(data).toHaveProperty('webgl');
       expect(data).toHaveProperty('storage');
     });
 
@@ -150,8 +151,7 @@ describe('Data Utilities', () => {
         writable: true,
       });
 
-      // Mock touch capability
-      jest.spyOn(document, 'createEvent').mockImplementation(() => ({}) as Event);
+      Object.defineProperty(navigator, 'maxTouchPoints', { value: 5, configurable: true });
 
       const data = (await getBrowserData()) as BrowserData;
 
@@ -159,6 +159,7 @@ describe('Data Utilities', () => {
       expect(data.device.memory).toBe(4);
       expect(data.device.cpuClass).toBe('x86');
       expect(data.device.touch).toBe(true);
+      expect(data.device.maxTouchPoints).toBe(5);
       expect(data.device.devicePixelRatio).toBe(2);
     });
 
@@ -317,47 +318,6 @@ describe('Data Utilities', () => {
         // Restore originals
         window.matchMedia = originalMatchMedia;
         delete window.ApplePaySession;
-      }
-    });
-
-    it('should handle different permission states', async () => {
-      const scenarios = [
-        { navPer: '2.0', renderedPer: 'Mock Renderer', geoPer: { state: 'granted' } },
-        { navPer: undefined, renderedPer: undefined, geoPer: undefined },
-        { navPer: '1.0', renderedPer: 'Other Renderer', geoPer: { state: 'denied' } },
-      ];
-
-      // Test each permission state sequentially (cache must be cleared between each)
-
-      for (const perms of scenarios) {
-        // Clear cached data between iterations
-        clearBrowserDataCache();
-
-        // If permissions property already exists and is not configurable, skip redefining
-        // (JSDOM sometimes makes it non-configurable)
-        try {
-          Object.defineProperty(navigator, 'permissions', {
-            value: {
-              webglVersion: perms.navPer,
-              RENDERER: perms.renderedPer,
-              geolocation: perms.geoPer,
-            },
-            configurable: true,
-            writable: true,
-          });
-        } catch (_e) {
-          // fallback: assign directly if defineProperty fails
-          (navigator as any).permissions = {
-            webglVersion: perms.navPer,
-            RENDERER: perms.renderedPer,
-            geolocation: perms.geoPer,
-          };
-        }
-
-        const data = (await getBrowserData()) as BrowserData;
-        expect(data.permissions.navPer).toBe(perms.navPer);
-        expect(data.permissions.renderedPer).toBe(perms.renderedPer);
-        expect(data.permissions.geoPer).toBe(perms.geoPer);
       }
     });
 
@@ -711,16 +671,98 @@ describe('Data Utilities', () => {
     });
   });
 
-  describe('isTouchEnabled', () => {
-    it('returns false if createEvent throws', () => {
-      jest.spyOn(document, 'createEvent').mockImplementationOnce(() => {
+  describe('canvas noise detection', () => {
+    const mockCanvasWith = (toDataURL: jest.Mock) => {
+      const ctx = new Proxy({}, { get: () => jest.fn().mockReturnValue({ addColorStop: jest.fn() }), set: () => true });
+      jest
+        .spyOn(document, 'createElement')
+        .mockReturnValue({ getContext: () => ctx, toDataURL } as unknown as HTMLCanvasElement);
+    };
+
+    it('flags canvasNoisy when two renders differ', async () => {
+      mockCanvasWith(jest.fn().mockReturnValueOnce('data:a').mockReturnValueOnce('data:b'));
+      const data = await getBrowserData();
+      expect(data.browser.canvasNoisy).toBe(true);
+    });
+
+    it('reports a stable canvas when two renders match', async () => {
+      mockCanvasWith(jest.fn().mockReturnValue('data:a'));
+      const data = await getBrowserData();
+      expect(data.browser.canvasNoisy).toBe(false);
+      expect(data.browser.uniqueHash).toMatch(/^[0-9a-f]{64}$/);
+    });
+  });
+
+  describe('getWebGLInfo', () => {
+    it('returns undefined when WebGL is unavailable', () => {
+      jest.spyOn(document, 'createElement').mockReturnValueOnce({ getContext: () => null } as any);
+      expect(getWebGLInfo()).toBeUndefined();
+    });
+
+    it('returns undefined if context creation throws', () => {
+      jest.spyOn(document, 'createElement').mockImplementationOnce(() => {
         throw new Error('fail');
       });
+      expect(getWebGLInfo()).toBeUndefined();
+    });
+
+    it('reads renderer info and releases the context', () => {
+      const loseContext = jest.fn();
+      const gl = {
+        VENDOR: 1,
+        RENDERER: 2,
+        VERSION: 3,
+        SHADING_LANGUAGE_VERSION: 4,
+        MAX_TEXTURE_SIZE: 5,
+        MAX_RENDERBUFFER_SIZE: 6,
+        MAX_VIEWPORT_DIMS: 7,
+        MAX_VERTEX_ATTRIBS: 8,
+        getParameter: jest.fn((param: number) => {
+          if (param === 7) return new Int32Array([16384, 16384]);
+          if (param === 101) return 'Apple M2';
+          if (param === 100) return 'Apple Inc.';
+          return param === 2 ? 'WebKit WebGL' : param;
+        }),
+        getExtension: jest.fn((name: string) => {
+          if (name === 'WEBGL_debug_renderer_info') return { UNMASKED_VENDOR_WEBGL: 100, UNMASKED_RENDERER_WEBGL: 101 };
+          return name === 'WEBGL_lose_context' ? { loseContext } : null;
+        }),
+        getSupportedExtensions: jest.fn().mockReturnValue(['OES_texture_float']),
+      };
+      jest.spyOn(document, 'createElement').mockReturnValueOnce({ getContext: () => gl } as any);
+
+      expect(getWebGLInfo()).toMatchObject({
+        renderer: 'WebKit WebGL',
+        unmaskedVendor: 'Apple Inc.',
+        unmaskedRenderer: 'Apple M2',
+        maxViewportDims: [16384, 16384],
+        extensions: ['OES_texture_float'],
+      });
+      expect(loseContext).toHaveBeenCalled();
+    });
+
+    it('omits unmasked values when the debug extension is blocked', () => {
+      const gl = {
+        getParameter: jest.fn().mockReturnValue([]),
+        getExtension: jest.fn().mockReturnValue(null),
+        getSupportedExtensions: jest.fn().mockReturnValue(null),
+      };
+      jest.spyOn(document, 'createElement').mockReturnValueOnce({ getContext: () => gl } as any);
+
+      const info = getWebGLInfo();
+      expect(info?.unmaskedRenderer).toBeUndefined();
+      expect(info?.extensions).toEqual([]);
+    });
+  });
+
+  describe('isTouchEnabled', () => {
+    it('returns false without touch points', () => {
+      Object.defineProperty(navigator, 'maxTouchPoints', { value: 0, configurable: true });
       expect(isTouchEnabled()).toBe(false);
     });
 
-    it('returns true if createEvent does not throw', () => {
-      jest.spyOn(document, 'createEvent').mockImplementationOnce(() => ({}) as Event);
+    it('returns true with touch points', () => {
+      Object.defineProperty(navigator, 'maxTouchPoints', { value: 5, configurable: true });
       expect(isTouchEnabled()).toBe(true);
     });
   });

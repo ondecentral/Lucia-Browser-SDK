@@ -6,6 +6,7 @@ export {
   filterObject,
   getCanvasFingerprint,
   isTouchEnabled,
+  getWebGLInfo,
   getApplePayAvailable,
   getContrastPreference,
   getColorGamut,

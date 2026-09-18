@@ -18,6 +18,8 @@ export async function getBrowserData(): Promise<BrowserData> {
     memory: safeAccess(() => (navigator as Navigator & { deviceMemory?: number }).deviceMemory),
     cpuClass: safeAccess(() => (navigator as Navigator & { cpuClass?: string }).cpuClass),
     touch: isTouchEnabled(),
+    maxTouchPoints: safeAccess(() => navigator.maxTouchPoints),
+    platform: safeAccess(() => navigator.platform),
     devicePixelRatio: safeAccess(() => window.devicePixelRatio),
   };
 
@@ -33,28 +35,22 @@ export async function getBrowserData(): Promise<BrowserData> {
     },
   };
 
+  const canvas = await getCanvasSignals();
+
   const browser = {
     language: safeAccess(() => navigator.language),
+    languages: safeAccess(() => Array.from(navigator.languages)),
     encoding: safeAccess(() => (TextDecoder as typeof TextDecoder & { encoding?: string }).encoding),
     timezone: safeAccess(() => -new Date().getTimezoneOffset() / 60),
+    timezoneName: safeAccess(() => Intl.DateTimeFormat().resolvedOptions().timeZone),
     pluginsLength: safeAccess(() => navigator.plugins.length),
     pluginNames: safeAccess(() => Array.from(navigator.plugins, (p) => p.name)),
     applePayAvailable: getApplePayAvailable(),
-    uniqueHash: await getCanvasFingerprint(),
+    uniqueHash: canvas.uniqueHash,
+    canvasNoisy: canvas.canvasNoisy,
     colorGamut: getColorGamut(),
     contrastPreference: getContrastPreference(),
   };
-  type ExtendedPermissions = Permissions & {
-    webglVersion?: PermissionStatus;
-    RENDERER?: PermissionStatus;
-    geolocation?: PermissionStatus;
-  };
-  const permissions = {
-    navPer: safeAccess(() => (navigator.permissions as ExtendedPermissions).webglVersion),
-    renderedPer: safeAccess(() => (navigator.permissions as ExtendedPermissions).RENDERER),
-    geoPer: safeAccess(() => (navigator.permissions as ExtendedPermissions).geolocation),
-  };
-
   const storage = {
     localStorage: safeAccess(() => !!window.localStorage),
     indexedDB: safeAccess(() => !!window.indexedDB),
@@ -65,7 +61,7 @@ export async function getBrowserData(): Promise<BrowserData> {
     device,
     screen,
     browser,
-    permissions,
+    webgl: getWebGLInfo(),
     storage,
   };
 
@@ -168,77 +164,127 @@ async function sha256(str: string): Promise<string> {
 let browserDataCache: BrowserData | null = null;
 
 /**
- * Generates a unique hash based on canvas rendering characteristics.
+ * Draws the fingerprint scene and returns it as a PNG data URL.
  * Uses text rendering, gradients, blending, and curves to maximise
- * per-device variance in the resulting pixel data, then hashes the
- * full canvas image with SHA-256.
+ * per-device variance in the resulting pixel data.
+ */
+function renderCanvas(): string | undefined {
+  const canvas = document.createElement('canvas');
+  const width = 280;
+  const height = 60;
+  canvas.width = width;
+  canvas.height = height;
+
+  const ctx = canvas.getContext('2d', {
+    willReadFrequently: true,
+  } as CanvasRenderingContext2DSettings) as CanvasRenderingContext2D | null;
+  if (!ctx) return undefined;
+
+  // 1) Linear gradient — colour interpolation differs by GPU
+  const gradient = ctx.createLinearGradient(0, 0, width, 0);
+  gradient.addColorStop(0, '#ff0000');
+  gradient.addColorStop(0.5, '#00ff00');
+  gradient.addColorStop(1, '#0000ff');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+
+  // 2) Text with common font — sub-pixel rendering & hinting vary by OS/GPU
+  ctx.font = '14px Arial, sans-serif';
+  ctx.fillStyle = 'rgba(100, 200, 50, 0.8)';
+  ctx.fillText('Cwm fjord bank glyphs vext quiz!', 2, 20);
+
+  // 3) Emoji — rendered by OS-specific emoji font (Apple vs Google vs MS)
+  ctx.font = '18px serif';
+  ctx.fillText('\u{1F3F4}\u{200D}\u{2620}\u{FE0F}\u{1F355}\u{1F3B5}', 2, 45);
+
+  // 4) Composited, anti-aliased circle — blending amplifies GPU differences
+  ctx.globalCompositeOperation = 'multiply';
+  ctx.fillStyle = 'rgba(255, 100, 0, 0.6)';
+  ctx.beginPath();
+  ctx.arc(200, 30, 25, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 5) Thin bezier stroke — sub-pixel anti-aliasing varies across renderers
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.strokeStyle = 'rgba(50, 50, 255, 0.7)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.moveTo(100, 5);
+  ctx.bezierCurveTo(130, 55, 170, 5, 200, 55);
+  ctx.stroke();
+
+  return canvas.toDataURL('image/png');
+}
+
+/**
+ * Hashes the canvas scene and flags browsers that randomise canvas reads
+ * (Safari private mode, some anti-fingerprinting extensions). A noisy hash
+ * changes on every read, so it must not be used for matching.
+ */
+async function getCanvasSignals(): Promise<{ uniqueHash?: string; canvasNoisy?: boolean }> {
+  try {
+    const first = renderCanvas();
+    if (!first) return {};
+    return { uniqueHash: await sha256(first), canvasNoisy: first !== renderCanvas() };
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Generates a unique hash based on canvas rendering characteristics.
  *
  * @returns {Promise<string | undefined>} A SHA-256 hexadecimal hash string representing the canvas fingerprint,
  *                              or undefined if canvas is not supported or operation fails
  */
 export async function getCanvasFingerprint(): Promise<string | undefined> {
+  return (await getCanvasSignals()).uniqueHash;
+}
+
+/**
+ * Reads GPU identity and limits from a throwaway WebGL context.
+ * Nothing is rendered; the context is released immediately because
+ * browsers cap live contexts per page and the host site may need them.
+ *
+ * @returns {BrowserData['webgl']} WebGL vendor/renderer strings and limits,
+ *                                or undefined if WebGL is unavailable
+ */
+export function getWebGLInfo(): BrowserData['webgl'] {
   try {
     const canvas = document.createElement('canvas');
-    const width = 280;
-    const height = 60;
-    canvas.width = width;
-    canvas.height = height;
+    const gl = (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')) as WebGLRenderingContext | null;
+    if (!gl) return undefined;
 
-    const ctx = canvas.getContext('2d', {
-      willReadFrequently: true,
-    } as CanvasRenderingContext2DSettings) as CanvasRenderingContext2D | null;
-    if (!ctx) return undefined;
+    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+    const info = {
+      vendor: gl.getParameter(gl.VENDOR) as string,
+      renderer: gl.getParameter(gl.RENDERER) as string,
+      unmaskedVendor: debugInfo ? (gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) as string) : undefined,
+      unmaskedRenderer: debugInfo ? (gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) as string) : undefined,
+      version: gl.getParameter(gl.VERSION) as string,
+      shadingLanguageVersion: gl.getParameter(gl.SHADING_LANGUAGE_VERSION) as string,
+      maxTextureSize: gl.getParameter(gl.MAX_TEXTURE_SIZE) as number,
+      maxRenderbufferSize: gl.getParameter(gl.MAX_RENDERBUFFER_SIZE) as number,
+      maxViewportDims: Array.from(gl.getParameter(gl.MAX_VIEWPORT_DIMS) as Int32Array),
+      maxVertexAttribs: gl.getParameter(gl.MAX_VERTEX_ATTRIBS) as number,
+      extensions: gl.getSupportedExtensions() ?? [],
+    };
 
-    // 1) Linear gradient — colour interpolation differs by GPU
-    const gradient = ctx.createLinearGradient(0, 0, width, 0);
-    gradient.addColorStop(0, '#ff0000');
-    gradient.addColorStop(0.5, '#00ff00');
-    gradient.addColorStop(1, '#0000ff');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, width, height);
-
-    // 2) Text with common font — sub-pixel rendering & hinting vary by OS/GPU
-    ctx.font = '14px Arial, sans-serif';
-    ctx.fillStyle = 'rgba(100, 200, 50, 0.8)';
-    ctx.fillText('Cwm fjord bank glyphs vext quiz!', 2, 20);
-
-    // 3) Emoji — rendered by OS-specific emoji font (Apple vs Google vs MS)
-    ctx.font = '18px serif';
-    ctx.fillText('\u{1F3F4}\u{200D}\u{2620}\u{FE0F}\u{1F355}\u{1F3B5}', 2, 45);
-
-    // 4) Composited, anti-aliased circle — blending amplifies GPU differences
-    ctx.globalCompositeOperation = 'multiply';
-    ctx.fillStyle = 'rgba(255, 100, 0, 0.6)';
-    ctx.beginPath();
-    ctx.arc(200, 30, 25, 0, Math.PI * 2);
-    ctx.fill();
-
-    // 5) Thin bezier stroke — sub-pixel anti-aliasing varies across renderers
-    ctx.globalCompositeOperation = 'source-over';
-    ctx.strokeStyle = 'rgba(50, 50, 255, 0.7)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    ctx.moveTo(100, 5);
-    ctx.bezierCurveTo(130, 55, 170, 5, 200, 55);
-    ctx.stroke();
-
-    // Hash the full image (captures every rendering difference)
-    const dataUrl = canvas.toDataURL('image/png');
-    return sha256(dataUrl);
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return info;
   } catch {
     return undefined;
   }
 }
 
 /**
- * Detects if the device supports touch events.
- * Used to determine if the user is on a touch-enabled device.
+ * Detects if the device has a touch screen.
  *
- * @returns {boolean} True if touch events are supported, false otherwise
+ * @returns {boolean} True if the device reports at least one touch point
  */
 export function isTouchEnabled(): boolean {
   try {
-    return !!document.createEvent('TouchEvent');
+    return navigator.maxTouchPoints > 0;
   } catch {
     return false;
   }
