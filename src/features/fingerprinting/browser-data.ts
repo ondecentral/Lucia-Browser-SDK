@@ -217,15 +217,30 @@ function renderCanvas(): string | undefined {
 }
 
 /**
+ * Detects Brave via its documented `navigator.brave.isBrave()` hook. Brave's
+ * canvas noise is constant within a session, so the double-render check below
+ * can't catch it on its own.
+ */
+async function isBrave(): Promise<boolean> {
+  try {
+    const brave = (navigator as Navigator & { brave?: { isBrave: () => Promise<boolean> } }).brave;
+    return (await brave?.isBrave()) === true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Hashes the canvas scene and flags browsers that randomise canvas reads
- * (Safari private mode, some anti-fingerprinting extensions). A noisy hash
- * changes on every read, so it must not be used for matching.
+ * (Safari private mode, Brave, some anti-fingerprinting extensions). A noisy
+ * hash changes on every read (or is constant-but-per-session for Brave), so
+ * it must not be used for matching.
  */
 async function getCanvasSignals(): Promise<{ uniqueHash?: string; canvasNoisy?: boolean }> {
   try {
     const first = renderCanvas();
     if (!first) return {};
-    return { uniqueHash: await sha256(first), canvasNoisy: first !== renderCanvas() };
+    return { uniqueHash: await sha256(first), canvasNoisy: first !== renderCanvas() || (await isBrave()) };
   } catch {
     return {};
   }
