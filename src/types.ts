@@ -73,6 +73,8 @@ export interface BrowserData {
     memory?: number;
     cpuClass?: string;
     touch: boolean;
+    maxTouchPoints?: number;
+    platform?: string;
     devicePixelRatio?: number;
   };
   screen: {
@@ -88,19 +90,30 @@ export interface BrowserData {
   };
   browser: {
     language?: string;
+    languages?: string[];
     encoding?: string;
     timezone?: number;
+    timezoneName?: string;
     pluginsLength?: number;
     pluginNames?: string[];
     applePayAvailable?: boolean;
     uniqueHash?: string;
+    canvasNoisy?: boolean;
     colorGamut: string[];
     contrastPreference?: string;
   };
-  permissions: {
-    navPer?: PermissionStatus;
-    renderedPer?: PermissionStatus;
-    geoPer?: PermissionStatus;
+  webgl?: {
+    vendor?: string;
+    renderer?: string;
+    unmaskedVendor?: string;
+    unmaskedRenderer?: string;
+    version?: string;
+    shadingLanguageVersion?: string;
+    maxTextureSize?: number;
+    maxRenderbufferSize?: number;
+    maxViewportDims?: number[];
+    maxVertexAttribs?: number;
+    extensions: string[];
   };
   storage: {
     localStorage?: boolean;
