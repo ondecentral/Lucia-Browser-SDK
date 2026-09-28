@@ -2,6 +2,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.11.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.12...v0.11.0) (2026-09-28)
+
+### Features
+
+- **fingerprinting:** add webgl, timezone name and canvas noise signals ([e760259](https://github.com/ondecentral/Lucia-Browser-SDK/commit/e7602597172b7187777ae6b469c395b42ce4b6ed))
+- **fingerprinting:** flag Brave as a noisy canvas ([b24c13e](https://github.com/ondecentral/Lucia-Browser-SDK/commit/b24c13e2f1d1b5ee74e36df282e230d488a32940))
+
+### Miscellaneous
+
+- **deps:** bump @testing-library/dom in the testing group ([467b6af](https://github.com/ondecentral/Lucia-Browser-SDK/commit/467b6af09cd8beadc1e9f4c2c5c4947e7b3ba522))
+- **deps:** bump eslint-plugin-unicorn in the eslint group ([db28f64](https://github.com/ondecentral/Lucia-Browser-SDK/commit/db28f6433cc29996a6ba93ac2bd79f4bb00032ee))
+- **deps:** bump lint-staged from 17.4.1 to 17.5.1 ([736383d](https://github.com/ondecentral/Lucia-Browser-SDK/commit/736383de4b44ba0e722998420f42f4f56530a525))
+- **deps:** bump prettier from 3.9.6 to 3.9.8 ([dc00904](https://github.com/ondecentral/Lucia-Browser-SDK/commit/dc00904f54862a6d59bdb577a576fef7331dc9f9))
+- **deps:** bump rollup from 4.63.1 to 4.63.3 in the rollup group ([ceff33f](https://github.com/ondecentral/Lucia-Browser-SDK/commit/ceff33fb29be814d1d15c302ab3a95e689764b7a))
+- **deps:** bump rollup from 4.63.3 to 4.63.5 in the rollup group ([2aadee3](https://github.com/ondecentral/Lucia-Browser-SDK/commit/2aadee3ef0263486a92069f59bca3e8957966b60))
+- **deps:** bump the eslint group with 4 updates ([1961856](https://github.com/ondecentral/Lucia-Browser-SDK/commit/19618560640b5ee6c8c5fc7b5545b300ff98816b))
+- **deps:** bump the eslint group with 5 updates ([3a84f79](https://github.com/ondecentral/Lucia-Browser-SDK/commit/3a84f792dfa9c624e8bfb820531625bf80d13e90))
+- **deps:** bump the release group with 2 updates ([ee7db98](https://github.com/ondecentral/Lucia-Browser-SDK/commit/ee7db989ae44f60f9e2190b29209cc8cb3a01bb3))
+- **deps:** bump the release group with 3 updates ([b9f5853](https://github.com/ondecentral/Lucia-Browser-SDK/commit/b9f5853728d5707fc11ad94610cd0d5b22a9e7ec))
+- **deps:** bump the testing group with 2 updates ([27bf1a6](https://github.com/ondecentral/Lucia-Browser-SDK/commit/27bf1a6f52e1edc2bb034102322b7bb9991a6247))
+- **deps:** bump ts-jest in the typescript group ([061201b](https://github.com/ondecentral/Lucia-Browser-SDK/commit/061201bec80c01936c70df1cb1a353ef56f237b3))
+
 ## [0.10.12](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.11...v0.10.12) (2026-09-08)
 
 ### Bug Fixes
