@@ -38,11 +38,6 @@ describe('LuciaSDK', () => {
       colorGamut: ['srgb'],
       contrastPreference: 'None',
     },
-    permissions: {
-      navPer: undefined,
-      renderedPer: undefined,
-      geoPer: undefined,
-    },
     storage: {
       localStorage: true,
       indexedDB: true,
