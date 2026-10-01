@@ -191,6 +191,7 @@ LuciaSDK.trackConversion(
     quantity: 1,
     brand: 'Nike',
   },
+  'EUR', // optional ISO-4217 currency of the amount; defaults to the workspace currency
 );
 
 // Manual click tracking (optional with auto-tracking enabled)

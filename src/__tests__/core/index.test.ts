@@ -311,6 +311,20 @@ describe('LuciaSDK', () => {
         session: mockSession,
       });
     });
+
+    it('sends the currency when one is given', async () => {
+      await sdk.trackConversion('purchase', 129, { product: 'Premium Plan' }, 'PLN');
+
+      expect(httpClientPostSpy).toHaveBeenCalledWith('/api/sdk/conversion', {
+        tag: 'purchase',
+        amount: 129,
+        currency: 'PLN',
+        event: { product: 'Premium Plan' },
+        user: { name: mockUser },
+        lid: mockLid,
+        session: mockSession,
+      });
+    });
   });
 
   describe('buttonClick', () => {
