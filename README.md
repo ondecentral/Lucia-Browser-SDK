@@ -203,3 +203,5 @@ LuciaSDK.buttonClick('cta-button', {
 
 LuciaSDK.sendWalletInfo('0x1234567890', 59141);
 ```
+
+If the `currency` passed to `trackConversion` is a code the server does not accept, the server rejects the conversion and the SDK cannot report it, because conversions are sent without reading the response.
