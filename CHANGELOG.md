@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.11.0...v0.12.0) (2026-10-05)
+
+### Features
+
+- accept an optional currency in trackConversion ([1115cb4](https://github.com/ondecentral/Lucia-Browser-SDK/commit/1115cb4bd22a072c8313b332e707a4095d9ae50d))
+
+### Documentation
+
+- say that a conversion with a currency the server refuses is lost silently ([c21a6f9](https://github.com/ondecentral/Lucia-Browser-SDK/commit/c21a6f90d32d98c43b469684b4347e7fa553dbab))
+
+### Miscellaneous
+
+- **deps:** bump ip-address from 10.4.0 to 10.7.2 ([0034ae5](https://github.com/ondecentral/Lucia-Browser-SDK/commit/0034ae5397b84e95ba752c72a796087e6ad63542))
+- **deps:** bump lint-staged from 17.5.1 to 17.6.0 ([d51841c](https://github.com/ondecentral/Lucia-Browser-SDK/commit/d51841cd1ae378711996ee057d555c41f470eb29))
+- **deps:** bump rollup from 4.63.5 to 4.63.6 in the rollup group ([9f71dc3](https://github.com/ondecentral/Lucia-Browser-SDK/commit/9f71dc3d78bd5dad7f149a1e88dc7868df80d8c0))
+- **deps:** bump the eslint group with 3 updates ([91fc0c4](https://github.com/ondecentral/Lucia-Browser-SDK/commit/91fc0c45b65352a0d782faf96929119f0ed3aee4))
+- **deps:** bump ts-jest ([82e5e81](https://github.com/ondecentral/Lucia-Browser-SDK/commit/82e5e81c0248ff30b43d0fcef6de78a407589931))
+
 ## [0.11.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.10.12...v0.11.0) (2026-09-28)
 
 ### Features
