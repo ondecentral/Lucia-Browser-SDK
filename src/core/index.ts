@@ -334,14 +334,18 @@ class LuciaSDK extends BaseClass {
    * @param eventTag The tag of the event that was triggered, e.g. 'purchase', 'signup', etc.
    * @param amount The amount of the conversion, e.g. purchase amount, etc.
    * @param eventDetails Additional details about the event, e.g. product details, etc.
+   * @param currency ISO-4217 code of `amount`, e.g. 'PLN'. Omitted, the workspace currency applies.
+   *   A code the server does not accept makes the server reject the conversion, and the SDK cannot report it,
+   *   because conversions are sent without reading the response.
    */
-  async trackConversion(eventTag: string, amount: number, eventDetails: object) {
+  async trackConversion(eventTag: string, amount: number, eventDetails: object, currency?: string) {
     const lid = getLidData();
     const session = getSessionData();
 
     const payload: ConversionPayload = {
       tag: eventTag,
       amount,
+      ...(currency && { currency }),
       event: eventDetails,
       user: {
         name: getUser(),

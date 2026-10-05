@@ -44,7 +44,7 @@ export interface SDK {
   init: (config: Config) => Promise<LuciaSDKInstance>;
   userInfo: (user: string, userInfo: object) => Promise<void>;
   pageView: (page: string) => Promise<void>;
-  trackConversion: (eventTag: string, amount: number, eventDetails: object) => Promise<void>;
+  trackConversion: (eventTag: string, amount: number, eventDetails: object, currency?: string) => Promise<void>;
   buttonClick: (button: string, metadata?: ClickEventMetadata) => Promise<void>;
   sendWalletInfo: (
     walletAddress: string,
@@ -168,6 +168,7 @@ export interface PageViewPayload extends BaseApiPayload {
 export interface ConversionPayload extends BaseApiPayload {
   tag: string;
   amount: number;
+  currency?: string;
   event: object;
 }
 

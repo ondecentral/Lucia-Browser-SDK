@@ -191,6 +191,7 @@ LuciaSDK.trackConversion(
     quantity: 1,
     brand: 'Nike',
   },
+  'EUR', // optional ISO-4217 currency of the amount; defaults to the workspace currency
 );
 
 // Manual click tracking (optional with auto-tracking enabled)
@@ -202,3 +203,5 @@ LuciaSDK.buttonClick('cta-button', {
 
 LuciaSDK.sendWalletInfo('0x1234567890', 59141);
 ```
+
+If the `currency` passed to `trackConversion` is a code the server does not accept, the server rejects the conversion and the SDK cannot report it, because conversions are sent without reading the response.

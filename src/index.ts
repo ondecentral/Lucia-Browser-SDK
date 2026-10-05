@@ -73,7 +73,8 @@ const LuciaSDK: SDK = {
 
   userInfo: async (user, userInfo) => (await getSdk()).userInfo(user, userInfo),
   pageView: async (page) => (await getSdk()).pageView(page),
-  trackConversion: async (tag, amount, details) => (await getSdk()).trackConversion(tag, amount, details),
+  trackConversion: async (tag, amount, details, currency) =>
+    (await getSdk()).trackConversion(tag, amount, details, currency),
   buttonClick: async (button, meta) => (await getSdk()).buttonClick(button, meta),
   sendWalletInfo: async (addr, optionsOrChainId, name) => (await getSdk()).sendWalletInfo(addr, optionsOrChainId, name),
   trackUserAcquisition: async (userId, data = {}) => (await getSdk()).trackUserAcquisition(userId, data),
