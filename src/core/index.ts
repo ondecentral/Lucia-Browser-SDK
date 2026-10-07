@@ -23,6 +23,19 @@ import {
   WalletPayload,
 } from '../types';
 
+// The nonce stands for whoever clicked the link; a copied or bookmarked URL must not
+// carry it. Reads the current URL, since an SPA may have navigated during init.
+function stripRedirectHash() {
+  const current = new URL(window.location.href);
+  if (!current.searchParams.has('lucia')) return;
+  current.searchParams.delete('lucia');
+  try {
+    window.history.replaceState(window.history.state, '', current.toString());
+  } catch {
+    /* sandboxed frames may refuse; the server-side stitch window still bounds reuse */
+  }
+}
+
 // Register trackers at module load time
 autoTrackerRegistry.register(clickTrackerRegistration);
 
@@ -91,6 +104,8 @@ class LuciaSDK extends BaseClass {
       if (result.session) {
         updateSessionFromServer(result.session);
       }
+
+      if (redirectHash) stripRedirectHash();
     }
 
     // Initialize all configured auto-trackers via registry

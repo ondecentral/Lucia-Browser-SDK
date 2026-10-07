@@ -119,6 +119,33 @@ describe('LuciaSDK', () => {
       );
     });
 
+    describe('redirect nonce', () => {
+      afterEach(() => window.history.replaceState(null, '', '/'));
+
+      it('sends the nonce, then removes only it from the address bar', async () => {
+        window.history.replaceState(null, '', '/landing?lucia=abc123&utm_source=x');
+
+        await sdk.init();
+
+        expect(httpClientPostSpy).toHaveBeenCalledWith(
+          '/api/sdk/init',
+          expect.objectContaining({ redirectHash: 'abc123' }),
+          false,
+        );
+        expect(window.location.pathname).toBe('/landing');
+        expect(window.location.search).toBe('?utm_source=x');
+      });
+
+      it('keeps the nonce when init fails, so a reload can retry', async () => {
+        window.history.replaceState(null, '', '/landing?lucia=abc123');
+        httpClientPostSpy.mockResolvedValueOnce(null);
+
+        await sdk.init();
+
+        expect(window.location.search).toBe('?lucia=abc123');
+      });
+    });
+
     it('should not include lid in init request on first visit (no lid in localStorage)', async () => {
       jest.spyOn(sessionUtils, 'getLidData').mockReturnValueOnce(null);
 
