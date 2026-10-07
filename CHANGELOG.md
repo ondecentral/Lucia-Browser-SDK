@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.1](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.12.0...v0.12.1) (2026-10-07)
+
+### Bug Fixes
+
+- remove the redirect nonce from the address bar after init ([f1093f9](https://github.com/ondecentral/Lucia-Browser-SDK/commit/f1093f92f53e72fa9973af79372c82395ab9bfea))
+
 ## [0.12.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.11.0...v0.12.0) (2026-10-05)
 
 ### Features
