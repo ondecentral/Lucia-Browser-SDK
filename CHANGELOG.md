@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.12.2](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.12.1...v0.12.2) (2026-10-08)
+
+### Bug Fixes
+
+- let SDK calls made before init wait for the instance instead of throwing ([ecca0ee](https://github.com/ondecentral/Lucia-Browser-SDK/commit/ecca0ee2be8ce99d7b3286642d6da86d52e196cf))
+
 ## [0.12.1](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.12.0...v0.12.1) (2026-10-07)
 
 ### Bug Fixes
