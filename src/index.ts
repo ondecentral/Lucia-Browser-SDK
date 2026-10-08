@@ -22,11 +22,31 @@ export {
 export { detectEvmProvider, detectSolanaProvider } from './features/web3';
 
 let sdk: Promise<LuciaSDKClass> | null = null;
+let waiting: Promise<LuciaSDKClass> | null = null;
+let waitTimer: ReturnType<typeof setInterval> | undefined;
 
+const INIT_WAIT_MS = 15_000;
+const INIT_POLL_MS = 50;
+const notInitialized = () => new Error('LuciaSDK not initialized. Please call LuciaSDK.init() first');
+
+// Calls can arrive before init: the CDN build's auto-init may run after the app's own code
+// (e.g. Next.js loads <Script> after hydration), and it publishes only via window.__luciaInitPromise.
 const getSdk = () => {
-  const p = sdk || (typeof window !== 'undefined' && window.__luciaInitPromise);
-  if (!p) throw new Error('LuciaSDK not initialized. Please call LuciaSDK.init() first');
-  return p;
+  if (typeof window === 'undefined') throw notInitialized();
+  const p = sdk || window.__luciaInitPromise;
+  if (p) return p;
+  waiting ??= new Promise<LuciaSDKClass>((resolve, reject) => {
+    const startedAt = Date.now();
+    waitTimer = setInterval(() => {
+      const ready = sdk || window.__luciaInitPromise;
+      if (!ready && Date.now() - startedAt < INIT_WAIT_MS) return;
+      clearInterval(waitTimer);
+      waiting = null;
+      if (ready) resolve(ready);
+      else reject(notInitialized());
+    }, INIT_POLL_MS);
+  });
+  return waiting;
 };
 
 // Helper for tests to reset instance
@@ -38,6 +58,8 @@ export const __resetInstance = () => {
     promise.then((s) => s.destroy()).catch(() => {});
   }
   sdk = null;
+  clearInterval(waitTimer);
+  waiting = null;
   if (typeof window !== 'undefined') {
     delete window.__luciaInitPromise;
   }
