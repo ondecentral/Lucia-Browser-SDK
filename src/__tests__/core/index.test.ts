@@ -1,5 +1,6 @@
 import LuciaSDK from '../../core';
 import * as dataUtils from '../../features/fingerprinting';
+import Facade, { __resetInstance } from '../../index';
 import * as sessionUtils from '../../infrastructure/session';
 import { BrowserData } from '../../types';
 
@@ -521,5 +522,71 @@ describe('LuciaSDK', () => {
       const walletCalls = httpClientPostSpy.mock.calls.filter((call: any[]) => call[0] === '/api/sdk/wallet');
       expect(walletCalls).toHaveLength(1);
     });
+  });
+});
+
+describe('LuciaSDK facade before init', () => {
+  let pageViewSpy: jest.SpyInstance;
+
+  beforeEach(() => {
+    jest.useFakeTimers();
+    __resetInstance();
+    jest.spyOn(LuciaSDK.prototype, 'init').mockResolvedValue(undefined);
+    pageViewSpy = jest.spyOn(LuciaSDK.prototype, 'pageView').mockResolvedValue(undefined);
+  });
+
+  afterEach(() => {
+    __resetInstance();
+    jest.useRealTimers();
+    jest.restoreAllMocks();
+  });
+
+  it('waits for init() and then performs the call', async () => {
+    const call = Facade.pageView('swap');
+    await jest.advanceTimersByTimeAsync(2000);
+    expect(pageViewSpy).not.toHaveBeenCalled();
+
+    await Facade.init({ apiKey: 'test-key' });
+    await jest.advanceTimersByTimeAsync(1000);
+    await call;
+
+    expect(pageViewSpy).toHaveBeenCalledWith('swap');
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  it('rejects with the init error when init fails', async () => {
+    jest.spyOn(LuciaSDK.prototype, 'init').mockRejectedValue(new Error('init failed'));
+    const call = Facade.pageView('swap').catch((e: unknown) => e);
+
+    Facade.init({ apiKey: 'test-key' }).catch(() => {});
+    await jest.advanceTimersByTimeAsync(1000);
+
+    expect(await call).toEqual(new Error('init failed'));
+    expect(pageViewSpy).not.toHaveBeenCalled();
+  });
+
+  it('picks up an instance initialised later by the CDN build', async () => {
+    const cdnPageView = jest.fn().mockResolvedValue(undefined);
+    const call = Facade.pageView('swap');
+
+    window.__luciaInitPromise = Promise.resolve({ pageView: cdnPageView } as unknown as LuciaSDK);
+    await jest.advanceTimersByTimeAsync(1000);
+    await call;
+
+    expect(cdnPageView).toHaveBeenCalledWith('swap');
+  });
+
+  it('rejects with the not-initialized error when init never happens', async () => {
+    const call = Facade.pageView('swap').catch((e: unknown) => e);
+    await jest.advanceTimersByTimeAsync(15_000);
+    expect(await call).toEqual(new Error('LuciaSDK not initialized. Please call LuciaSDK.init() first'));
+    expect(pageViewSpy).not.toHaveBeenCalled();
+    expect(jest.getTimerCount()).toBe(0);
+  });
+
+  it('calls straight through once initialised', async () => {
+    await Facade.init({ apiKey: 'test-key' });
+    await Facade.pageView('home');
+    expect(pageViewSpy).toHaveBeenCalledWith('home');
   });
 });
