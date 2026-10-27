@@ -44,6 +44,17 @@ updates:
           - "conventional-*"
           - "commitlint*"
           - "@commitlint/*"
+      # deps not matched above; majors still get their own PR
+      misc:
+        patterns:
+          - "*"
+        update-types:
+          - "minor"
+          - "patch"
+      security:
+        applies-to: security-updates
+        patterns:
+          - "*"
 
   # GitHub Actions
   - package-ecosystem: "github-actions"
