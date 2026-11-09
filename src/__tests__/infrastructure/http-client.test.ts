@@ -184,80 +184,60 @@ describe('HttpClient', () => {
       expect((httpClient as any).executePost).toHaveBeenCalledWith('/test', postData, false);
     });
 
-    it('should use sendBeacon and not call fetch when fireAndForget is true', async () => {
-      // Clear any mock implementations and set up new mocks
-      const sendBeaconMock = jest.fn().mockReturnValue(true);
+    it('should send fire-and-forget posts as keepalive fetch, never sendBeacon', async () => {
+      const sendBeaconMock = jest.fn();
       // @ts-ignore
       navigator.sendBeacon = sendBeaconMock;
-
-      // Spy on executePost to verify its behavior
-      const executePostSpy = jest.spyOn(httpClient as any, 'executePost');
-
-      // Mock fetch to ensure it's not called
-      const fetchMock = jest.fn();
+      const fetchMock = jest.fn().mockResolvedValue({ json: jest.fn() });
       global.fetch = fetchMock;
 
-      const postData = { foo: 'bar' };
-      const result = await httpClient.post('/test', postData, true);
+      const result = await httpClient.post('/test', { foo: 'bar' }, true);
 
-      // executePost should be called
-      expect(executePostSpy).toHaveBeenCalledWith('/test', postData, true);
-
-      // sendBeacon should be called with the right URL and data
-      expect(sendBeaconMock).toHaveBeenCalled();
-
-      // fetch should not be called
-      expect(fetchMock).not.toHaveBeenCalled();
-
-      // Result should be null for fire-and-forget requests
-      expect(result).toBeNull();
-    });
-
-    it('should log error if sendBeacon fails', async () => {
-      // Mock sendBeacon to return false (failure)
-      const sendBeaconMock = jest.fn().mockReturnValue(false);
-      // @ts-ignore
-      navigator.sendBeacon = sendBeaconMock;
-
-      // Spy on the logger
-      const loggerSpy = jest.spyOn(httpClient.logger, 'log');
-
-      const postData = { foo: 'bar' };
-      const result = await httpClient.post('/test', postData, true);
-
-      // sendBeacon should be called
-      expect(sendBeaconMock).toHaveBeenCalled();
-
-      // Logger should log an error
-      expect(loggerSpy).toHaveBeenCalledWith('error', 'sendBeacon failed');
-
-      // Result should be null
-      expect(result).toBeNull();
-    });
-
-    it('should log error if sendBeacon throws', async () => {
-      // Mock sendBeacon to throw an error
-      const error = new Error('sendBeacon error');
-      const sendBeaconMock = jest.fn().mockImplementation(() => {
-        throw error;
+      expect(sendBeaconMock).not.toHaveBeenCalled();
+      expect(fetchMock).toHaveBeenCalledWith(`${SERVER_URL}/test`, {
+        method: 'POST',
+        keepalive: true,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-API-KEY': 'test-key',
+          'SDK-VERSION': SDK_VERSION,
+        },
+        body: JSON.stringify({ foo: 'bar' }),
       });
-      // @ts-ignore
-      navigator.sendBeacon = sendBeaconMock;
+      expect(result).toBeNull();
+    });
 
-      // Spy on the logger
+    it('should not keepalive awaited posts', async () => {
+      const fetchMock = jest.fn().mockResolvedValue({ json: jest.fn().mockResolvedValue({ ok: 1 }) });
+      global.fetch = fetchMock;
+
+      const result = await httpClient.post('/test', { foo: 'bar' }, false);
+
+      expect(fetchMock.mock.calls[0][1].keepalive).toBe(false);
+      expect(result).toEqual({ ok: 1 });
+    });
+
+    it('should return null and log when an awaited post fails', async () => {
+      const error = new Error('Network error');
+      global.fetch = jest.fn().mockRejectedValue(error);
       const loggerSpy = jest.spyOn(httpClient.logger, 'log');
 
-      const postData = { foo: 'bar' };
-      const result = await httpClient.post('/test', postData, true);
+      const result = await httpClient.post('/test', { foo: 'bar' }, false);
 
-      // sendBeacon should be called
-      expect(sendBeaconMock).toHaveBeenCalled();
-
-      // Logger should log the error that was thrown
-      expect(loggerSpy).toHaveBeenCalledWith('error', error);
-
-      // Result should be null
       expect(result).toBeNull();
+      expect(loggerSpy).toHaveBeenCalledWith('error', error);
+    });
+
+    it('should log, not throw, when a fire-and-forget fetch rejects', async () => {
+      const error = new Error('blocked');
+      global.fetch = jest.fn().mockRejectedValue(error);
+      const loggerSpy = jest.spyOn(httpClient.logger, 'log');
+
+      const result = await httpClient.post('/test', { foo: 'bar' }, true);
+      await Promise.resolve();
+
+      expect(result).toBeNull();
+      expect(loggerSpy).toHaveBeenCalledWith('error', error);
     });
   });
 

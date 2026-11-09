@@ -7,7 +7,6 @@ import { Config } from '../../types';
 
 // Mock fetch globally
 global.fetch = jest.fn();
-global.navigator.sendBeacon = jest.fn();
 
 describe('Auto-Tracking Integration', () => {
   beforeEach(() => {
@@ -35,9 +34,6 @@ describe('Auto-Tracking Integration', () => {
         },
       }),
     });
-
-    // Mock sendBeacon
-    (global.navigator.sendBeacon as jest.Mock).mockReturnValue(true);
   });
 
   describe('Programmatic Configuration', () => {
@@ -60,12 +56,10 @@ describe('Auto-Tracking Integration', () => {
         setTimeout(resolve, 100);
       });
 
-      // Check that sendBeacon was called with click data
-      expect(global.navigator.sendBeacon).toHaveBeenCalled();
-      const beaconCall = (global.navigator.sendBeacon as jest.Mock).mock.calls.find((call) =>
-        call[0].includes('/api/sdk/click'),
-      );
-      expect(beaconCall).toBeDefined();
+      // Check that a request was sent with click data
+      expect(global.fetch).toHaveBeenCalled();
+      const clickCall = (global.fetch as jest.Mock).mock.calls.find((call) => call[0].includes('/api/sdk/click'));
+      expect(clickCall).toBeDefined();
     });
 
     it('should enable auto-tracking with object config', async () => {
@@ -90,7 +84,8 @@ describe('Auto-Tracking Integration', () => {
         setTimeout(resolve, 100);
       });
 
-      expect(global.navigator.sendBeacon).toHaveBeenCalled();
+      const clickCalls = (global.fetch as jest.Mock).mock.calls.filter((call) => call[0].includes('/api/sdk/click'));
+      expect(clickCalls).toHaveLength(1);
     });
 
     it('should not track when auto-tracking is disabled', async () => {
@@ -114,9 +109,7 @@ describe('Auto-Tracking Integration', () => {
       });
 
       // Should only have init call, no click tracking
-      const clickCalls = (global.navigator.sendBeacon as jest.Mock).mock.calls.filter((call) =>
-        call[0].includes('/api/sdk/click'),
-      );
+      const clickCalls = (global.fetch as jest.Mock).mock.calls.filter((call) => call[0].includes('/api/sdk/click'));
       expect(clickCalls).toHaveLength(0);
     });
 
@@ -139,9 +132,7 @@ describe('Auto-Tracking Integration', () => {
         setTimeout(resolve, 100);
       });
 
-      const clickCalls = (global.navigator.sendBeacon as jest.Mock).mock.calls.filter((call) =>
-        call[0].includes('/api/sdk/click'),
-      );
+      const clickCalls = (global.fetch as jest.Mock).mock.calls.filter((call) => call[0].includes('/api/sdk/click'));
       expect(clickCalls).toHaveLength(0);
     });
   });
@@ -169,19 +160,10 @@ describe('Auto-Tracking Integration', () => {
         setTimeout(resolve, 100);
       });
 
-      const beaconCall = (global.navigator.sendBeacon as jest.Mock).mock.calls.find((call) =>
-        call[0].includes('/api/sdk/click'),
-      );
-      expect(beaconCall).toBeDefined();
+      const clickCall = (global.fetch as jest.Mock).mock.calls.find((call) => call[0].includes('/api/sdk/click'));
+      expect(clickCall).toBeDefined();
 
-      // The second argument is a Blob, read it using FileReader
-      const blob = beaconCall[1] as Blob;
-      const reader = new FileReader();
-      const text = await new Promise<string>((resolve) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsText(blob);
-      });
-      const payload = JSON.parse(text);
+      const payload = JSON.parse(clickCall[1].body);
       expect(payload.button).toBe('signup-btn');
       expect(payload.elementType).toBe('button');
       expect(payload.text).toBe('Sign Up');
@@ -201,9 +183,7 @@ describe('Auto-Tracking Integration', () => {
         setTimeout(resolve, 100);
       });
 
-      const clickCalls = (global.navigator.sendBeacon as jest.Mock).mock.calls.filter((call) =>
-        call[0].includes('/api/sdk/click'),
-      );
+      const clickCalls = (global.fetch as jest.Mock).mock.calls.filter((call) => call[0].includes('/api/sdk/click'));
       expect(clickCalls).toHaveLength(0);
     });
 
@@ -220,16 +200,8 @@ describe('Auto-Tracking Integration', () => {
         setTimeout(resolve, 100);
       });
 
-      const beaconCall = (global.navigator.sendBeacon as jest.Mock).mock.calls.find((call) =>
-        call[0].includes('/api/sdk/click'),
-      );
-      const blob = beaconCall[1] as Blob;
-      const reader = new FileReader();
-      const text = await new Promise<string>((resolve) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsText(blob);
-      });
-      const payload = JSON.parse(text);
+      const clickCall = (global.fetch as jest.Mock).mock.calls.find((call) => call[0].includes('/api/sdk/click'));
+      const payload = JSON.parse(clickCall[1].body);
 
       expect(payload.meta).toEqual({
         variant: 'primary',
@@ -250,16 +222,8 @@ describe('Auto-Tracking Integration', () => {
         setTimeout(resolve, 100);
       });
 
-      const beaconCall = (global.navigator.sendBeacon as jest.Mock).mock.calls.find((call) =>
-        call[0].includes('/api/sdk/click'),
-      );
-      const blob = beaconCall[1] as Blob;
-      const reader = new FileReader();
-      const text = await new Promise<string>((resolve) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.readAsText(blob);
-      });
-      const payload = JSON.parse(text);
+      const clickCall = (global.fetch as jest.Mock).mock.calls.find((call) => call[0].includes('/api/sdk/click'));
+      const payload = JSON.parse(clickCall[1].body);
 
       expect(payload.href).toBe('/pricing');
       expect(payload.elementType).toBe('link');
@@ -294,9 +258,7 @@ describe('Auto-Tracking Integration', () => {
         setTimeout(resolve, 100);
       });
 
-      const clickCalls = (global.navigator.sendBeacon as jest.Mock).mock.calls.filter((call) =>
-        call[0].includes('/api/sdk/click'),
-      );
+      const clickCalls = (global.fetch as jest.Mock).mock.calls.filter((call) => call[0].includes('/api/sdk/click'));
 
       // Should have both clicks
       expect(clickCalls.length).toBeGreaterThanOrEqual(2);
@@ -325,9 +287,7 @@ describe('Auto-Tracking Integration', () => {
         setTimeout(resolve, 100);
       });
 
-      const clickCalls = (global.navigator.sendBeacon as jest.Mock).mock.calls.filter((call) =>
-        call[0].includes('/api/sdk/click'),
-      );
+      const clickCalls = (global.fetch as jest.Mock).mock.calls.filter((call) => call[0].includes('/api/sdk/click'));
       expect(clickCalls.length).toBeGreaterThan(0);
     });
 
@@ -342,9 +302,7 @@ describe('Auto-Tracking Integration', () => {
         setTimeout(resolve, 100);
       });
 
-      const clickCalls = (global.navigator.sendBeacon as jest.Mock).mock.calls.filter((call) =>
-        call[0].includes('/api/sdk/click'),
-      );
+      const clickCalls = (global.fetch as jest.Mock).mock.calls.filter((call) => call[0].includes('/api/sdk/click'));
       expect(clickCalls.length).toBeGreaterThan(0);
     });
 
@@ -360,9 +318,7 @@ describe('Auto-Tracking Integration', () => {
         setTimeout(resolve, 100);
       });
 
-      const clickCalls = (global.navigator.sendBeacon as jest.Mock).mock.calls.filter((call) =>
-        call[0].includes('/api/sdk/click'),
-      );
+      const clickCalls = (global.fetch as jest.Mock).mock.calls.filter((call) => call[0].includes('/api/sdk/click'));
       expect(clickCalls.length).toBeGreaterThan(0);
     });
 
@@ -377,9 +333,7 @@ describe('Auto-Tracking Integration', () => {
         setTimeout(resolve, 100);
       });
 
-      const clickCalls = (global.navigator.sendBeacon as jest.Mock).mock.calls.filter((call) =>
-        call[0].includes('/api/sdk/click'),
-      );
+      const clickCalls = (global.fetch as jest.Mock).mock.calls.filter((call) => call[0].includes('/api/sdk/click'));
       expect(clickCalls).toHaveLength(0);
     });
   });
@@ -407,9 +361,7 @@ describe('Auto-Tracking Integration', () => {
         setTimeout(resolve, 100);
       });
 
-      const clickCalls = (global.navigator.sendBeacon as jest.Mock).mock.calls.filter((call) =>
-        call[0].includes('/api/sdk/click'),
-      );
+      const clickCalls = (global.fetch as jest.Mock).mock.calls.filter((call) => call[0].includes('/api/sdk/click'));
       expect(clickCalls).toHaveLength(0);
     });
 
@@ -426,9 +378,7 @@ describe('Auto-Tracking Integration', () => {
         setTimeout(resolve, 100);
       });
 
-      const clickCalls = (global.navigator.sendBeacon as jest.Mock).mock.calls.filter((call) =>
-        call[0].includes('/api/sdk/click'),
-      );
+      const clickCalls = (global.fetch as jest.Mock).mock.calls.filter((call) => call[0].includes('/api/sdk/click'));
       expect(clickCalls).toHaveLength(0);
     });
   });
