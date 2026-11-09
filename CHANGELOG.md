@@ -2,6 +2,48 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.13.0](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.12.2...v0.13.0) (2026-11-09)
+
+### Features
+
+- add apiHost option to send events to a first-party domain ([53f7269](https://github.com/ondecentral/Lucia-Browser-SDK/commit/53f7269c8686f9964f464c0593f009f25e84ea96))
+
+### Bug Fixes
+
+- send fire-and-forget events via keepalive fetch so ad blockers don't drop them ([0fae99c](https://github.com/ondecentral/Lucia-Browser-SDK/commit/0fae99cec05b6b42d4a164660143e154e94c91a6))
+
+### Miscellaneous
+
+- **deps:** bump brace-expansion ([df6e95f](https://github.com/ondecentral/Lucia-Browser-SDK/commit/df6e95fc0c3dff6fe2bedc1135ed883e74390e4b))
+- **deps:** bump fast-uri from 3.1.7 to 3.1.9 ([e8fa4db](https://github.com/ondecentral/Lucia-Browser-SDK/commit/e8fa4db1d07d7399949ee0e1c1a72664be94c0d7))
+- **deps:** bump handlebars from 4.7.9 to 4.7.10 ([89939ad](https://github.com/ondecentral/Lucia-Browser-SDK/commit/89939adbb7238e30c8bb313353447fa215d9c59d))
+- **deps:** bump js-yaml from 3.14.2 to 3.15.2 ([65e2f98](https://github.com/ondecentral/Lucia-Browser-SDK/commit/65e2f98f0087251ce3ae1fc18877396bc49a4c6d))
+- **deps:** bump minimatch from 3.1.2 to 3.1.5 ([12c23a5](https://github.com/ondecentral/Lucia-Browser-SDK/commit/12c23a528f6fdd781c23ad296a44479e0834ea25))
+- **deps:** bump picomatch from 2.3.1 to 2.3.2 ([88ab085](https://github.com/ondecentral/Lucia-Browser-SDK/commit/88ab085803262f046e6c8f1d2ddc15053eca162b))
+- **deps:** bump prettier from 3.9.8 to 3.9.9 ([2c83a86](https://github.com/ondecentral/Lucia-Browser-SDK/commit/2c83a8684130a91253c6b597f963310f303beb17))
+- **deps:** bump prettier from 3.9.9 to 3.9.10 ([769d9c4](https://github.com/ondecentral/Lucia-Browser-SDK/commit/769d9c4ec7546288f6da9dba2f69816ada298c65))
+- **deps:** bump release-it from 21.1.0 to 21.1.1 in the release group ([0c8d252](https://github.com/ondecentral/Lucia-Browser-SDK/commit/0c8d2521737d0e41ba62a9148a7bf863af1a999b))
+- **deps:** bump rollup from 4.63.6 to 4.64.3 in the rollup group ([eb149e4](https://github.com/ondecentral/Lucia-Browser-SDK/commit/eb149e414ee4ce3ee7835b8890029b094d7160b5))
+- **deps:** bump rollup from 4.65.0 to 4.66.0 in the rollup group ([9b25346](https://github.com/ondecentral/Lucia-Browser-SDK/commit/9b25346c9ec5d0ef42db8e0b01d6b7c59d684248))
+- **deps:** bump serialize-javascript from 7.0.5 to 7.1.4 ([00c2b03](https://github.com/ondecentral/Lucia-Browser-SDK/commit/00c2b033195e58b258f73b197f64a5fdb471ec5d))
+- **deps:** bump shell-quote from 1.10.0 to 1.12.0 ([997379d](https://github.com/ondecentral/Lucia-Browser-SDK/commit/997379d2c9caf74422b8d3d24d01805396429041))
+- **deps:** bump source-map-js from 1.2.1 to 1.2.2 ([47b79cc](https://github.com/ondecentral/Lucia-Browser-SDK/commit/47b79ccd00bb816eb6d36026d4cb4a14ae9ea0aa))
+- **deps:** bump the eslint group across 1 directory with 5 updates ([7f8c606](https://github.com/ondecentral/Lucia-Browser-SDK/commit/7f8c606e054a3bb5b46bcb4a306a2c794f732b14))
+- **deps:** bump the eslint group across 1 directory with 6 updates ([5496f01](https://github.com/ondecentral/Lucia-Browser-SDK/commit/5496f01c796b46409cb77e3f801d371ff1b464af))
+- **deps:** bump the eslint group with 5 updates ([6340b84](https://github.com/ondecentral/Lucia-Browser-SDK/commit/6340b847d84d705bfb7cc91829c74d42cfc4dee0))
+- **deps:** bump the release group across 1 directory with 3 updates ([8d75072](https://github.com/ondecentral/Lucia-Browser-SDK/commit/8d750724933cf24704e49035d0126d0c1b5d179d))
+- **deps:** bump the rollup group across 1 directory with 2 updates ([e7ab32b](https://github.com/ondecentral/Lucia-Browser-SDK/commit/e7ab32bf943e9bea574564715535e894b88383be))
+- **deps:** bump ts-jest ([f56a5cc](https://github.com/ondecentral/Lucia-Browser-SDK/commit/f56a5cc35d2dd2231d138454157e7d2b46a5461b))
+- **deps:** bump uuid from 14.0.2 to 14.0.3 ([b74c612](https://github.com/ondecentral/Lucia-Browser-SDK/commit/b74c612ca1b655e5f912c5f798e0e12e21865b46))
+
+### Code Refactoring
+
+- remove authenticate() which called a nonexistent endpoint ([51f8007](https://github.com/ondecentral/Lucia-Browser-SDK/commit/51f80078376254caee1b5b34cabf3e4017801bc5))
+
+### Continuous Integration
+
+- group remaining npm and security updates in dependabot ([eb98d9b](https://github.com/ondecentral/Lucia-Browser-SDK/commit/eb98d9b6d12f6a61a4f73a6dc21f040a7c5c087b))
+
 ## [0.12.2](https://github.com/ondecentral/Lucia-Browser-SDK/compare/v0.12.1...v0.12.2) (2026-10-08)
 
 ### Bug Fixes
