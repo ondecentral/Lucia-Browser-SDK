@@ -35,7 +35,7 @@ The SDK will automatically initialize when you provide the `data-api-key` attrib
 Optional configuration attributes:
 
 - `data-api-key` (required) - Your Lucia API key
-- `data-debug-url` (optional) - Custom debug endpoint URL
+- `data-api-host` (optional) - API origin to send events to, e.g. your own first-party domain (default `https://api.luciaprotocol.com`)
 - `data-auto-track-clicks` (optional) - Enable automatic click tracking (`"true"` or `"false"`)
 - `data-track-selectors` (optional) - Custom CSS selectors for click tracking (comma-separated)
 
@@ -48,7 +48,7 @@ Load the script without attributes and initialize programmatically:
 <script>
   LuciaSDK.init({
     apiKey: 'your-api-key-here',
-    debugURL: 'https://custom-debug-url.com', // optional
+    apiHost: 'https://t.your-domain.com', // optional, defaults to https://api.luciaprotocol.com
   });
 </script>
 ```
@@ -62,7 +62,7 @@ Load the script without attributes and initialize programmatically:
 ```javascript
 LuciaSDK.init({
   apiKey: 'your-api-key-here',
-  debugURL: 'https://custom-debug-url.com', // optional
+  apiHost: 'https://t.your-domain.com', // optional, defaults to https://api.luciaprotocol.com
 });
 ```
 

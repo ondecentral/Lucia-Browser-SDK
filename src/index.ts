@@ -115,14 +115,14 @@ if (typeof window !== 'undefined') {
     const apiKey = tag?.getAttribute('data-api-key');
     if (!apiKey) return;
 
-    const debugURL = tag.getAttribute('data-debug-url');
+    const apiHost = tag.getAttribute('data-api-host') || tag.getAttribute('data-debug-url');
     const autoTrack = tag.getAttribute('data-auto-track-clicks');
     const selectors = tag.getAttribute('data-track-selectors');
 
     // Initialize the SDK
     LuciaSDK.init({
       apiKey,
-      ...(debugURL && { debugURL }),
+      ...(apiHost && { apiHost }),
       ...(autoTrack === 'true' && {
         autoTrackClicks: selectors ? { enabled: true, selectors: selectors.split(',').map((s) => s.trim()) } : true,
       }),

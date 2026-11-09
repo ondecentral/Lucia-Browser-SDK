@@ -43,12 +43,41 @@ describe('HttpClient', () => {
   });
 
   describe('constructor', () => {
-    it('should use debugURL when provided in config', () => {
-      const debugURL = 'https://debug.example.com';
-      Store.dispatch({ config: { apiKey: 'test-key', debugURL } });
+    it('should use apiHost when provided in config', () => {
+      Store.dispatch({ config: { apiKey: 'test-key', apiHost: 'https://t.example.com' } });
 
       httpClient = new HttpClient(Store.store);
-      expect((httpClient as any).baseURL).toBe(debugURL);
+      expect((httpClient as any).baseURL).toBe('https://t.example.com');
+    });
+
+    it('should strip trailing slashes from apiHost', () => {
+      Store.dispatch({ config: { apiKey: 'test-key', apiHost: 'https://t.example.com/' } });
+
+      httpClient = new HttpClient(Store.store);
+      expect((httpClient as any).baseURL).toBe('https://t.example.com');
+    });
+
+    it('should still accept the deprecated debugURL', () => {
+      Store.dispatch({ config: { apiKey: 'test-key', debugURL: 'https://old.example.com' } });
+
+      httpClient = new HttpClient(Store.store);
+      expect((httpClient as any).baseURL).toBe('https://old.example.com');
+    });
+
+    it('should prefer apiHost over debugURL', () => {
+      Store.dispatch({
+        config: { apiKey: 'test-key', apiHost: 'https://t.example.com', debugURL: 'https://old.example.com' },
+      });
+
+      httpClient = new HttpClient(Store.store);
+      expect((httpClient as any).baseURL).toBe('https://t.example.com');
+    });
+
+    it('should prefer apiHost over testENV', () => {
+      Store.dispatch({ config: { apiKey: 'test-key', apiHost: 'https://t.example.com', testENV: true } });
+
+      httpClient = new HttpClient(Store.store);
+      expect((httpClient as any).baseURL).toBe('https://t.example.com');
     });
 
     it('should use TEST_SERVER_URL when testENV is true', () => {

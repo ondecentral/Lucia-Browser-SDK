@@ -38,13 +38,13 @@ describe('Auto-initialization', () => {
       expect(foundScript?.getAttribute('data-api-key')).toBe('test-key-123');
     });
 
-    it('should detect data-debug-url attribute when present', () => {
+    it('should detect data-api-host attribute when present', () => {
       mockScript.setAttribute('data-api-key', 'test-key-123');
-      mockScript.setAttribute('data-debug-url', 'https://debug.example.com');
+      mockScript.setAttribute('data-api-host', 'https://debug.example.com');
       document.head.appendChild(mockScript);
 
       const foundScript = document.querySelector('script[data-api-key]') as HTMLScriptElement;
-      expect(foundScript?.getAttribute('data-debug-url')).toBe('https://debug.example.com');
+      expect(foundScript?.getAttribute('data-api-host')).toBe('https://debug.example.com');
     });
 
     it('should return null when no script tag has data-api-key', () => {
@@ -81,25 +81,25 @@ describe('Auto-initialization', () => {
       expect(apiKey).toBe('my-api-key-789');
     });
 
-    it('should extract debugURL from data-debug-url attribute', () => {
+    it('should extract apiHost from data-api-host attribute', () => {
       mockScript.setAttribute('data-api-key', 'test-key');
-      mockScript.setAttribute('data-debug-url', 'https://custom-debug.example.com');
+      mockScript.setAttribute('data-api-host', 'https://custom-debug.example.com');
       document.head.appendChild(mockScript);
 
       const scriptTag = document.querySelector('script[data-api-key]') as HTMLScriptElement;
-      const debugURL = scriptTag.getAttribute('data-debug-url');
+      const apiHost = scriptTag.getAttribute('data-api-host');
 
-      expect(debugURL).toBe('https://custom-debug.example.com');
+      expect(apiHost).toBe('https://custom-debug.example.com');
     });
 
-    it('should handle missing data-debug-url gracefully', () => {
+    it('should handle missing data-api-host gracefully', () => {
       mockScript.setAttribute('data-api-key', 'test-key');
       document.head.appendChild(mockScript);
 
       const scriptTag = document.querySelector('script[data-api-key]') as HTMLScriptElement;
-      const debugURL = scriptTag.getAttribute('data-debug-url');
+      const apiHost = scriptTag.getAttribute('data-api-host');
 
-      expect(debugURL).toBeNull();
+      expect(apiHost).toBeNull();
     });
 
     it('should handle empty string values', () => {
@@ -114,41 +114,41 @@ describe('Auto-initialization', () => {
   });
 
   describe('Config object construction', () => {
-    it('should create config with only apiKey when no debug-url', () => {
+    it('should create config with only apiKey when no api-host', () => {
       const apiKey = 'test-api-key';
-      const debugURL: string | null = null;
+      const apiHost: string | null = null;
 
       const config: any = { apiKey };
-      if (debugURL) {
-        config.debugURL = debugURL;
+      if (apiHost) {
+        config.apiHost = apiHost;
       }
 
       expect(config).toEqual({ apiKey: 'test-api-key' });
-      expect(config).not.toHaveProperty('debugURL');
+      expect(config).not.toHaveProperty('apiHost');
     });
 
-    it('should create config with both apiKey and debugURL when present', () => {
+    it('should create config with both apiKey and apiHost when present', () => {
       const apiKey = 'test-api-key';
-      const debugURL: string | null = 'https://debug.example.com';
+      const apiHost: string | null = 'https://debug.example.com';
 
       const config: any = { apiKey };
-      if (debugURL) {
-        config.debugURL = debugURL;
+      if (apiHost) {
+        config.apiHost = apiHost;
       }
 
       expect(config).toEqual({
         apiKey: 'test-api-key',
-        debugURL: 'https://debug.example.com',
+        apiHost: 'https://debug.example.com',
       });
     });
 
-    it('should not include debugURL when empty string', () => {
+    it('should not include apiHost when empty string', () => {
       const apiKey = 'test-api-key';
-      const debugURL: string = '';
+      const apiHost: string = '';
 
       const config: any = { apiKey };
-      if (debugURL) {
-        config.debugURL = debugURL;
+      if (apiHost) {
+        config.apiHost = apiHost;
       }
 
       expect(config).toEqual({ apiKey: 'test-api-key' });
@@ -203,16 +203,16 @@ describe('Auto-initialization', () => {
       expect(foundScript).toBeNull();
     });
 
-    it('should handle malformed URLs in data-debug-url', () => {
+    it('should handle malformed URLs in data-api-host', () => {
       mockScript.setAttribute('data-api-key', 'test-key');
-      mockScript.setAttribute('data-debug-url', 'not-a-valid-url');
+      mockScript.setAttribute('data-api-host', 'not-a-valid-url');
       document.head.appendChild(mockScript);
 
       const scriptTag = document.querySelector('script[data-api-key]') as HTMLScriptElement;
-      const debugURL = scriptTag.getAttribute('data-debug-url');
+      const apiHost = scriptTag.getAttribute('data-api-host');
 
       // Should still extract the value, validation happens elsewhere
-      expect(debugURL).toBe('not-a-valid-url');
+      expect(apiHost).toBe('not-a-valid-url');
     });
 
     it('should handle special characters in api key', () => {
@@ -362,17 +362,17 @@ describe('Auto-initialization', () => {
       expect(sdk).toBeUndefined();
     });
 
-    it('should handle Config type with optional debugURL', () => {
+    it('should handle Config type with optional apiHost', () => {
       interface Config {
         apiKey: string;
-        debugURL?: string;
+        apiHost?: string;
       }
 
       const config1: Config = { apiKey: 'test' };
-      const config2: Config = { apiKey: 'test', debugURL: 'url' };
+      const config2: Config = { apiKey: 'test', apiHost: 'url' };
 
       expect(config1.apiKey).toBe('test');
-      expect(config2.debugURL).toBe('url');
+      expect(config2.apiHost).toBe('url');
     });
   });
 });

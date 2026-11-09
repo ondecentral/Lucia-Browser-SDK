@@ -16,6 +16,8 @@ export interface Config {
   apiKey: string;
   debug?: boolean;
   testENV?: boolean;
+  apiHost?: string;
+  /** @deprecated Use `apiHost`. */
   debugURL?: string;
   autoTrackClicks?: boolean | AutoTrackClicksConfig;
 }

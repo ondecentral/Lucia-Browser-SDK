@@ -36,8 +36,9 @@ class HttpClient {
   private getBaseURL(): string {
     const { config } = this.store;
 
-    if (config?.debugURL) {
-      return config.debugURL;
+    const apiHost = config?.apiHost || config?.debugURL;
+    if (apiHost) {
+      return apiHost.replace(/\/+$/, '');
     }
 
     return config?.testENV ? TEST_SERVER_URL : SERVER_URL;
