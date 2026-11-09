@@ -36,8 +36,9 @@ class HttpClient {
   private getBaseURL(): string {
     const { config } = this.store;
 
-    if (config?.debugURL) {
-      return config.debugURL;
+    const apiHost = config?.apiHost || config?.debugURL;
+    if (apiHost) {
+      return apiHost.replace(/\/+$/, '');
     }
 
     return config?.testENV ? TEST_SERVER_URL : SERVER_URL;
@@ -133,34 +134,26 @@ class HttpClient {
       return null;
     }
 
-    if (fireAndForget && typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
-      try {
-        const fullUrl = `${this.baseURL}${url}`;
-        // Ensure data is an object for spreading
-        const safeData = data && typeof data === 'object' && !Array.isArray(data) ? data : { payload: data };
-        const beaconData = JSON.stringify({ ...safeData, _apiKey: this.store.config.apiKey });
-        const blob = new Blob([beaconData], { type: 'application/json' });
-        const success = navigator.sendBeacon(fullUrl, blob);
-        if (!success) {
-          this.logger.log('error', 'sendBeacon failed');
-        }
-      } catch (e) {
-        this.logger.log('error', e);
-      }
-      // fire-and-forget: always return null
+    // keepalive survives page unload like sendBeacon, but blockers classify beacons as "ping"
+    // and filter lists drop every third-party ping.
+    const request = fetch(`${this.baseURL}${url}`, {
+      method: 'POST',
+      keepalive: fireAndForget,
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-KEY': this.store.config.apiKey,
+        'SDK-VERSION': SDK_VERSION,
+      },
+      body: JSON.stringify(data),
+    });
+
+    if (fireAndForget) {
+      request.catch((e) => this.logger.log('error', e));
       return null;
     }
 
     try {
-      const response = await fetch(`${this.baseURL}${url}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-KEY': this.store.config.apiKey,
-          'SDK-VERSION': SDK_VERSION,
-        },
-        body: JSON.stringify(data),
-      });
+      const response = await request;
       return (await response.json()) as T;
     } catch (e) {
       this.logger.log('error', e);

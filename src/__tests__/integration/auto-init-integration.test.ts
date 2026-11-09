@@ -58,13 +58,13 @@ describe('Auto-init Integration Tests - Conceptual', () => {
     it('should find script tag with data-api-key', () => {
       const script = document.createElement('script');
       script.setAttribute('data-api-key', 'test-key-123');
-      script.setAttribute('data-debug-url', 'https://debug.example.com');
+      script.setAttribute('data-api-host', 'https://debug.example.com');
       document.head.appendChild(script);
 
       const foundScript = document.querySelector('script[data-api-key]') as HTMLScriptElement;
       expect(foundScript).toBeTruthy();
       expect(foundScript.getAttribute('data-api-key')).toBe('test-key-123');
-      expect(foundScript.getAttribute('data-debug-url')).toBe('https://debug.example.com');
+      expect(foundScript.getAttribute('data-api-host')).toBe('https://debug.example.com');
 
       document.head.removeChild(script);
     });
@@ -72,20 +72,20 @@ describe('Auto-init Integration Tests - Conceptual', () => {
     it('should extract config from script attributes', () => {
       const script = document.createElement('script');
       script.setAttribute('data-api-key', 'extracted-key');
-      script.setAttribute('data-debug-url', 'https://custom.debug.com');
+      script.setAttribute('data-api-host', 'https://custom.debug.com');
       document.head.appendChild(script);
 
       const scriptTag = document.querySelector('script[data-api-key]') as HTMLScriptElement;
       const apiKey = scriptTag.getAttribute('data-api-key');
-      const debugURL = scriptTag.getAttribute('data-debug-url');
+      const apiHost = scriptTag.getAttribute('data-api-host');
 
       const config = {
         apiKey: apiKey || '',
-        ...(debugURL && { debugURL }),
+        ...(apiHost && { apiHost }),
       };
 
       expect(config.apiKey).toBe('extracted-key');
-      expect(config.debugURL).toBe('https://custom.debug.com');
+      expect(config.apiHost).toBe('https://custom.debug.com');
 
       document.head.removeChild(script);
     });
@@ -94,39 +94,39 @@ describe('Auto-init Integration Tests - Conceptual', () => {
   describe('Config object construction', () => {
     it('should build config with only required fields', () => {
       const apiKey = 'required-key';
-      const debugURL: string | null = null;
+      const apiHost: string | null = null;
 
       const config: any = { apiKey };
-      if (debugURL) {
-        config.debugURL = debugURL;
+      if (apiHost) {
+        config.apiHost = apiHost;
       }
 
       expect(config).toEqual({ apiKey: 'required-key' });
-      expect(config).not.toHaveProperty('debugURL');
+      expect(config).not.toHaveProperty('apiHost');
     });
 
     it('should build config with optional fields when provided', () => {
       const apiKey = 'required-key';
-      const debugURL = 'https://debug.example.com';
+      const apiHost = 'https://debug.example.com';
 
       const config: any = { apiKey };
-      if (debugURL) {
-        config.debugURL = debugURL;
+      if (apiHost) {
+        config.apiHost = apiHost;
       }
 
       expect(config).toEqual({
         apiKey: 'required-key',
-        debugURL: 'https://debug.example.com',
+        apiHost: 'https://debug.example.com',
       });
     });
 
     it('should handle empty string values correctly', () => {
       const apiKey = 'key';
-      const debugURL = '';
+      const apiHost = '';
 
       const config: any = { apiKey };
-      if (debugURL) {
-        config.debugURL = debugURL;
+      if (apiHost) {
+        config.apiHost = apiHost;
       }
 
       expect(config).toEqual({ apiKey: 'key' });

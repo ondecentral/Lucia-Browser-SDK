@@ -46,10 +46,6 @@ class LuciaSDK extends BaseClass {
   /** Stored listener references for cleanup */
   private walletListenerCleanups: Array<() => void> = [];
 
-  authenticate() {
-    this.httpClient.post('/api/key/auth', {});
-  }
-
   /**
    * Initializes the SDK with the provided configuration
    */
